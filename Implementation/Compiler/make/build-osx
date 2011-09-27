@@ -1,2 +1,2 @@
-ant -Dboot.java.home=/Library/Java/Home
+ant -Dboot.java.home=${JAVA_HOME}
 
