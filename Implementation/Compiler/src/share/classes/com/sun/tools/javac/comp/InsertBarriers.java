@@ -1665,7 +1665,7 @@ public class InsertBarriers extends TreeTranslator {
 				// "throw new RuntimeException(ex);"
 				ifExBlock.stats = ifExBlock.stats.append(
 					make.Throw(make.NewClass(null, List.<DPJRegionPathList>nil(), 
-						List.<JCExpression>nil(), List.<DPJEffect>nil(), 
+						List.<JCExpression>nil(), List.<JCIdent>nil(), 
 						make.Ident(n_RuntimeException), 
 						List.<JCExpression>of(make.Ident(n_ex)), null)));
 
@@ -1678,7 +1678,7 @@ public class InsertBarriers extends TreeTranslator {
 			    // javac's control flow analysis happy.
 			    ifBlock.stats = ifBlock.stats.append(
 				    make.Throw(make.NewClass(null, List.<DPJRegionPathList>nil(), 
-						List.<JCExpression>nil(), List.<DPJEffect>nil(), 
+						List.<JCExpression>nil(), List.<JCIdent>nil(), 
 						make.Ident(n_RuntimeException), 
 						List.<JCExpression>nil(), null)));
 			}

@@ -217,7 +217,7 @@ public class DPJAnnotationCounter extends TreeScanner {
 	Context savedContext = context;
 	context = Context.METHOD_INVOKE;
 	scan(tree.regionArgs);
-	scan(tree.effectargs);
+	scan(tree.groupArgs);
 	context = savedContext;
 	scan(tree.typeargs);
 	scan(tree.args);
@@ -230,7 +230,7 @@ public class DPJAnnotationCounter extends TreeScanner {
 	    addLineFor(pair.fst.pos);
 	    addLineFor(pair.snd.pos);
 	}
-	for (JCIdent effectParam : tree.effectParams) {
+	for (JCIdent effectParam : tree.groupParams) {
 	    addLineFor(effectParam.pos);
 	    switch (context) {
 	    case CLASS:
@@ -243,18 +243,12 @@ public class DPJAnnotationCounter extends TreeScanner {
 		assert false;  
 	    }
 	}
-	for (Pair<DPJEffect,DPJEffect> pair : tree.effectConstraints) {
-	    addLineFor(pair.fst.pos);
-	    addLineFor(pair.snd.pos);
-	}
 	switch (context) {
 	case CLASS:
 	    classRPLConstraintCount += tree.rplConstraints.size();
-	    classEffectConstraintCount += tree.effectConstraints.size();
 	    break;
 	case METHOD_DEF:
 	    methodRPLConstraintCount += tree.rplConstraints.size();
-	    methodEffectConstraintCount += tree.effectConstraints.size();
 	    break;
 	default:
 	    assert false;

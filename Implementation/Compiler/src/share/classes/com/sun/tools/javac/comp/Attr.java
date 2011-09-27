@@ -922,7 +922,7 @@ public class Attr extends JCTree.Visitor {
 	}
 	
 	// Enter all effect params into the local method scope
-	for (JCIdent param : tree.effectParams) {
+	for (JCIdent param : tree.groupParams) {
 	    EffectParameterSymbol sym = (EffectParameterSymbol) param.sym;
 	    if (chk.checkUnique(param.pos(), sym, localEnv.info.scope)) {
 		localEnv.info.scope.enter(sym);
@@ -951,26 +951,9 @@ public class Attr extends JCTree.Visitor {
 	localEnv.info.constraints.disjointRPLs =
 	    localEnv.info.constraints.disjointRPLs.appendList(rplConstraints);
 
-	// Attribute effect constraints
-	for (Pair<DPJEffect,DPJEffect> constraint : tree.effectConstraints) {
-	    attribTree(constraint.fst, localEnv, NIL, Type.noType);
-	    attribTree(constraint.snd, localEnv, NIL, Type.noType);
-	}
-
-	// Enter effect constraints
-	ListBuffer<Pair<Effects,Effects>> effectBuf = ListBuffer.lb();
-	for (Pair<DPJEffect,DPJEffect> treeConstraint : tree.effectConstraints) {
-	    Pair<Effects,Effects> constraint = 
-		new Pair<Effects,Effects>(treeConstraint.fst.effects,
-			treeConstraint.snd.effects);
-	    effectBuf.append(constraint);
-	}
-	List<Pair<Effects,Effects>> effectConstraints = effectBuf.toList();
-	localEnv.info.constraints.noninterferingEffects =
-	    localEnv.info.constraints.noninterferingEffects.appendList(effectConstraints);
-	
 	// Return constraints
-	return new Constraints(rplConstraints, effectConstraints);
+	// FIXME
+	return new Constraints(rplConstraints, null);
     }
     
     public void visitMethodDef(JCMethodDecl tree) {
@@ -1640,7 +1623,7 @@ public class Attr extends JCTree.Visitor {
                 argtypes = attribArgs(tree.args, localEnv);
                 typeargtypes = attribTypes(tree.typeargs, localEnv);
                 regionargs = attribRPLs(tree.regionArgs);
-                effectargs = attribEffects(tree.effectargs);
+                effectargs = null; // FIXME attribEffects(tree.groupArgs);
                 
                 // Variable `site' points to the class in which the called
                 // constructor is defined.
@@ -1715,7 +1698,7 @@ public class Attr extends JCTree.Visitor {
             argtypes = attribArgs(tree.args, localEnv);
             typeargtypes = attribTypes(tree.typeargs, localEnv);
             regionargs = attribRPLs(tree.regionArgs);
-            effectargs = attribEffects(tree.effectargs);
+            effectargs = null; // FIXME attribEffects(tree.groupArgs);
             
             // ... and attribute the method using as a prototype a methodtype
             // whose formal argument types is exactly the list of actual
@@ -1869,7 +1852,7 @@ public class Attr extends JCTree.Visitor {
                     TypeApply(clazzid1,
                               ((JCTypeApply) clazz).typeArgs, 
                               ((JCTypeApply) clazz).rplArgs,
-                              ((JCTypeApply) clazz).effectArgs);
+                              ((JCTypeApply) clazz).groupArgs);
             else
                 clazz = clazzid1;
 //          System.out.println(clazz + " generated.");//DEBUG
@@ -1903,7 +1886,7 @@ public class Attr extends JCTree.Visitor {
         List<Type> argtypes = attribArgs(tree.args, localEnv);
         List<Type> typeargtypes = attribTypes(tree.typeargs, localEnv);
         List<RPL> regionargs = attribRPLs(tree.regionArgs);
-        List<Effects> effectargs = attribEffects(tree.effectargs);
+        List<Effects> effectargs = null; // FIXME attribEffects(tree.effectargs);
 
         // If we have made no mistakes in the class type...
         if (clazztype.tag == CLASS) {
@@ -3211,8 +3194,8 @@ public class Attr extends JCTree.Visitor {
 
             // Attribute effect args
             // TODO: Why does the null reference occur?
-            if (tree.effectArgs == null) tree.effectArgs = List.nil();
-            List<Effects> effectActuals = attribEffects(tree.effectArgs);
+            if (tree.groupArgs == null) tree.groupArgs = List.nil();
+            List<Effects> effectActuals = List.nil(); // FIXME attribEffects(tree.groupArgs);
             if (effectActuals.length() != effectFormals.length()) {
         	log.error(tree.pos(), "wrong.number.effect.args",
         		Integer.toString(effectFormals.length())); 

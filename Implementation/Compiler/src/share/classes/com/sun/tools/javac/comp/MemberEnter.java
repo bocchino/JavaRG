@@ -437,7 +437,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 		enter.classEnter(param, env);
 		rplBuf.append(new RPL(new RPLParameterElement(param.sym)));
 	    }
-	    for (JCIdent param : paramInfo.effectParams) {
+	    for (JCIdent param : paramInfo.groupParams) {
 		enter.classEnter(param, env);
 		effectsBuf.append(new Effects(new 
 			VariableEffect((EffectParameterSymbol) param.sym)));
@@ -709,7 +709,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             m.rgnParams = rgnParams.toList();
             // Set m.effectparams
             ListBuffer<Effects> effectparams = ListBuffer.lb();
-            for (JCIdent param : tree.paramInfo.effectParams) {
+            for (JCIdent param : tree.paramInfo.groupParams) {
         	assert(param. sym instanceof EffectParameterSymbol);
         	effectparams.append(new Effects(new 
         		VariableEffect((EffectParameterSymbol)param.sym)));
@@ -1167,7 +1167,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                  rparams.nonEmpty();
                  rparams = rparams.tail)
                 typaramScope.enter(rparams.head.sym);
-            for (List<JCIdent> eparams = tree.paramInfo.effectParams;
+            for (List<JCIdent> eparams = tree.paramInfo.groupParams;
             	eparams.nonEmpty();
             	eparams = eparams.tail)
         	typaramScope.enter(eparams.head.sym);
@@ -1288,8 +1288,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         }
         List<DPJRegionPathList> regionArgs = null; // DPJ FIXME
         List<JCExpression> typeargs = typarams.nonEmpty() ? make.Types(typarams) : null;
-        List<DPJEffect> effectargs = null; // FIXME
-        return make.Exec(make.Apply(regionArgs, typeargs, effectargs, 
+        List<JCIdent> groupArgs = null; // FIXME
+        return make.Exec(make.Apply(regionArgs, typeargs, groupArgs, 
         	meth, make.Idents(params)));
     }
 }

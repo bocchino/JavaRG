@@ -1992,8 +1992,8 @@ public class Pretty extends JCTree.Visitor {
             printExpr(tree.functor);
             boolean rplsToPrint = (codeGenMode == NONE) && tree.rplArgs != null &&
             	tree.rplArgs.nonEmpty();
-            boolean effectsToPrint = (codeGenMode == NONE) && tree.effectArgs != null &&
-            	tree.effectArgs.nonEmpty();
+            boolean effectsToPrint = (codeGenMode == NONE) && tree.groupArgs != null &&
+            	tree.groupArgs.nonEmpty();
             if (tree.typeArgs.nonEmpty() || rplsToPrint || effectsToPrint) {
         	print("<");
         	printExprs(tree.typeArgs);

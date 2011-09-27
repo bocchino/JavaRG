@@ -388,10 +388,10 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCMethodInvocation t = (JCMethodInvocation) node;
         List<DPJRegionPathList> regionArgs = copy(t.regionArgs, p);
         List<JCExpression> typeargs = copy(t.typeargs, p);
-        List<DPJEffect> effectargs = copy(t.effectargs, p);
+        List<JCIdent> groupArgs = copy(t.groupArgs, p);
         JCExpression meth = copy(t.meth, p);
         List<JCExpression> args = copy(t.args, p);
-        return M.at(t.pos).Apply(regionArgs, typeargs, effectargs, meth, args);
+        return M.at(t.pos).Apply(regionArgs, typeargs, groupArgs, meth, args);
     }
 
     public JCTree visitModifiers(ModifiersTree node, P p) {
@@ -417,12 +417,12 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCExpression encl = copy(t.encl, p);
         List<DPJRegionPathList> regionArgs = copy(t.regionArgs, p);
         List<JCExpression> typeargs = copy(t.typeargs, p);
-        List<DPJEffect> effectargs = copy(t.effectargs, p);
+        List<JCIdent> groupArgs = copy(t.groupArgs, p);
         JCExpression clazz = copy(t.clazz, p);
         List<JCExpression> args = copy(t.args, p);
         JCClassDecl def = copy(t.def, p);
         JCNewClass result = M.at(t.pos).NewClass(encl, regionArgs, typeargs, 
-        	effectargs, clazz, args, def);
+        	groupArgs, clazz, args, def);
         result.constructor = t.constructor;
         return result;
     }
@@ -494,8 +494,8 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCExpression clazz = copy(t.functor, p);
         List<JCExpression> arguments = copy(t.typeArgs, p);
         List<DPJRegionPathList> rplArgs = copy(t.rplArgs, p);
-        List<DPJEffect> effectArgs = copy(t.effectArgs, p);
-        return M.at(t.pos).TypeApply(clazz, arguments, rplArgs, effectArgs);
+        List<JCIdent> groupArgs = copy(t.groupArgs, p);
+        return M.at(t.pos).TypeApply(clazz, arguments, rplArgs, groupArgs);
     }
 
     public JCTree visitArrayType(ArrayTypeTree node, P p) {
@@ -620,15 +620,9 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
             rplConstraints.append(new Pair<DPJRegionPathList,DPJRegionPathList>(pair.fst, 
         	    pair.snd));
         }
-        List<JCIdent> effectParams = copy(t.effectParams, p);
-        ListBuffer<Pair<DPJEffect,DPJEffect>> effectConstraints = ListBuffer.lb();
-        if (t.effectConstraints != null) {
-            for (Pair<DPJEffect,DPJEffect> pair : t.effectConstraints) {
-                effectConstraints.append(new Pair<DPJEffect,DPJEffect>(pair.fst,pair.snd));
-            }
-        }
+        List<JCIdent> effectParams = copy(t.groupParams, p);
         return M.at(t.pos).ParamInfo(params, rplConstraints.toList(), 
-        	effectParams, effectConstraints.toList());
+        	effectParams);
     }
     
     public JCTree visitSpawn(SpawnTree node, P p) {

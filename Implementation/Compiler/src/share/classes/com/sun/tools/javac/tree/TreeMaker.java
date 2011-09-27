@@ -325,12 +325,13 @@ public class TreeMaker implements JCTree.Factory {
 
     public JCMethodInvocation Apply(List<DPJRegionPathList> regionArgs,
 	               List<JCExpression> typeargs,
-	               List<DPJEffect> effectargs,
+	               List<JCIdent> groupArgs,
 		       JCExpression fn,
 		       List<JCExpression> args)
     {
+	// FIXME
         JCMethodInvocation tree = 
-            new JCMethodInvocation(regionArgs, typeargs, effectargs, fn, args);
+            new JCMethodInvocation(regionArgs, typeargs, null, fn, args);
         tree.pos = pos;
         return tree;
     }
@@ -338,13 +339,13 @@ public class TreeMaker implements JCTree.Factory {
     public JCNewClass NewClass(JCExpression encl,
 	    	             List<DPJRegionPathList> regionArgs,
                              List<JCExpression> typeargs,
-                             List<DPJEffect> effectargs,
+                             List<JCIdent> groupArgs,
                              JCExpression clazz,
                              List<JCExpression> args,
                              JCClassDecl def)
     {
         JCNewClass tree = new JCNewClass(encl, regionArgs, typeargs, 
-        	                         effectargs, clazz, args, def);
+        	                         groupArgs, clazz, args, def);
         tree.pos = pos;
         return tree;
     }
@@ -444,8 +445,8 @@ public class TreeMaker implements JCTree.Factory {
     }
 
     public JCTypeApply TypeApply(JCExpression clazz, List<JCExpression> arguments,
-	    List<DPJRegionPathList> rplArgs, List<DPJEffect> effectArgs) {
-        JCTypeApply tree = new JCTypeApply(clazz, arguments, rplArgs, effectArgs);
+	    List<DPJRegionPathList> rplArgs, List<JCIdent> groupArgs) {
+        JCTypeApply tree = new JCTypeApply(clazz, arguments, rplArgs, groupArgs);
         tree.pos = pos;
         return tree;
     }
@@ -537,11 +538,9 @@ public class TreeMaker implements JCTree.Factory {
     }
     
     public DPJParamInfo ParamInfo(List<DPJRegionParameter> params,
-	    				List<Pair<DPJRegionPathList,DPJRegionPathList>> rplConstraints,
-	    				List<JCIdent> effectParams,
-	    				List<Pair<DPJEffect,DPJEffect>> effectConstraints) {
-	DPJParamInfo tree = new DPJParamInfo(params, rplConstraints, effectParams,
-					effectConstraints);
+	    			  List<Pair<DPJRegionPathList,DPJRegionPathList>> rplConstraints,
+	    			  List<JCIdent> groupParams) {
+	DPJParamInfo tree = new DPJParamInfo(params, rplConstraints, groupParams);
 	tree.pos = pos;
 	return tree;
     }

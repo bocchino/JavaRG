@@ -285,7 +285,7 @@ public class TreeScanner extends Visitor {
 	scan(tree.functor);
 	scan(tree.typeArgs);
 	scan(tree.rplArgs);
-	scan(tree.effectArgs);
+	scan(tree.groupArgs);
     }
 
     public void visitTypeParameter(JCTypeParameter tree) {

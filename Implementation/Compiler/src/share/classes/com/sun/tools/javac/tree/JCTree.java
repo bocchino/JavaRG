@@ -1706,14 +1706,14 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCMethodInvocation extends JCExpression implements MethodInvocationTree {
 	public List<JCExpression> typeargs;
 	public List<DPJRegionPathList> regionArgs;
-	public List<DPJEffect> effectargs;
+	public List<JCIdent> groupArgs;
         public JCExpression meth;
         public List<JCExpression> args;
         public Type varargsElement;
         public MethodType mtype; // DPJ
         protected JCMethodInvocation(List<DPJRegionPathList> regionArgs,
         	        List<JCExpression> typeargs,
-        	        List<DPJEffect> effectargs,
+        	        List<JCIdent> groupArgs,
 			JCExpression meth,
 			List<JCExpression> args)
 	{
@@ -1721,7 +1721,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         	                                   : regionArgs;
 	    this.typeargs = (typeargs == null) ? List.<JCExpression>nil()
 		                               : typeargs;
-	    this.effectargs = (effectargs == null) ? List.<DPJEffect>nil() : effectargs;
+	    this.groupArgs = (groupArgs == null) ? List.<JCIdent>nil() : groupArgs;
             this.meth = meth;
             this.args = args;
         }
@@ -1764,7 +1764,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression encl;
         public List<DPJRegionPathList> regionArgs;
         public List<JCExpression> typeargs;
-        public List<DPJEffect> effectargs;
+        public List<JCIdent> groupArgs;
         public JCExpression clazz;
         public List<JCExpression> args;
         public JCClassDecl def;
@@ -1773,7 +1773,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         protected JCNewClass(JCExpression encl,
         		   List<DPJRegionPathList> regionArgs,
 			   List<JCExpression> typeargs,
-			   List<DPJEffect> effectargs,
+			   List<JCIdent> groupArgs,
 			   JCExpression clazz,
 			   List<JCExpression> args,
 			   JCClassDecl def)
@@ -1783,8 +1783,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         	                                   : regionArgs;
 	    this.typeargs = (typeargs == null) ? List.<JCExpression>nil()
 		                               : typeargs;
-	    this.effectargs = (effectargs == null) ? List.<DPJEffect>nil()
-		    				: effectargs;
+	    this.groupArgs = (groupArgs == null) ? List.<JCIdent>nil()
+		    				: groupArgs;
             this.clazz = clazz;
             this.args = args;
             this.def = def;
@@ -2330,13 +2330,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression functor;
         public List<JCExpression> typeArgs;
         public List<DPJRegionPathList> rplArgs;
-        public List<DPJEffect> effectArgs;
+        public List<JCIdent> groupArgs;
         protected JCTypeApply(JCExpression functor, List<JCExpression> typeArgs,
-        	List<DPJRegionPathList> rplArgs, List<DPJEffect> effectArgs) {
+        	List<DPJRegionPathList> rplArgs, List<JCIdent> groupArgs) {
             this.functor = functor;
             this.typeArgs = typeArgs;
             this.rplArgs = rplArgs;
-            this.effectArgs = effectArgs;
+            this.groupArgs = groupArgs;
         }
         @Override
         public void accept(Visitor v) { v.visitTypeApply(this); }
@@ -2432,16 +2432,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class DPJParamInfo extends JCTree implements ParamInfoTree {
         public List<DPJRegionParameter> rplParams;
         public List<Pair<DPJRegionPathList,DPJRegionPathList>> rplConstraints;
-        public List<JCIdent> effectParams;
-        public List<Pair<DPJEffect,DPJEffect>> effectConstraints;
+        public List<JCIdent> groupParams;
         protected DPJParamInfo(List<DPJRegionParameter> rplParams,
         	List<Pair<DPJRegionPathList,DPJRegionPathList>> rplConstraints,
-        	List<JCIdent> effectParams,
-        	List<Pair<DPJEffect,DPJEffect>> effectConstraints) {
+        	List<JCIdent> groupParams) {
             this.rplParams = rplParams;
             this.rplConstraints = rplConstraints;
-            this.effectParams = effectParams;
-            this.effectConstraints = effectConstraints;
+            this.groupParams = groupParams;
         }
 	@Override
 	public void accept(Visitor v) { v.visitParamInfo(this); }
@@ -2844,13 +2841,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 	JCAssert Assert(JCExpression cond, JCExpression detail);
         JCMethodInvocation Apply(List<DPJRegionPathList> regionArgs,
         	    List<JCExpression> typeargs,
-        	    List<DPJEffect> effectargs,
+        	    List<JCIdent> groupArgs,
 		    JCExpression fn,
 		    List<JCExpression> args);
         JCNewClass NewClass(JCExpression encl,
         	          List<DPJRegionPathList> regionArgs,
                           List<JCExpression> typeargs,
-                          List<DPJEffect> effectargs,
+                          List<JCIdent> groupArgs,
                           JCExpression clazz,
                           List<JCExpression> args,
                           JCClassDecl def);
@@ -2873,7 +2870,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         JCArrayTypeTree TypeArray(JCExpression elemtype, DPJRegionPathList rpl, 
         	JCIdent indexParam);
         JCTypeApply TypeApply(JCExpression clazz, List<JCExpression> typeArgs,
-        	List<DPJRegionPathList> rplArgs, List<DPJEffect> effectArgs);
+        	List<DPJRegionPathList> rplArgs, List<JCIdent> groupArgs);
         JCTypeParameter TypeParameter(Name name, List<DPJRegionParameter> rplparams,
         	List<JCExpression> bounds);
         DPJForLoop DPJForLoop(JCVariableDecl var, JCExpression start, JCExpression length,
@@ -2882,8 +2879,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         	boolean isAtomic);
         DPJParamInfo ParamInfo(List<DPJRegionParameter> rplParams,
         		List<Pair<DPJRegionPathList,DPJRegionPathList>> rplConstraints,
-        		List<JCIdent> effectParams,
-        		List<Pair<DPJEffect,DPJEffect>> effectConstraints);
+        		List<JCIdent> effectParams);
         DPJRegionPathListElt RegionPathListElt(JCExpression exp, int t);
         DPJRegionPathList RegionPathList(List<DPJRegionPathListElt> elts);
         DPJEffect Effect(boolean isPure,

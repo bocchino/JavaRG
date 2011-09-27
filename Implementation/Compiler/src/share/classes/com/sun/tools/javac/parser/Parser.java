@@ -71,6 +71,7 @@ import static com.sun.tools.javac.parser.Token.QUES;
 import static com.sun.tools.javac.parser.Token.RBRACE;
 import static com.sun.tools.javac.parser.Token.RBRACKET;
 import static com.sun.tools.javac.parser.Token.READS;
+import static com.sun.tools.javac.parser.Token.REFGROUP;
 import static com.sun.tools.javac.parser.Token.REGION;
 import static com.sun.tools.javac.parser.Token.RPAREN;
 import static com.sun.tools.javac.parser.Token.SEMI;
@@ -94,10 +95,9 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.TypeTags;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.TreeInfo;
-import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.JCTree.DPJEffect;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
+import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathListElt;
@@ -123,7 +123,6 @@ import com.sun.tools.javac.tree.JCTree.JCModifiers;
 import com.sun.tools.javac.tree.JCTree.JCNewArray;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCPrimitiveTypeTree;
-import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.JCReturn;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.JCSwitch;
@@ -132,6 +131,8 @@ import com.sun.tools.javac.tree.JCTree.JCTypeApply;
 import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.TypeBoundKind;
+import com.sun.tools.javac.tree.TreeInfo;
+import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Convert;
 import com.sun.tools.javac.util.List;
@@ -937,47 +938,47 @@ public class Parser {
      *                 | Primary {Selector} {PostfixOp}
      *  Primary        = "(" Expression ")"
      *                 | Literal
-     *                 | [TypeRPLEffectArgs] THIS [Arguments]
-     *                 | [TypeRPLEffectArgs] SUPER SuperSuffix
-     *                 | NEW [TypeRPLEffectArgs] Creator
+     *                 | [TypeRPLGroupArgs] THIS [Arguments]
+     *                 | [TypeRPLGroupArgs] SUPER SuperSuffix
+     *                 | NEW [TypeRPLGroupArgs] Creator
      *                 | Ident { "." Ident }
      *                   [ "[" ( "]" BracketsOpt "." CLASS | Expression "]" )
      *                   | Arguments
      *                   | "." ( CLASS | THIS | 
-     *                           [TypeRPLEffectArgs] SUPER Arguments | 
-     *                           NEW [TypeRPLEffectArgs] InnerCreator )
+     *                           [TypeRPLGroupArgs] SUPER Arguments | 
+     *                           NEW [TypeRPLGroupArgs] InnerCreator )
      *                   ]
      *                 | BasicType BracketsOpt "." CLASS
      *  PrefixOp       = "++" | "--" | "!" | "~" | "+" | "-"
      *  PostfixOp      = "++" | "--"
-     *  Type3          = Ident { "." Ident } [TypeRPLEffectArgs] 
+     *  Type3          = Ident { "." Ident } [TypeRPLGroupArgs] 
      *                   {TypeSelector} BracketsOpt | BasicType
      *  TypeNoParams3  = Ident { "." Ident } BracketsOpt
-     *  Selector       = "." [TypeRPLEffectArgs] Ident [Arguments]
+     *  Selector       = "." [TypeRPLGroupArgs] Ident [Arguments]
      *                 | "." THIS
-     *                 | "." [TypeRPLEffectArgs] SUPER SuperSuffix
-     *                 | "." NEW [TypeRPLEffectArgs] InnerCreator
+     *                 | "." [TypeRPLGroupArgs] SUPER SuperSuffix
+     *                 | "." NEW [TypeRPLGroupArgs] InnerCreator
      *                 | "[" Expression "]"
-     *  TypeSelector   = "." Ident [TypeRPLEffectArgs]
+     *  TypeSelector   = "." Ident [TypeRPLGroupArgs]
      *  SuperSuffix    = Arguments | "." Ident [Arguments]
      */
     protected JCExpression term3() {
         int pos = S.pos();
         JCExpression t;
-        TypeRPLEffectArgs typeRPLEffectArgs = typeRPLEffectArgsOpt(EXPR);
-        List<JCExpression> typeArgs = typeRPLEffectArgs.typeArgs; //typeRPLEffectArgsOpt(EXPR).typeArgs;
-        List<DPJRegionPathList> rplArgs = typeRPLEffectArgs.rplArgs;
-        List<DPJEffect> effectargs = typeRPLEffectArgs.effectArgs;
+        TypeRPLGroupArgs typeRPLGroupArgs = typeRPLGroupArgsOpt(EXPR);
+        List<JCExpression> typeArgs = typeRPLGroupArgs.typeArgs;
+        List<DPJRegionPathList> rplArgs = typeRPLGroupArgs.rplArgs;
+        List<JCIdent> groupArgs = typeRPLGroupArgs.groupArgs;
         switch (S.token()) {
         case QUES:
             if ((mode & TYPE) != 0 && (mode & (TYPEARG|NOPARAMS)) == TYPEARG) {
                 mode = TYPE;
-                return typeArgument();
+                return typeOrRPLArgument();
             } else
                 return illegal();
         case PLUSPLUS: case SUBSUB: case BANG: case TILDE: case PLUS: case SUB:
             if (rplArgs == null && typeArgs == null && 
-        	    effectargs == null && (mode & EXPR) != 0) {
+        	    groupArgs == null && (mode & EXPR) != 0) {
                 Token token = S.token();
                 S.nextToken();
                 mode = EXPR;
@@ -994,7 +995,7 @@ public class Parser {
             break;
         case LPAREN:
             if (rplArgs == null && typeArgs == null && 
-        	    effectargs == null && (mode & EXPR) != 0) {
+        	    groupArgs == null && (mode & EXPR) != 0) {
                 S.nextToken();
                 mode = EXPR | TYPE | NOPARAMS;
                 t = term3();
@@ -1038,11 +1039,11 @@ public class Parser {
                         // TODO: Make this handle RPL and effect args properly
                         while (S.token() == COMMA) {
                             S.nextToken();
-                            args.append(typeArgument());
+                            args.append(typeOrRPLArgument());
                         }
                         accept(GT);
                         t = F.at(pos1).TypeApply(t, args.toList(), null, 
-                        	List.<DPJEffect>nil());
+                        	List.<JCIdent>nil());
                         checkGenerics();
                         t = bracketsOpt(toP(t), true);
                     } else if ((mode & EXPR) != 0) {
@@ -1079,30 +1080,30 @@ public class Parser {
             } else return illegal();
             t = toP(F.at(pos).Parens(t));
             break;
-        // THIS constructor invocation:  [TypeRPLEffectArgs] THIS [Arguments]
+        // THIS constructor invocation:  [TypeRPLGroupArgs] THIS [Arguments]
         case THIS:
             if ((mode & EXPR) != 0) {
                 mode = EXPR;
                 t = to(F.at(pos).Ident(names._this));
                 S.nextToken();
-                if (rplArgs == null && typeArgs == null && effectargs == null)
+                if (rplArgs == null && typeArgs == null && groupArgs == null)
                     t = argumentsOpt(null, null, null, t);
                 else
-                    t = arguments(rplArgs, typeArgs, effectargs, t);
+                    t = arguments(rplArgs, typeArgs, groupArgs, t);
                 rplArgs = null;
                 typeArgs = null;
-                effectargs = null;
+                groupArgs = null;
             } else return illegal();
             break;
-        // SUPER constructor invocation:  [TypeRPLEffectArgs] SUPER SuperSuffix
+        // SUPER constructor invocation:  [TypeRPLGroupArgs] SUPER SuperSuffix
         case SUPER:
             if ((mode & EXPR) != 0) {
                 mode = EXPR;
-                t = to(superSuffix(rplArgs, typeArgs, effectargs,
+                t = to(superSuffix(rplArgs, typeArgs, groupArgs,
                 	   	   F.at(pos).Ident(names._super)));
                 rplArgs = null;
                 typeArgs = null;
-                effectargs = null;
+                groupArgs = null;
             } else return illegal();
             break;
         // Literals
@@ -1110,33 +1111,33 @@ public class Parser {
         case CHARLITERAL: case STRINGLITERAL:
         case TRUE: case FALSE: case NULL:
             if (rplArgs == null && typeArgs == null 
-        	    && effectargs == null && (mode & EXPR) != 0) {
+        	    && groupArgs == null && (mode & EXPR) != 0) {
                 mode = EXPR;
                 t = literal(names.empty);
             } else return illegal();
             break;
-        // Object creation:  NEW [TypeRPLEffectArgs] Creator 
+        // Object creation:  NEW [TypeRPLGroupArgs] Creator 
         case NEW:
             if (rplArgs != null || typeArgs != null || 
-        	    effectargs != null) return illegal();
+        	    groupArgs != null) return illegal();
             if ((mode & EXPR) != 0) {
                 mode = EXPR;
                 S.nextToken();
                 if (S.token() == LT) {
-                    typeRPLEffectArgs = typeRPLEffectArgs();
-                    typeArgs = typeRPLEffectArgs.typeArgs;
-                    rplArgs = typeRPLEffectArgs.rplArgs;
-                    effectargs = typeRPLEffectArgs.effectArgs;
+                    typeRPLGroupArgs = typeRPLGroupArgs();
+                    typeArgs = typeRPLGroupArgs.typeArgs;
+                    rplArgs = typeRPLGroupArgs.rplArgs;
+                    groupArgs = typeRPLGroupArgs.groupArgs;
                 }
-                t = creator(pos, rplArgs, typeArgs, effectargs);
+                t = creator(pos, rplArgs, typeArgs, groupArgs);
                 rplArgs = null;
                 typeArgs = null;
-                effectargs = null;
+                groupArgs = null;
             } else return illegal();
             break;
         case IDENTIFIER: case ASSERT: case ENUM:
             if (rplArgs != null || typeArgs != null
-        	    || effectargs != null) return illegal();
+        	    || groupArgs != null) return illegal();
             t = toP(F.at(S.pos()).Ident(ident()));
             loop: while (true) {
                 pos = S.pos();
@@ -1161,24 +1162,24 @@ public class Parser {
                 case LPAREN:
                     if ((mode & EXPR) != 0) {
                         mode = EXPR;
-                        t = arguments(rplArgs, typeArgs, effectargs, t);
+                        t = arguments(rplArgs, typeArgs, groupArgs, t);
                         rplArgs = null;
                         typeArgs = null;
-                        effectargs = null;
+                        groupArgs = null;
                     }
                     break loop;
                 case DOT:
                     S.nextToken();
-                    typeRPLEffectArgs = typeRPLEffectArgsOpt(EXPR);
-                    typeArgs = typeRPLEffectArgs.typeArgs; //Opt(EXPR).typeArgs;
-                    rplArgs = typeRPLEffectArgs.rplArgs;
-                    effectargs = typeRPLEffectArgs.effectArgs;
+                    typeRPLGroupArgs = typeRPLGroupArgsOpt(EXPR);
+                    typeArgs = typeRPLGroupArgs.typeArgs; //Opt(EXPR).typeArgs;
+                    rplArgs = typeRPLGroupArgs.rplArgs;
+                    groupArgs = typeRPLGroupArgs.groupArgs;
                     if ((mode & EXPR) != 0) {
                         switch (S.token()) {
                         // Ident { "." Ident } "." CLASS
                         case CLASS:
                             if (rplArgs != null || typeArgs != null
-                        	    || effectargs != null) return illegal();
+                        	    || groupArgs != null) return illegal();
                             mode = EXPR;
                             t = to(F.at(pos).Select(t, names._class));
                             S.nextToken();
@@ -1186,37 +1187,37 @@ public class Parser {
                         // Ident { "." Ident } "." THIS
                         case THIS:
                             if (rplArgs != null || typeArgs != null
-                        	    || effectargs != null) return illegal();
+                        	    || groupArgs != null) return illegal();
                             mode = EXPR;
                             t = to(F.at(pos).Select(t, names._this));
                             S.nextToken();
                             break loop;
-                        // Ident { "." Ident } "." [TypeRPLEffectArgs] SUPER Arguments
+                        // Ident { "." Ident } "." [TypeRPLGroupArgs] SUPER Arguments
                         case SUPER:
                             mode = EXPR;
                             t = to(F.at(pos).Select(t, names._super));
-                            t = superSuffix(rplArgs, typeArgs, effectargs, t);
+                            t = superSuffix(rplArgs, typeArgs, groupArgs, t);
                             rplArgs = null;
                             typeArgs = null;
-                            effectargs = null;
+                            groupArgs = null;
                             break loop;
-                        // Ident { "." Ident } "." NEW [TypeRPLEffectArgs] InnerCreator
+                        // Ident { "." Ident } "." NEW [TypeRPLGroupArgs] InnerCreator
                         case NEW:
                             if (rplArgs != null || typeArgs != null ||
-                        	    effectargs != null) return illegal();
+                        	    groupArgs != null) return illegal();
                             mode = EXPR;
                             int pos1 = S.pos();
                             S.nextToken();
                             if (S.token() == LT) {
-                        	typeRPLEffectArgs = typeRPLEffectArgs();
-                        	typeArgs = typeRPLEffectArgs.typeArgs;
-                        	rplArgs = typeRPLEffectArgs.rplArgs;
-                        	effectargs = typeRPLEffectArgs.effectArgs;
+                        	typeRPLGroupArgs = typeRPLGroupArgs();
+                        	typeArgs = typeRPLGroupArgs.typeArgs;
+                        	rplArgs = typeRPLGroupArgs.rplArgs;
+                        	groupArgs = typeRPLGroupArgs.groupArgs;
                             }
-                            t = innerCreator(pos1, rplArgs, typeArgs, effectargs, t);
+                            t = innerCreator(pos1, rplArgs, typeArgs, groupArgs, t);
                             rplArgs = null;
                             typeArgs = null;
-                            effectargs = null;
+                            groupArgs = null;
                             break loop;
                         }
                     }
@@ -1228,19 +1229,19 @@ public class Parser {
                 }
             }
             if (rplArgs != null || typeArgs != null
-        	    || effectargs != null) illegal();
-            t = typeRPLEffectArgsOpt(t);
+        	    || groupArgs != null) illegal();
+            t = typeRPLGroupArgsOpt(t);
             break;
         // Basic types
         case BYTE: case SHORT: case CHAR: case INT: case LONG: case FLOAT:
         case DOUBLE: case BOOLEAN:
             if (rplArgs != null || typeArgs != null ||
-        	    effectargs != null) illegal();
+        	    groupArgs != null) illegal();
             t = bracketsSuffix(bracketsOpt(basicType(), true));
             break;
         case VOID:
             if (rplArgs != null || typeArgs != null ||
-        	    effectargs != null) illegal();
+        	    groupArgs != null) illegal();
             if ((mode & EXPR) != 0) {
                 S.nextToken();
                 if (S.token() == DOT) {
@@ -1257,7 +1258,7 @@ public class Parser {
             return illegal();
         }
         if (rplArgs != null || typeArgs != null ||
-        	effectargs != null) illegal();
+        	groupArgs != null) illegal();
         // Selector
         while (true) {
             int pos1 = S.pos();
@@ -1282,43 +1283,43 @@ public class Parser {
                 accept(RBRACKET);
             } else if (S.token() == DOT) {
                 S.nextToken();
-                typeRPLEffectArgs = typeRPLEffectArgsOpt(EXPR);
-                typeArgs = typeRPLEffectArgs.typeArgs; //Opt(EXPR).typeArgs;
-                rplArgs = typeRPLEffectArgs.rplArgs;
-                effectargs = typeRPLEffectArgs.effectArgs;
+                typeRPLGroupArgs = typeRPLGroupArgsOpt(EXPR);
+                typeArgs = typeRPLGroupArgs.typeArgs; //Opt(EXPR).typeArgs;
+                rplArgs = typeRPLGroupArgs.rplArgs;
+                groupArgs = typeRPLGroupArgs.groupArgs;
                 if (S.token() == SUPER && (mode & EXPR) != 0) {
-                    // "." [TypeRPLEffectArgs] SUPER Arguments
+                    // "." [TypeRPLGroupArgs] SUPER Arguments
                     mode = EXPR;
                     t = to(F.at(pos1).Select(t, names._super));
                     S.nextToken();
-                    t = arguments(rplArgs, typeArgs, effectargs, t);
+                    t = arguments(rplArgs, typeArgs, groupArgs, t);
                     rplArgs = null;
                     typeArgs = null;
-                    effectargs = null;
+                    groupArgs = null;
                 } else if (S.token() == NEW && (mode & EXPR) != 0) {
-                    // "." NEW [TypeRPLEffectArgs] InnerCreator
+                    // "." NEW [TypeRPLGroupArgs] InnerCreator
                     if (rplArgs != null || typeArgs != null
-                	    || effectargs != null) return illegal();
+                	    || groupArgs != null) return illegal();
                     mode = EXPR;
                     int pos2 = S.pos();
                     S.nextToken();
                     if (S.token() == LT) {
-                	typeRPLEffectArgs = typeRPLEffectArgs();
-                	typeArgs = typeRPLEffectArgs.typeArgs;
-                	rplArgs = typeRPLEffectArgs.rplArgs;
-                	effectargs = typeRPLEffectArgs.effectArgs;
+                	typeRPLGroupArgs = typeRPLGroupArgs();
+                	typeArgs = typeRPLGroupArgs.typeArgs;
+                	rplArgs = typeRPLGroupArgs.rplArgs;
+                	groupArgs = typeRPLGroupArgs.groupArgs;
                     }
-                    t = innerCreator(pos2, rplArgs, typeArgs, effectargs, t);
+                    t = innerCreator(pos2, rplArgs, typeArgs, groupArgs, t);
                     rplArgs = null;
                     typeArgs = null;
-                    effectargs = null;
+                    groupArgs = null;
                 } else {
                     t = toP(F.at(pos1).Select(t, ident()));
-                    t = argumentsOpt(rplArgs, typeArgs, effectargs,
-                	    typeRPLEffectArgsOpt(t));
+                    t = argumentsOpt(rplArgs, typeArgs, groupArgs,
+                	    typeRPLGroupArgsOpt(t));
                     rplArgs = null;
                     typeArgs = null;
-                    effectargs = null;
+                    groupArgs = null;
                 }
             } else {
                 break;
@@ -1333,28 +1334,28 @@ public class Parser {
         return toP(t);
     }
 
-    /** SuperSuffix = Arguments | "." [TypeRPLEffectArgs] Ident [Arguments]
+    /** SuperSuffix = Arguments | "." [TypeRPLGroupArgs] Ident [Arguments]
      */
     JCExpression superSuffix(List<DPJRegionPathList> rplArgs,
 	                     List<JCExpression> typeArgs, 
-	                     List<DPJEffect> effectargs,
+	                     List<JCIdent> groupArgs,
 	                     JCExpression t) {
         S.nextToken();
         if (S.token() == LPAREN || typeArgs != null || rplArgs != null
-        	|| effectargs != null) {
-            t = arguments(rplArgs, typeArgs, effectargs, t);
+        	|| groupArgs != null) {
+            t = arguments(rplArgs, typeArgs, groupArgs, t);
         } else {
             int pos = S.pos();
             accept(DOT);
             rplArgs = null;
             if (S.token() == LT) {
-        	TypeRPLEffectArgs typeRPLEffectArgs = typeRPLEffectArgs();
-        	typeArgs = typeRPLEffectArgs.typeArgs;
-        	rplArgs = typeRPLEffectArgs.rplArgs;
-        	effectargs = typeRPLEffectArgs.effectArgs;
+        	TypeRPLGroupArgs typeRPLGroupArgs = typeRPLGroupArgs();
+        	typeArgs = typeRPLGroupArgs.typeArgs;
+        	rplArgs = typeRPLGroupArgs.rplArgs;
+        	groupArgs = typeRPLGroupArgs.groupArgs;
             }
             t = toP(F.at(pos).Select(t, ident()));
-            t = argumentsOpt(rplArgs, typeArgs, effectargs, t);
+            t = argumentsOpt(rplArgs, typeArgs, groupArgs, t);
         }
         return t;
     }
@@ -1371,11 +1372,11 @@ public class Parser {
      */
     JCExpression argumentsOpt(List<DPJRegionPathList> rplArgs,
 	                      List<JCExpression> typeArgs, 
-	                      List<DPJEffect> effectargs, JCExpression t) {
+	                      List<JCIdent> groupArgs, JCExpression t) {
         if ((mode & EXPR) != 0 && S.token() == LPAREN || rplArgs != null ||
-        	typeArgs != null || effectargs != null) {
+        	typeArgs != null || groupArgs != null) {
             mode = EXPR;
-            return arguments(rplArgs, typeArgs, effectargs, t);
+            return arguments(rplArgs, typeArgs, groupArgs, t);
         } else {
             return t;
         }
@@ -1403,30 +1404,30 @@ public class Parser {
 
     JCMethodInvocation arguments(List<DPJRegionPathList> rplArgs,
 	    	                 List<JCExpression> typeArgs, 
-	    	                 List<DPJEffect> effectargs, JCExpression t) {
+	    	                 List<JCIdent> groupArgs, JCExpression t) {
         int pos = S.pos();
         List<JCExpression> args = arguments();
-        return toP(F.at(pos).Apply(rplArgs, typeArgs, effectargs, t, args));
+        return toP(F.at(pos).Apply(rplArgs, typeArgs, groupArgs, t, args));
     }
 
-    /**  TypeRPLEffectArgsOpt = [ TypeRPLEffectArgs ]
+    /**  TypeRPLGroupArgsOpt = [ TypeRPLGroupArgs ]
      */
-    JCExpression typeRPLEffectArgsOpt(JCExpression t) {
+    JCExpression typeRPLGroupArgsOpt(JCExpression t) {
         if (S.token() == LT &&
             (mode & TYPE) != 0 &&
             (mode & NOPARAMS) == 0) {
             mode = TYPE;
             checkGenerics();
-            return typeRPLEffectArgs(t);
+            return typeRPLGroupArgs(t);
         } else {
             return t;
         }
     }
-    TypeRPLEffectArgs typeRPLEffectArgsOpt() {
-        return typeRPLEffectArgsOpt(TYPE);
+    TypeRPLGroupArgs typeRPLGroupArgsOpt() {
+        return typeRPLGroupArgsOpt(TYPE);
     }
 
-    TypeRPLEffectArgs typeRPLEffectArgsOpt(int useMode) {
+    TypeRPLGroupArgs typeRPLGroupArgsOpt(int useMode) {
         if (S.token() == LT) {
             checkGenerics();
             if ((mode & useMode) == 0 ||
@@ -1434,65 +1435,63 @@ public class Parser {
                 illegal();
             }
             mode = useMode;
-            return typeRPLEffectArgs();
+            return typeRPLGroupArgs();
         }
-        return new TypeRPLEffectArgs(null, null, null);
+        return new TypeRPLGroupArgs(null, null, null);
     }
 
-    /** TypeRPLEffectArgs := "<" ( TypeArgs | RPLEffectArgs | TypeArgs "," RPLEffectArgs ) ">"
-     *  RPLEffectArgs := RPLArgs | EffectArgs | RPLArgs "," EffectArgs
+    /** TypeRPLGroupArgs := "<" ( TypeArgs | RPLGroupArgs | TypeArgs "," RPLGroupArgs ) ">"
+     *  RPLGroupArgs := RPLList | GroupList | RPLList "," GroupList
      *  TypeArgs = TypeArgument {"," TypeArgument}
-     *  RPLArgs := RPLList
-     *  EffectArgs := EffectList
      *  
      *  Note that some of the "types" in the "TypeArgs" may actually be RPLs.  
      *  We won't know that until symbol resolution time.  Here we're trading
      *  some ambiguity (in the form of late resolution) for brevity of notation
      *  (not requiring "region" in front of the first RPL).
      */    
-    private class TypeRPLEffectArgs {
+    private class TypeRPLGroupArgs {
 	public List<JCExpression> typeArgs;
 	public List<DPJRegionPathList> rplArgs;
-	public List<DPJEffect> effectArgs;
-	public TypeRPLEffectArgs(List<JCExpression> typeArgs, 
-		List<DPJRegionPathList> rplArgs, List<DPJEffect> effectArgs) {
+	public List<JCIdent> groupArgs;
+	public TypeRPLGroupArgs(List<JCExpression> typeArgs, 
+		List<DPJRegionPathList> rplArgs, List<JCIdent> groupArgs) {
 	    this.typeArgs = typeArgs;
 	    this.rplArgs = rplArgs;
-	    this.effectArgs = effectArgs;
+	    this.groupArgs = groupArgs;
 	}
     }
     
-    TypeRPLEffectArgs typeRPLEffectArgs() {
+    TypeRPLGroupArgs typeRPLGroupArgs() {
         ListBuffer<JCExpression> typeArgs = lb();
         List<DPJRegionPathList> rplArgs = null;
-        List<DPJEffect> effectArgs = List.nil();
+        List<JCIdent> groupArgs = List.nil();
         if (S.token() == LT) {
             S.nextToken();
-            // Get the type args, if any
-            if (S.token() != REGION && !tokenIsStartOfEffect()) {
-        	typeArgs.append(((mode & EXPR) == 0) ? typeArgument() : type());
+            // Get the args that may be type or RPL args, if any.  Which they are 
+            // will be resolved at type checking time.
+            if (S.token() != REGION && S.token() != REFGROUP) {
+        	typeArgs.append(((mode & EXPR) == 0) ? typeOrRPLArgument() : type());
         	while (S.token() == COMMA) {
         	    S.nextToken();
-        	    if (S.token() == REGION) break;
-        	    if (tokenIsStartOfEffect()) break;
-        	    typeArgs.append(((mode & EXPR) == 0) ? typeArgument() : type());
+        	    if (S.token() == REGION || S.token() == REFGROUP) break;
+        	    typeArgs.append(((mode & EXPR) == 0) ? typeOrRPLArgument() : type());
         	}
             }
-            // Get the RPL args, if any
+            // Get the args that are definitely RPL args, if any
             if (S.token() == SEMI || S.token() == REGION) {
         	if (S.token() == SEMI) S.nextToken();
         	rplArgs = RPLList();
         	if (S.token() == COMMA || S.token() == SEMI) S.nextToken();
             }
-            // Get the effect args, if any
-            if (tokenIsStartOfEffect()) {        	
-        	effectArgs = effectList();
+            // Get the group args, if any
+            if (S.token() == REFGROUP) {        	
+        	groupArgs = groups();
             }
             endOfArgs();
         } else {
             syntaxError(S.pos(), "expected", keywords.token2string(LT));
         }
-        return new TypeRPLEffectArgs(typeArgs.toList(), rplArgs, effectArgs);
+        return new TypeRPLGroupArgs(typeArgs.toList(), rplArgs, groupArgs);
     }
 
     void endOfArgs() {
@@ -1518,15 +1517,15 @@ public class Parser {
         }	
     }
     
-    /** TypeArgument = Type
+    /** TypeOrRPLArgument = Type
      *               | "?"
      *               | "?" EXTENDS Type {"&" Type}
      *               | "?" SUPER Type
      *               | RPLElement { ":" RPLElement}
      *  RPLElement = Type | THIS | "[" Expr "]" | "[?]"
      */
-    JCExpression typeArgument() {
-        if (S.token() != QUES) return typeOrRPL(); //type();
+    JCExpression typeOrRPLArgument() {
+        if (S.token() != QUES) return typeOrRPL();
         int pos = S.pos();
         S.nextToken();
         if (S.token() == EXTENDS) {
@@ -1553,14 +1552,14 @@ public class Parser {
         }
     }
 
-    JCTypeApply typeRPLEffectArgs(JCExpression t) {
+    JCTypeApply typeRPLGroupArgs(JCExpression t) {
         int pos = S.pos();
-        TypeRPLEffectArgs typeRPLEffectArgs = typeRPLEffectArgs();
-        List<JCExpression> typeArgs = typeRPLEffectArgs.typeArgs;
-        List<DPJRegionPathList> rplArgs = typeRPLEffectArgs.rplArgs;
-        List<DPJEffect> effectArgs = typeRPLEffectArgs.effectArgs;
+        TypeRPLGroupArgs typeRPLGroupArgs = typeRPLGroupArgs();
+        List<JCExpression> typeArgs = typeRPLGroupArgs.typeArgs;
+        List<DPJRegionPathList> rplArgs = typeRPLGroupArgs.rplArgs;
+        List<JCIdent> groupArgs = typeRPLGroupArgs.groupArgs;
         JCTypeApply result = toP(F.at(pos).TypeApply(t, typeArgs, 
-        	rplArgs, effectArgs));
+        	rplArgs, groupArgs));
         return result;
     }
     
@@ -1633,11 +1632,11 @@ public class Parser {
         return t;
     }
 
-    /** Creator = Qualident [TypeRPLEffectArgs] ( ArrayCreatorRest | ClassCreatorRest )
+    /** Creator = Qualident [TypeRPLGroupArgs] ( ArrayCreatorRest | ClassCreatorRest )
      */
     JCExpression creator(int newpos, List<DPJRegionPathList> rplArgs,
 	                 List<JCExpression> typeArgs,
-	                 List<DPJEffect> effectargs) {
+	                 List<JCIdent> groupArgs) {
         switch (S.token()) {
         case BYTE: case SHORT: case CHAR: case INT: case LONG: case FLOAT:
         case DOUBLE: case BOOLEAN:
@@ -1651,7 +1650,7 @@ public class Parser {
         mode = TYPE;
         if (S.token() == LT) {
             checkGenerics();
-            t = typeRPLEffectArgs(t);
+            t = typeRPLGroupArgs(t);
         }
         while (S.token() == DOT) {
             int pos = S.pos();
@@ -1659,7 +1658,7 @@ public class Parser {
             t = toP(F.at(pos).Select(t, ident()));
             if (S.token() == LT) {
                 checkGenerics();
-                t = typeRPLEffectArgs(t);
+                t = typeRPLGroupArgs(t);
             }
         }
         mode = oldmode;
@@ -1680,29 +1679,29 @@ public class Parser {
             return e;
         } else if (S.token() == LPAREN) {
             return classCreatorRest(newpos, null, rplArgs, 
-        	    typeArgs, effectargs, t);
+        	    typeArgs, groupArgs, t);
         } else {
             reportSyntaxError(S.pos(), "expected2",
                                keywords.token2string(LPAREN),
                                keywords.token2string(LBRACKET));
             t = toP(F.at(newpos).NewClass(null, rplArgs, typeArgs, 
-        	    effectargs, t, List.<JCExpression>nil(), null));
+        	    groupArgs, t, List.<JCExpression>nil(), null));
             return toP(F.at(newpos).Erroneous(List.<JCTree>of(t)));
         }
     }
 
-    /** InnerCreator = Ident [TypeRPLEffectArgs] ClassCreatorRest
+    /** InnerCreator = Ident [TypeRPLGroupArgs] ClassCreatorRest
      */
     JCExpression innerCreator(int newpos, List<DPJRegionPathList> rplArgs,
 	                      List<JCExpression> typeArgs, 
-	                      List<DPJEffect> effectargs, JCExpression encl) {
+	                      List<JCIdent> groupArgs, JCExpression encl) {
         JCExpression t = toP(F.at(S.pos()).Ident(ident()));
         if (S.token() == LT) {
             checkGenerics();
-            t = typeRPLEffectArgs(t);
+            t = typeRPLGroupArgs(t);
         }
         return classCreatorRest(newpos, encl, rplArgs, 
-        	typeArgs, effectargs, t);
+        	typeArgs, groupArgs, t);
     }
 
     /** ArrayCreatorRest = "[" ( "]" BracketsOpt ArrayInitializer
@@ -1788,7 +1787,7 @@ public class Parser {
                                   JCExpression encl,
                                   List<DPJRegionPathList> rplArgs,
                                   List<JCExpression> typeArgs,
-                                  List<DPJEffect> effectargs,
+                                  List<JCIdent> groupArgs,
                                   JCExpression t)
     {
         List<JCExpression> args = arguments();
@@ -1800,7 +1799,7 @@ public class Parser {
             body = toP(F.at(pos).AnonymousClassDef(mods, defs));
         }
         return toP(F.at(newpos).NewClass(encl, rplArgs, typeArgs, 
-        	effectargs, t, args, body));
+        	groupArgs, t, args, body));
     }
 
     /** ArrayInitializer = "{" [VariableInitializer {"," VariableInitializer}] [","] "}"
@@ -2667,24 +2666,6 @@ public class Parser {
 	return rpl(elt);
     }
     
-    /** QualifiedRPL := [ ATOMIC | NONINT ] RPL
-     */
-    private DPJRegionPathList qualifiedRPL() {
-	boolean isAtomic = false;
-	boolean isNonint = false;
-	if (tokenIsIdent("atomic")) {
-	    isAtomic = true;
-	    S.nextToken();
-	} else if (tokenIsIdent("nonint")) {
-	    isNonint = true;
-	    S.nextToken();
-	}
-	DPJRegionPathList rpl = rpl();
-	rpl.isAtomic = isAtomic;
-	rpl.isNonint = isNonint;
-	return rpl;
-    }
-    
     /** RPL := [ REGION ] RPLElement { ":" RPLElement }
      */
     private JCTree.DPJRegionPathList rpl() {
@@ -2902,7 +2883,7 @@ public class Parser {
         Name name = ident();
 
         Pair<List<JCTypeParameter>,DPJParamInfo> params = 
-            typeRPLEffectParamsOpt();
+            typeRPLGroupParamsOpt();
         DPJParamInfo rgnparamInfo = params.snd;
         List<JCTypeParameter> typarams = params.fst;
 
@@ -2934,7 +2915,7 @@ public class Parser {
         accept(INTERFACE);
         Name name = ident();
 
-        Pair<List<JCTypeParameter>,DPJParamInfo> params = typeRPLEffectParamsOpt();
+        Pair<List<JCTypeParameter>,DPJParamInfo> params = typeRPLGroupParamsOpt();
         List<JCTypeParameter> typarams = params.fst;
         DPJParamInfo rgnparamInfo = params.snd;
 
@@ -3013,7 +2994,7 @@ public class Parser {
         return defs.toList();
     }
 
-    /** EnumeratorDeclaration = AnnotationsOpt [TypeRPLEffectArgs] 
+    /** EnumeratorDeclaration = AnnotationsOpt [TypeRPLGroupArgs] 
      *  IDENTIFIER [ Arguments ] [ "{" ClassBody "}" ]
      */
     JCTree enumeratorDeclaration(Name enumName) {
@@ -3027,10 +3008,10 @@ public class Parser {
         List<JCAnnotation> annotations = annotationsOpt();
         JCModifiers mods = F.at(annotations.isEmpty() ? 
         	Position.NOPOS : pos).Modifiers(flags, annotations);
-        TypeRPLEffectArgs typeRPLEffectArgs = typeRPLEffectArgsOpt();
-        List<JCExpression> typeArgs = typeRPLEffectArgs.typeArgs;
-        List<DPJRegionPathList> rplArgs = typeRPLEffectArgs.rplArgs;
-        List<DPJEffect> effectargs = typeRPLEffectArgs.effectArgs;
+        TypeRPLGroupArgs typeRPLGroupArgs = typeRPLGroupArgsOpt();
+        List<JCExpression> typeArgs = typeRPLGroupArgs.typeArgs;
+        List<DPJRegionPathList> rplArgs = typeRPLGroupArgs.rplArgs;
+        List<JCIdent> groupArgs = typeRPLGroupArgs.groupArgs;
         int identPos = S.pos();
         Name name = ident();
         int createPos = S.pos();
@@ -3046,7 +3027,7 @@ public class Parser {
             createPos = Position.NOPOS;
         JCIdent ident = F.at(Position.NOPOS).Ident(enumName);
         JCNewClass create = F.at(createPos).NewClass(null, rplArgs, typeArgs, 
-        	effectargs, ident, args, body);
+        	groupArgs, ident, args, body);
         if (createPos != Position.NOPOS)
             storeEnd(create, S.prevEndPos());
         ident = F.at(Position.NOPOS).Ident(enumName);
@@ -3129,7 +3110,7 @@ public class Parser {
                 return List.<JCTree>of(block(pos, mods.flags));
             } else {
                 pos = S.pos();
-                Pair<List<JCTypeParameter>,DPJParamInfo> params = typeRPLEffectParamsOpt();
+                Pair<List<JCTypeParameter>,DPJParamInfo> params = typeRPLGroupParamsOpt();
                 List<JCTypeParameter> typarams = params.fst;
                 DPJParamInfo rgnParamInfo = params.snd;
                 // Hack alert:  if there are type arguments but no Modifiers, the start
@@ -3217,10 +3198,9 @@ public class Parser {
     }
 
     /**
-     * Effect := PURE | [ ReadEffects ] [ WriteEffects ] [ VariableEffects ]
-     * ReadEffects := READS QualifiedRPLList
-     * WriteEffects := WRITES QualifiedRPLList
-     * VariableEffects := "effect" Ident { "," [ "effect" ] Ident }
+     * Effect := PURE | [ ReadEffects ] [ WriteEffects ]
+     * ReadEffects := READS RPLList
+     * WriteEffects := WRITES RPLList
      */
     DPJEffect effect(int pos) {	
         boolean isPure = false;
@@ -3229,11 +3209,11 @@ public class Parser {
         List<JCIdent> variableEffects = List.nil();
         if (S.token() == READS) {
             S.nextToken();
-            readEffects = qualifiedRPLList();
+            readEffects = RPLList();
         }
         if (S.token() == WRITES) {
             S.nextToken();
-            writeEffects = qualifiedRPLList();
+            writeEffects = RPLList();
         }
         JCTree.DPJEffect result = 
             toP(F.at(pos).Effect(isPure, readEffects, writeEffects,
@@ -3323,40 +3303,16 @@ public class Parser {
         return ts.toList();
     }
     
-    /** QualifiedRPLList = QualifiedRPL {"," QualifiedRPL}
-     */
-    List<DPJRegionPathList> qualifiedRPLList() {
-	ListBuffer<DPJRegionPathList> lb = ListBuffer.lb();
-	lb.append(qualifiedRPL());
-	while (S.token() == COMMA) {
-	    S.nextToken();
-	    lb.append(qualifiedRPL());
-	}
-	return lb.toList();
-    }
-
-    /** EffectList = Effect {";" Effect}
-     */
-    List<DPJEffect> effectList() {
-	ListBuffer<DPJEffect> lb = ListBuffer.lb();
-	lb.append(effect(S.pos()));
-	while (S.token() == SEMI) {
-	    S.nextToken();
-	    lb.append(effect(S.pos()));
-	}
-	return lb.toList();
-    }
-    
-    /** ParametersOpt := [ "<" TypeRPLEffectParams ">" ]
-     *  TypeRPLEffectParams := TypeParams | RPLEffectParamsConstraints | 
-     *                         TypeParams ("," | ";") RPLEffectParamsConstraints
+    /** TypeRPLGroupParamsOpt := [ "<" TypeRPLGroupParams ">" ]
+     *  TypeRPLGroupParams := TypeParams | RPLGroupParamsConstraints | 
+     *                        TypeParams (",") RPLGroupParamsConstraints
      *  TypeParams := [ "type" ] Ident { "," [ "type" ] Ident }
-     *  RPLEffectParamsConstraints := RPLEffectParams [ "|" Constraints ]
-     *  RPLEffectParams := RPLParams | EffectParams | RPLParams ("," | ";") EffectParams
+     *  RPLGroupParamsConstraints := RPLGroupParams [ "|" RPLConstraints ]
+     *  RPLGroupParams := RPLParams | GroupParams | RPLParams (",") GroupParams
      *  RPLParams := REGION Ident { "," [ REGION ] Ident }
-     *  EffectParams := "effect" Ident { "," [ "effect" ] Ident }
+     *  GroupParams := REFGROUP Ident { "," [ REFGROUP ] Ident }
      */
-    Pair<List<JCTypeParameter>, DPJParamInfo> typeRPLEffectParamsOpt() {
+    Pair<List<JCTypeParameter>, DPJParamInfo> typeRPLGroupParamsOpt() {
 	if (S.token() == LT) {
             checkGenerics();
             S.nextToken();
@@ -3364,9 +3320,8 @@ public class Parser {
             DPJParamInfo paramInfo = null;
             List<DPJRegionParameter> rplParams = List.nil();
             List<Pair<DPJRegionPathList,DPJRegionPathList>> rplConstraints = List.nil();
-            List<Pair<DPJEffect,DPJEffect>> effectConstraints = List.nil();
-            List<JCIdent> effectParams = List.nil();
-            if (S.token() != REGION && !tokenIsIdent("effect")) {
+            List<JCIdent> groupParams = List.nil();
+            if (S.token() != REGION && S.token() != REFGROUP) {
         	typarams = typeParameters();
         	if (S.token() == SEMI) S.nextToken();
             } else {
@@ -3377,20 +3332,17 @@ public class Parser {
         	rplParams = regionParameters();
         	if (S.token() == SEMI) S.nextToken();
             }
-            if (tokenIsIdent("effect")) {
-        	effectParams = effectParams();
+            if (S.token() == REFGROUP) {
+        	groupParams = groups();
             }
             if (S.token() == BAR) {
         	S.nextToken();
-        	Pair<List<Pair<DPJRegionPathList,DPJRegionPathList>>,
-        		List<Pair<DPJEffect, DPJEffect>>> constraints = constraints();
-        	rplConstraints = constraints.fst;
-        	effectConstraints = constraints.snd;
+        	rplConstraints = rplConstraints();
             }
             if (rplParams.nonEmpty() || rplConstraints.nonEmpty() ||
-        	    effectParams.nonEmpty()) {
+        	    groupParams.nonEmpty()) {
         	paramInfo = toP(F.at(pos).ParamInfo(rplParams,
-                        rplConstraints, effectParams, effectConstraints));
+        		rplConstraints, groupParams));
             }
             accept(GT);
             return new Pair(typarams, paramInfo);
@@ -3401,17 +3353,12 @@ public class Parser {
 
     // Skip over optional marker
     private void skipIdent(String name) {
-	if (tokenIsIdent(name))//S.token() == IDENTIFIER && S.name().equals(names.fromString(name)))
+	if (tokenIsIdent(name))
 	    S.nextToken();
     }
     
     private boolean tokenIsIdent(String name) {
 	return (S.token() == IDENTIFIER && S.name().equals(names.fromString(name)));
-    }
-    
-    private boolean tokenIsStartOfEffect() {
-	return (S.token() == READS || 
-		S.token() == WRITES || tokenIsIdent("effect"));
     }
     
     /** TypeParameters = TypeParameter {"," TypeParameter}
@@ -3421,43 +3368,26 @@ public class Parser {
         typarams.append(typeParameter());
         while (S.token() == COMMA) {
             S.nextToken();
-            if (S.token() == REGION) break;
-            if (tokenIsStartOfEffect()) break;
+            if (S.token() == REGION || S.token() == REFGROUP) break;
             typarams.append(typeParameter());
         }
         return typarams.toList();    
     }
     
     
-    /** Constraints := Constraint {("," | ";") Constraint}
-     *  Constraint := RPLConstraint | EffectConstraint
+    /** RPLConstraints := RPLConstraint {(",") RPLConstraint}
      */
-    Pair<List<Pair<DPJRegionPathList,DPJRegionPathList>>,
-    	List<Pair<DPJEffect, DPJEffect>>> constraints() {
+    List<Pair<DPJRegionPathList,DPJRegionPathList>> rplConstraints() {
         ListBuffer<Pair<DPJRegionPathList,DPJRegionPathList>> rplConstraints = 
             	ListBuffer.lb();
-        ListBuffer<Pair<DPJEffect,DPJEffect>> effectConstraints = 
-            ListBuffer.lb();
-        if (tokenIsStartOfEffect()) {
-            Pair<DPJEffect,DPJEffect> effectConstraint = effectConstraint();
-            effectConstraints.append(effectConstraint);
-        } else {
-            Pair<DPJRegionPathList,DPJRegionPathList> rplConstraint = rplConstraint();
-            rplConstraints.append(rplConstraint);
-        }
+        Pair<DPJRegionPathList,DPJRegionPathList> rplConstraint = rplConstraint();
+        rplConstraints.append(rplConstraint);
 	while (S.token() == COMMA || S.token() == SEMI) {
 	    S.nextToken();
-	    if (tokenIsStartOfEffect()) {
-		Pair<DPJEffect,DPJEffect> effectConstraint = effectConstraint();
-		effectConstraints.append(effectConstraint);
-	    } else {
-		Pair<DPJRegionPathList,DPJRegionPathList> rplConstraint = rplConstraint();
-		rplConstraints.append(rplConstraint);
-	    }
+	    rplConstraint = rplConstraint();
+	    rplConstraints.append(rplConstraint);
 	}
-	return new Pair<List<Pair<DPJRegionPathList,DPJRegionPathList>>,
-		List<Pair<DPJEffect,DPJEffect>>>(rplConstraints.toList(), 
-			effectConstraints.toList());
+	return rplConstraints.toList();
     }
     
     /** RegionParameters = RegionParameter {"," RegionParameter}
@@ -3467,48 +3397,42 @@ public class Parser {
         rgnparams.append(regionParameter());
         while (S.token() == COMMA) {
             S.nextToken();
-            if (tokenIsIdent("effect")) break;
+            if (S.token() == REFGROUP) break;
             rgnparams.append(regionParameter());
         }
 	return rgnparams.toList();
     }
     
-    /** EffectParams := EffectParam { "," EffectParam }
+    /** Groups := Group { "," Group }
      */
-    List<JCIdent> effectParams() {
+    List<JCIdent> groups() {
 	ListBuffer<JCIdent> params = ListBuffer.lb();
-	params.append(effectParam());
+	params.append(group());
 	while (S.token() == COMMA) {
 	    S.nextToken();
-	    params.append(effectParam());
+	    params.append(group());
 	}
 	return params.toList();
     }
     
-    /** RegionParameter = [ REGION ] [ ATOMIC] RegionVariable [RegionParameterBound]
-     *  RegionParameterBound = UNDER RegionPathList
-     *  RegionVariable = Ident
+    /** Group := [ REFGROUP ] Ident
      */
-    DPJRegionParameter regionParameter() {
-	if (S.token() == REGION) S.nextToken();
-	boolean isAtomic = false;
-	if (tokenIsIdent("atomic")) {
+    JCIdent group() {
+	if (S.token() == REFGROUP) {
 	    S.nextToken();
-	    isAtomic = true;
 	}
-	int pos = S.pos();
-        Name name = ident();
-        JCTree.DPJRegionPathList bound = null;
-        return toP(F.at(pos).RegionParameter(name, bound, isAtomic));
-    }
-    
-    /** EffectParam := [ "effect" ] Ident
-     */
-    JCIdent effectParam() {
-	skipIdent("effect");
 	int pos = S.pos();
 	Name name = ident();
 	return toP(F.at(pos).Ident(name));
+    }
+    
+    /** RegionParameter = [ REGION ] Ident
+     */
+    DPJRegionParameter regionParameter() {
+	if (S.token() == REGION) S.nextToken();
+	int pos = S.pos();
+        Name name = ident();
+        return toP(F.at(pos).RegionParameter(name, null, false));
     }
     
     /** RPLConstraint := RPL "#" RPL
@@ -3518,22 +3442,6 @@ public class Parser {
         accept(NUMBER);
         DPJRegionPathList right = rpl();
         return new Pair<DPJRegionPathList,DPJRegionPathList>(left, right);	
-    }
-    
-    /** EffectConstraint := VariableEffects "#" Effect
-     */
-    Pair<DPJEffect,DPJEffect> effectConstraint() {
-	int pos = S.pos();
-	if (!tokenIsIdent("effect")) {
-	    log.error("first.effect.must.be.variable", pos);
-	}
-	List<JCIdent> variableEffects = effectParams();
-	DPJEffect left = 
-	    toP(F.at(pos).Effect(false, List.<DPJRegionPathList>nil(), 
-		    List.<DPJRegionPathList>nil(), variableEffects));
-	accept(NUMBER);
-	DPJEffect right = effect(S.pos());
-	return new Pair<DPJEffect,DPJEffect>(left,right);
     }
     
     /** TypeParameter = { "type" } TypeVariable [TypeParameterBound]
