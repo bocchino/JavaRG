@@ -148,15 +148,19 @@ public enum Token {
     MONKEYS_AT("@"),
     CUSTOM,
     // JavaRG
-    //ARRAY("array"),
+    ARRAYTYPE("arraytype"),
     COPIES("copies"),
-    //MATCH("match"),
+    FOREACH("foreach"),
+    FRESH("fresh"),
+    REFGROUP("refgroup"),
+    MATCHTYPE("matchtype"),
     PARDO("pardo"),
+    PRESERVES("preserves"),
     READS("reads"),
     REGION("region"),
+    UNIQUE("unique"),
     UPDATES("updates"),
-    WRITES("writes"),
-    FOREACH("foreach");
+    WRITES("writes");
 
     Token() {
 	this(null);
