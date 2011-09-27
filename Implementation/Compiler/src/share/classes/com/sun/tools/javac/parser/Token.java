@@ -47,9 +47,6 @@ public enum Token {
     CATCH("catch"),
     CHAR("char"),
     CLASS("class"),
-    COBEGIN("cobegin"),
-    COBEGIN_ND("cobegin_nd"),
-    COMMUTATIVE("commutative"),
     CONST("const"),
     CONTINUE("continue"),
     DEFAULT("default"),
@@ -60,11 +57,8 @@ public enum Token {
     EXTENDS("extends"),
     FINAL("final"),
     FINALLY("finally"),
-    FINISH("dpjfinish"),
     FLOAT("float"),
     FOR("for"),
-    FOREACH("foreach"),
-    FOREACH_ND("foreach_nd"),
     GOTO("goto"),
     IF("if"),
     IMPLEMENTS("implements"),
@@ -79,12 +73,8 @@ public enum Token {
     PRIVATE("private"),
     PROTECTED("protected"),
     PUBLIC("public"),
-    PURE("pure"), // DPJ
-    READS("reads"), // DPJ
-    REGION("region"), // DPJ
     RETURN("return"),
     SHORT("short"),
-    SPAWN("spawn"), // DPJ
     STATIC("static"),
     STRICTFP("strictfp"),
     SUPER("super"),
@@ -95,11 +85,9 @@ public enum Token {
     THROWS("throws"),
     TRANSIENT("transient"),
     TRY("try"),
-    UNDER("under"), // DPJ
     VOID("void"),
     VOLATILE("volatile"),
     WHILE("while"),
-    WRITES("writes"), // DPJ
     INTLITERAL,
     LONGLITERAL,
     FLOATLITERAL,
@@ -158,7 +146,17 @@ public enum Token {
     GTGTEQ(">>="),
     GTGTGTEQ(">>>="),
     MONKEYS_AT("@"),
-    CUSTOM;
+    CUSTOM,
+    // JavaRG
+    //ARRAY("array"),
+    COPIES("copies"),
+    //MATCH("match"),
+    PARDO("pardo"),
+    READS("reads"),
+    REGION("region"),
+    UPDATES("updates"),
+    WRITES("writes"),
+    FOREACH("foreach");
 
     Token() {
 	this(null);
