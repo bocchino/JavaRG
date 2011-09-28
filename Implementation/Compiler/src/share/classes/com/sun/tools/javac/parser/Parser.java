@@ -1830,7 +1830,7 @@ public class Parser {
                     stats.append(classOrInterfaceOrEnumDeclaration(mods, dc));
                 } else {
                     JCExpression t = type();
-                    stats.appendList(variableDeclarators(mods, t, true,
+                    stats.appendList(variableDeclarators(mods, t, false,
                                                          new ListBuffer<JCStatement>()));
                     // A "LocalVariableDeclarationStatement" subsumes the terminating semicolon
                     storeEnd(stats.elems.last(), S.endPos());
@@ -3002,14 +3002,14 @@ public class Parser {
      *      ";"
      *    | [STATIC] Block
      *    | ModifiersOpt
-     *      ( Type Ident
+     *      ( RefPermOpt Type Ident
      *        ( VariableDeclaratorsRest ";" | MethodDeclaratorRest )
      *      | VOID Ident MethodDeclaratorRest
      *      | Parameters (Type | VOID) Ident MethodDeclaratorRest
      *      | Ident ConstructorDeclaratorRest
      *      | Parameters Ident ConstructorDeclaratorRest
      *      | ClassOrInterfaceOrEnumDeclaration
-     *      | RegionDeclarations // DPJ
+     *      | RegionDeclarations
      *      )
      *  InterfaceBodyDeclaration =
      *      ";"
@@ -3140,15 +3140,16 @@ public class Parser {
     }
     
     /** MethodDeclaratorRest =
-     *      FormalParameters BracketsOpt [Effect] [THROWS TypeList] ( MethodBody | [DEFAULT AnnotationValue] ";")
+     *      FormalParameters BracketsOpt MethodPermsOpt [THROWS TypeList] 
+     *      ( MethodBody | [DEFAULT AnnotationValue] ";")
      *  VoidMethodDeclaratorRest =
-     *      FormalParameters [Effect] [THROWS TypeList] ( MethodBody | ";")
+     *      FormalParameters MethodPermsOpt [THROWS TypeList] ( MethodBody | ";")
      *  InterfaceMethodDeclaratorRest =
-     *      FormalParameters BracketsOpt [Effect] [THROWS TypeList] ";"
+     *      FormalParameters BracketsOpt MethodPermsOpt [THROWS TypeList] ";"
      *  VoidInterfaceMethodDeclaratorRest =
-     *      FormalParameters [Effect] [THROWS TypeList] ";"
+     *      FormalParameters MethodPermsOpt [THROWS TypeList] ";"
      *  ConstructorDeclaratorRest =
-     *      "(" FormalParameterListOpt ")" [Effect] [THROWS TypeList] MethodBody
+     *      "(" FormalParameterListOpt ")" MethodPermsOpt [THROWS TypeList] MethodBody
      */
     JCTree methodDeclaratorRest(int pos,
                               JCModifiers mods,
