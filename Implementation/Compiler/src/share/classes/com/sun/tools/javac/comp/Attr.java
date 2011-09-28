@@ -265,7 +265,7 @@ public class Attr extends JCTree.Visitor {
 		// Make a new environment for the method scope
 		parentEnv = memberEnter.methodEnv(tree, parentEnv);	
 		
-	        // Enter type, region, and effect parameters into the local scope.
+	        // Enter type, region, and group parameters into the local scope.
 	        attr.enterMethodParams(tree, parentEnv);
 
 	        // Enter value parameters into the local method scope.
@@ -313,15 +313,6 @@ public class Attr extends JCTree.Visitor {
         		    parentEnv.info.constraints.disjointRPLs)) {
         		enter.log.warning(tree, "rpl.constraints");
         	    }
-        	    // Check that nonint constraints on effect vars are satisfied
-        	    if (!Effects.nonintConstraintsAreSatisfied(cs.constraints.noninterferingEffects,
-        		    ct, parentEnv.info.constraints)) {
-        		enter.log.warning(tree, "effect.constraints");
-        	    }
-        	}
-        	if (!rpls.atomicConstraintsAreSatisfied(ct.getRegionParams(),
-        		ct.getRegionActuals())) {
-        	    enter.log.error(tree, "atomic.constraints");
         	}
 	    }
 	    super.visitTypeApply(tree);
@@ -3100,7 +3091,7 @@ public class Attr extends JCTree.Visitor {
                 return;
             }    
             
-            // Use the # of type params to separate the type args from the RPL args
+            // Use the # of type params to separate the type args from the RPL and group args
             int counter = 0;
             int size = typeFormals.size();
             List<JCExpression> listptr = tree.typeArgs;
@@ -3133,6 +3124,40 @@ public class Attr extends JCTree.Visitor {
         	} while (counter++ < size);
             }
 
+            // Use the # of RPL params to separate the RPL args from the group args
+            counter = 0;
+            size = rplFormals.size();
+            listptr = rplArgs;
+            List<JCExpression> groupArgs = List.nil();
+            if (size > rplArgs.size() && rplArgs.nonEmpty()) {
+        	log.error(tree.pos(), "wrong.number.rpl.args",
+        		Integer.toString(size));
+            } else {
+        	do {
+        	    if (counter >= size) {
+        		if (counter == 0) {
+        		    // No RPL arguments expected!
+        		    groupArgs = rplArgs;
+        		    rplArgs = List.nil();
+        		} else {
+        		    // Rest of list from listptr.tail is rpl args
+        		    groupArgs = listptr.tail;
+        		    listptr.tail = List.nil();
+        		}
+        	    } else {
+        		if (listptr == null || listptr.head == null) {
+        		    log.error(tree.pos(), "wrong.number.rpl.args",
+        			    Integer.toString(typeFormals.length()));
+        	    		break;
+        		} else {
+        		    if (counter > 0)
+        			listptr = listptr.tail;
+        		}
+        	    }
+        	} while (counter++ < size);
+            }
+
+
             if (tree.rplArgs == null) {
         	// Construct the list of rpl arguments and store it in the AST
         	tree.rplArgs = asRPLs(rplArgs);
@@ -3144,7 +3169,9 @@ public class Attr extends JCTree.Visitor {
 			Integer.toString(typeFormals.length()));        	    
         	}
             }
-
+             
+            // TODO:  Construct list of group args
+            
             // Attribute type args
             List<Type> actuals = attribTypes(tree.typeArgs, env);            
 
@@ -3174,11 +3201,16 @@ public class Attr extends JCTree.Visitor {
             // Attribute effect args
             // TODO: Why does the null reference occur?
             if (tree.groupArgs == null) tree.groupArgs = List.nil();
-            List<Effects> effectActuals = List.nil(); // FIXME attribEffects(tree.groupArgs);
+
+            // TODO: Attribute group args
+            List<Effects> effectActuals = List.nil(); 
+            /*
+            // FIXME
             if (effectActuals.length() != effectFormals.length()) {
         	log.error(tree.pos(), "wrong.number.effect.args",
         		Integer.toString(effectFormals.length())); 
             }
+            */
             
             // Compute the proper generic outer
             Type clazzOuter = functortype.getEnclosingType();

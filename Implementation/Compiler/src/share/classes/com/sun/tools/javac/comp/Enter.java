@@ -442,7 +442,7 @@ public class Enter extends JCTree.Visitor {
 	// Enter type parameters.
 	ct.typarams_field = classEnter(tree.typarams, localEnv);
 
-	// Attribute and enter RPL and effect parameters.
+	// Attribute and enter RPL and group parameters.
 	if (tree.paramInfo != null) {
 	    ListBuffer<RegionParameterSymbol> rplparams = ListBuffer.lb();
 	    for (DPJRegionParameter param : tree.paramInfo.rplParams) {

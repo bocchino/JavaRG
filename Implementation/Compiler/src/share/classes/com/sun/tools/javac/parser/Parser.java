@@ -2445,8 +2445,8 @@ public class Parser {
         return variableDeclaratorRest(S.pos(), mods, type, ident(), reqInit, regionOK, dc);
     }
 
-    /** VariableDeclaratorRest = BracketsOpt RegionOpt ["=" VariableInitializer] // DPJ
-     *  ConstantDeclaratorRest = BracketsOpt RegionOpt "=" VariableInitializer   // DPJ
+    /** VariableDeclaratorRest = BracketsOpt RegionOpt ["=" VariableInitializer]
+     *  ConstantDeclaratorRest = BracketsOpt RegionOpt "=" VariableInitializer  
      *
      *  @param reqInit  Is an initializer always required?
      *  @param dc       The documentation comment for the variable declarations, or null.
@@ -2456,7 +2456,7 @@ public class Parser {
 	    				  boolean regionOK, String dc) {
         type = bracketsOpt(type);
         JCTree.DPJRegionPathList rpl = null;
-        if (regionOK) rpl = regionOpt(); // DPJ
+        if (regionOK) rpl = regionOpt();
         JCExpression init = null;
         if (S.token() == EQ) {
             S.nextToken();
@@ -2464,12 +2464,12 @@ public class Parser {
         }
         else if (reqInit) syntaxError(S.pos(), "expected", keywords.token2string(EQ));
         JCVariableDecl result =
-            toP(F.at(pos).VarDef(mods, name, rpl, type, init)); // DPJ
+            toP(F.at(pos).VarDef(mods, name, rpl, type, init));
         attach(result, dc);
         return result;
     }
 
-    /** VariableDeclaratorId = Ident BracketsOpt RegionOpt // DPJ
+    /** VariableDeclaratorId = Ident BracketsOpt RegionOpt
      */
     JCVariableDecl variableDeclaratorId(JCModifiers mods, JCExpression type) {
         int pos = S.pos();
@@ -2480,7 +2480,7 @@ public class Parser {
         return toP(F.at(pos).VarDef(mods, name, rpl, type, null));
     }
 
-    /** RegionOpt = { "in" RegionPathList } // DPJ
+    /** RegionOpt = { "in" RegionPathList }
      */
     private JCTree.DPJRegionPathList regionOpt() {
 	if (S.token() == IDENTIFIER) {
@@ -2593,7 +2593,8 @@ public class Parser {
 	return rpl(elt);
     }
     
-    /** RPL := [ REGION ] RPLElement { ":" RPLElement }
+    /** RPL = [ REGION ] RPLElement { ":" RPLElement }
+     *  RPLElement = Ident { "." Ident } | "*"
      */
     private JCTree.DPJRegionPathList rpl() {
 	if (S.token() == REGION) S.nextToken(); // optional 'region' marker
@@ -2605,17 +2606,13 @@ public class Parser {
             int pos = S.pos();
             switch (S.token()) {
             case IDENTIFIER:
-        	if (tokenIsIdent("effect")) {
-        	    done = true;
-        	} else {
-        	    JCExpression regionName = toP(F.at(S.pos()).Ident(ident()));
-        	    while (S.token() == DOT) {
-        		S.nextToken();
-        		regionName = toP(F.at(S.pos()).Select(regionName, ident()));
-        	    }
-        	    elt = toP(F.at(pos).RegionPathListElt(regionName, DPJRegionPathListElt.NAME));
-        	    elts.append(elt);
+        	JCExpression regionName = toP(F.at(S.pos()).Ident(ident()));
+        	while (S.token() == DOT) {
+        	    S.nextToken();
+        	    regionName = toP(F.at(S.pos()).Select(regionName, ident()));
         	}
+        	elt = toP(F.at(pos).RegionPathListElt(regionName, DPJRegionPathListElt.NAME));
+        	elts.append(elt);
         	break;
             case STAR:
         	elts.append(F.at(pos).RegionPathListElt(null, DPJRegionPathListElt.STAR));
@@ -2623,28 +2620,6 @@ public class Parser {
         	break;
             case COLON:
         	S.nextToken();
-        	break;
-            case LBRACKET:
-        	S.nextToken();
-        	if (S.token() == QUES) {
-        	    S.nextToken();
-        	    elt = toP(F.at(pos).RegionPathListElt(null, DPJRegionPathListElt.ARRAY_UNKNOWN));
-        	    elts.append(elt);
-        	} else {
-        	    elt = toP(F.at(pos).RegionPathListElt(expression(), DPJRegionPathListElt.ARRAY_INDEX));
-        	    elts.append(elt);
-        	}
-        	accept(RBRACKET);
-        	break;
-            case THIS:
-        	S.nextToken();
-                if (elts.size() > 0)
-                    if (!badRPLOK)
-                	syntaxError("illegal.rpl");
-                    else
-                	goodRPL = false;
-                elts.append(toP(F.at(pos).RegionPathListElt(to(F.at(pos).Ident(names._this)), 
-                	DPJRegionPathListElt.NAME)));
         	break;
             default:
         	done = true;
@@ -3095,8 +3070,6 @@ public class Parser {
     /** RegionDeclarations = 
      *           REGION Ident { "," Ident } ";"
      *
-     *  <p>// DPJ
-     *  
      *  @param mods     Any modifiers starting the region declaration
      *  @param dc       The documentation comment for the region, or null.
      */
