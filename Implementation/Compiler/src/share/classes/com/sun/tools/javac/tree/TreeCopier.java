@@ -576,7 +576,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitRegion(RegionTree node, P p) {
         DPJRegionDecl t = (DPJRegionDecl) node;
         JCModifiers mods = copy(t.mods, p);
-        DPJRegionDecl result = M.at(t.pos).RegionDecl(mods, t.name, t.isAtomic);
+        DPJRegionDecl result = M.at(t.pos).RegionDecl(mods, t.name);
         result.sym = t.sym;
         return result;
     }

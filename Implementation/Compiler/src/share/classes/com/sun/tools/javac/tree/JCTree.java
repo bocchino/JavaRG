@@ -913,12 +913,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public boolean isAtomic;
         protected DPJRegionDecl(JCModifiers mods,
 			 Name name,
-			 RegionNameSymbol sym,
-			 boolean isAtomic) {
+			 RegionNameSymbol sym) {
             this.mods = mods;
             this.name = name;
             this.sym = sym;
-            this.isAtomic = isAtomic;
         }
         @Override
         public void accept(Visitor v) { v.visitRegionDecl(this); }
@@ -2464,6 +2462,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 	    return rplConstraints;
 	}
 	
+	public boolean hasParams() {
+	    return rplParams.nonEmpty() || groupParams.nonEmpty();
+	}
     }
 
     public static class DPJRegionPathListElt extends JCTree implements RPLEltTree {
@@ -2884,7 +2885,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 			               List<DPJRegionPathList> readEffects,
 			               List<DPJRegionPathList> writeEffects,
 			               List<JCIdent> variableEffects);
-        DPJRegionDecl RegionDecl(JCModifiers mods, Name name, boolean isAtomic);
+        DPJRegionDecl RegionDecl(JCModifiers mods, Name name);
         DPJSpawn Spawn(JCStatement expr);
         DPJFinish Finish(JCStatement body);
         DPJCobegin Cobegin(JCStatement body, boolean isNonDet);

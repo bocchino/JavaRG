@@ -361,7 +361,6 @@ public class Parser {
                 case DEFAULT:
                 case IF:
                 case FOR:
-                case FOREACH:
                 case WHILE:
                 case DO:
                 case TRY:
@@ -1814,7 +1813,7 @@ public class Parser {
             switch (token) {
             case RBRACE: case CASE: case DEFAULT: case EOF:
                 return stats.toList();
-            case LBRACE: case IF: case FOR: case FOREACH: 
+            case LBRACE: case IF: case FOR:
             case WHILE: case DO: case TRY:
             case SWITCH: case SYNCHRONIZED: case RETURN: case THROW: case BREAK:
             case CONTINUE: case SEMI: case ELSE: case FINALLY: case CATCH: 
@@ -1916,18 +1915,15 @@ public class Parser {
 
     /** Statement =
      *       Block
-     *     | ATOMIC Statement
-     *     | COBEGIN Block
-     *     | COBEGIN_ND Block
+     *     | PARDO Block
      *     | IF ParExpression Statement [ELSE Statement]
      *     | FOR "(" ForInitOpt ";" [Expression] ";" ForUpdateOpt ")" Statement
-     *     | FOR "(" FormalParameter : Expression ")" Statement
-     *     | FOREACH Ident "in" Expression "," Expression ["," Expression] Statement
-     *     | FOREACH_ND Ident "in" Expression "," Expression ["," Expression] Statement
+     *     | FOR "(" FormalParameter ":" Expression ")" Statement
+     *     | FOR EACH Ident "in" Expression PARDO Statement
      *     | WHILE ParExpression Statement
      *     | DO Statement WHILE ParExpression ";"
      *     | TRY Block ( Catches | [Catches] FinallyPart )
-     *     | SWITCH ParExpression "{" SwitchBlockStatementGroups "}"
+     *     | SWITCH [ "type" ] ParExpression "{" SwitchBlockStatementGroups "}"
      *     | SYNCHRONIZED ParExpression Block
      *     | RETURN [Expression] ";"
      *     | THROW Expression ";"
@@ -1979,9 +1975,6 @@ public class Parser {
                 JCStatement body = statement();
                 return F.at(pos).ForLoop(inits, cond, steps, body);
             }
-        }
-        case FOREACH: {
-            return Foreach(pos, false);
         }
         case WHILE: {
             S.nextToken();
@@ -2805,10 +2798,10 @@ public class Parser {
         }
     }
 
-    /** ClassDeclaration = CLASS Ident RegionParametersOpt TypeParametersOpt 
+    /** ClassDeclaration = CLASS Ident ParametersOpt
      *                     [EXTENDS Type]
      *                     [IMPLEMENTS TypeList] ClassBody
-     *  @param mods    The modifiers starting the class declaration
+     *  @param mods     The modifiers starting the class declaration
      *  @param dc       The documentation comment for the class, or null.
      */
     JCClassDecl classDeclaration(JCModifiers mods, String dc) {
@@ -2817,7 +2810,7 @@ public class Parser {
         Name name = ident();
 
         Pair<List<JCTypeParameter>,DPJParamInfo> params = 
-            typeRPLGroupParamsOpt();
+            parametersOpt();
         DPJParamInfo rgnparamInfo = params.snd;
         List<JCTypeParameter> typarams = params.fst;
 
@@ -2839,7 +2832,7 @@ public class Parser {
         return result;
     }
 
-    /** InterfaceDeclaration = INTERFACE Ident TypeParametersOpt
+    /** InterfaceDeclaration = INTERFACE Ident ParametersOpt
      *                         [EXTENDS TypeList] InterfaceBody
      *  @param mods    The modifiers starting the interface declaration
      *  @param dc       The documentation comment for the interface, or null.
@@ -2849,7 +2842,7 @@ public class Parser {
         accept(INTERFACE);
         Name name = ident();
 
-        Pair<List<JCTypeParameter>,DPJParamInfo> params = typeRPLGroupParamsOpt();
+        Pair<List<JCTypeParameter>,DPJParamInfo> params = parametersOpt();
         List<JCTypeParameter> typarams = params.fst;
         DPJParamInfo rgnparamInfo = params.snd;
 
@@ -3012,9 +3005,9 @@ public class Parser {
      *      ( Type Ident
      *        ( VariableDeclaratorsRest ";" | MethodDeclaratorRest )
      *      | VOID Ident MethodDeclaratorRest
-     *      | [RegionParameters] TypeParameters (Type | VOID) Ident MethodDeclaratorRest
+     *      | Parameters (Type | VOID) Ident MethodDeclaratorRest
      *      | Ident ConstructorDeclaratorRest
-     *      | [RegionParameters] TypeParameters Ident ConstructorDeclaratorRest
+     *      | Parameters Ident ConstructorDeclaratorRest
      *      | ClassOrInterfaceOrEnumDeclaration
      *      | RegionDeclarations // DPJ
      *      )
@@ -3044,9 +3037,9 @@ public class Parser {
                 return List.<JCTree>of(block(pos, mods.flags));
             } else {
                 pos = S.pos();
-                Pair<List<JCTypeParameter>,DPJParamInfo> params = typeRPLGroupParamsOpt();
+                Pair<List<JCTypeParameter>,DPJParamInfo> params = parametersOpt();
                 List<JCTypeParameter> typarams = params.fst;
-                DPJParamInfo rgnParamInfo = params.snd;
+                DPJParamInfo dpjParamInfo = params.snd;
                 // Hack alert:  if there are type arguments but no Modifiers, the start
                 // position will be lost unless we set the Modifiers position.  There
                 // should be an AST node for type parameters (BugId 5005090).
@@ -3068,16 +3061,17 @@ public class Parser {
                     if (isInterface || name != className)
                         log.error(pos, "invalid.meth.decl.ret.type.req");
                     return List.of(methodDeclaratorRest(
-                        pos, mods, null, names.init, rgnParamInfo, typarams,
+                        pos, mods, null, names.init, dpjParamInfo, typarams,
                         isInterface, true, dc));
                 } else {
                     pos = S.pos();
                     name = ident();
                     if (S.token() == LPAREN) {
                         return List.of(methodDeclaratorRest(
-                            pos, mods, type, name, rgnParamInfo, typarams,
+                            pos, mods, type, name, dpjParamInfo, typarams,
                             isInterface, isVoid, dc));
-                    } else if (!isVoid && typarams.isEmpty()) {
+                    } else if (!isVoid && typarams.isEmpty() && 
+                	    (dpjParamInfo == null || !dpjParamInfo.hasParams())) {
                         List<JCTree> defs =
                             variableDeclaratorsRest(pos, mods, type, name, isInterface, true, dc,
                                                     new ListBuffer<JCTree>()).toList();
@@ -3088,7 +3082,7 @@ public class Parser {
                         pos = S.pos();
                         List<JCTree> err = isVoid
                             ? List.<JCTree>of(toP(F.at(pos).MethodDef(mods, name, type, 
-                        	    rgnParamInfo, typarams,
+                        	    dpjParamInfo, typarams,
                                 List.<JCVariableDecl>nil(), List.<JCExpression>nil(), null, null, null)))
                             : null;
                         return List.<JCTree>of(syntaxError(S.pos(), err, "expected", keywords.token2string(LPAREN)));
@@ -3099,7 +3093,7 @@ public class Parser {
     }
 
     /** RegionDeclarations = 
-     *           REGION [ ATOMIC ] Ident { "," Ident } ";"
+     *           REGION Ident { "," Ident } ";"
      *
      *  <p>// DPJ
      *  
@@ -3107,25 +3101,15 @@ public class Parser {
      *  @param dc       The documentation comment for the region, or null.
      */
     // <T extends ListBuffer<? super JCVariableDecl>>
-    <T extends ListBuffer<? super DPJRegionDecl>>T regionDeclarations(int pos, JCModifiers mods, String dc, 
-	                           				     T rdefs) {
+    <T extends ListBuffer<? super DPJRegionDecl>>T regionDeclarations(int pos, JCModifiers mods, 
+	    String dc, T rdefs) {
 	accept(REGION);
-	boolean isAtomic = false;
-	if (tokenIsIdent("atomic")) {
-	    S.nextToken();
-	    isAtomic = true;
-	}
-        rdefs.append(F.at(S.pos()).RegionDecl(mods, ident(), isAtomic));
+        rdefs.append(F.at(S.pos()).RegionDecl(mods, ident()));
         while (S.token() == COMMA) {
             // All but last of multiple declarators subsume a comma
             storeEnd((JCTree)rdefs.elems.last(), S.endPos());
             S.nextToken();
-            isAtomic = false;
-            if (tokenIsIdent("atomic")) {
-        	S.nextToken();
-        	isAtomic = true;
-            }
-            rdefs.append(F.at(S.pos()).RegionDecl(mods, ident(), isAtomic));
+            rdefs.append(F.at(S.pos()).RegionDecl(mods, ident()));
         }
         accept(SEMI);
         return rdefs;
@@ -3237,16 +3221,16 @@ public class Parser {
         return ts.toList();
     }
     
-    /** TypeRPLGroupParamsOpt := [ "<" TypeRPLGroupParams ">" ]
-     *  TypeRPLGroupParams := TypeParams | RPLGroupParamsConstraints | 
-     *                        TypeParams (",") RPLGroupParamsConstraints
+    /** ParametersOpt := [ "<" Parameters ">" ]
+     *  Parameters := TypeParams | RPLGroupParamsConstraints | 
+     *                TypeParams (",") RPLGroupParamsConstraints
      *  TypeParams := [ "type" ] Ident { "," [ "type" ] Ident }
      *  RPLGroupParamsConstraints := RPLGroupParams [ "|" RPLConstraints ]
      *  RPLGroupParams := RPLParams | GroupParams | RPLParams (",") GroupParams
      *  RPLParams := REGION Ident { "," [ REGION ] Ident }
      *  GroupParams := REFGROUP Ident { "," [ REFGROUP ] Ident }
      */
-    Pair<List<JCTypeParameter>, DPJParamInfo> typeRPLGroupParamsOpt() {
+    Pair<List<JCTypeParameter>, DPJParamInfo> parametersOpt() {
 	if (S.token() == LT) {
             checkGenerics();
             S.nextToken();
