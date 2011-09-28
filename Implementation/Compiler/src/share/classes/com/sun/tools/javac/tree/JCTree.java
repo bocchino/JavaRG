@@ -1820,17 +1820,16 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCNewArray extends JCExpression implements NewArrayTree {
         public JCExpression elemtype;
         public List<JCExpression> dims;
-        public List<DPJRegionPathList> rpls;
+        // FIXME
+        public List<DPJRegionPathList> rpls = List.nil();
         public List<JCExpression> elems;
         public List<JCIdent> indexVars;
         protected JCNewArray(JCExpression elemtype,
 			   List<JCExpression> dims,
-			   List<DPJRegionPathList> rpls,
 			   List<JCExpression> elems)
 	{
             this.elemtype = elemtype;
             this.dims = dims;
-            this.rpls = rpls;
             this.elems = elems;
         }
         @Override
@@ -2853,7 +2852,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                           JCClassDecl def);
         JCNewArray NewArray(JCExpression elemtype,
                           List<JCExpression> dims,
-                          List<DPJRegionPathList> rpls,
                           List<JCExpression> elems);
         JCParens Parens(JCExpression expr);
         JCAssign Assign(JCExpression lhs, JCExpression rhs);

@@ -352,10 +352,9 @@ public class TreeMaker implements JCTree.Factory {
 
     public JCNewArray NewArray(JCExpression elemtype,
 			     List<JCExpression> dims,
-			     List<DPJRegionPathList> rpls,
 			     List<JCExpression> elems)
     {
-        JCNewArray tree = new JCNewArray(elemtype, dims, rpls, elems);
+        JCNewArray tree = new JCNewArray(elemtype, dims, elems);
         tree.pos = pos;
         return tree;
     }
@@ -840,7 +839,6 @@ public class TreeMaker implements JCTree.Factory {
             for (int i = 0; i < array.values.length; i++)
                 elems.append(translate(array.values[i]));
             result = NewArray(null, List.<JCExpression>nil(), 
-        	              List.<DPJRegionPathList>nil(), 
         	              elems.toList()).setType(array.type);
         }
         JCExpression translate(Attribute a) {

@@ -404,10 +404,9 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCNewArray t = (JCNewArray) node;
         JCExpression elemtype = copy(t.elemtype, p);
         List<JCExpression> dims = copy(t.dims, p);
-        List<DPJRegionPathList> rpls = copy(t.rpls, p);
         List<JCExpression> elems = copy(t.elems, p);
         List<JCIdent> indexVars = copy(t.indexVars, p);
-        JCNewArray result = M.at(t.pos).NewArray(elemtype, dims, rpls, elems);
+        JCNewArray result = M.at(t.pos).NewArray(elemtype, dims, elems);
         result.indexVars = indexVars;
         return result;
     }

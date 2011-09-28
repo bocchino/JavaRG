@@ -1036,7 +1036,7 @@ public class Parser {
                 	mode = TYPE;
                         ListBuffer<JCExpression> args = new ListBuffer<JCExpression>();
                         args.append(t1);
-                        // TODO: Make this handle RPL and effect args properly
+                        // TODO: Make this handle group args properly
                         while (S.token() == COMMA) {
                             S.nextToken();
                             args.append(typeOrRPLArgument());
@@ -1045,7 +1045,7 @@ public class Parser {
                         t = F.at(pos1).TypeApply(t, args.toList(), null, 
                         	List.<JCIdent>nil());
                         checkGenerics();
-                        t = bracketsOpt(toP(t), true);
+                        t = bracketsOpt(toP(t));
                     } else if ((mode & EXPR) != 0) {
                         mode = EXPR;
                         t = F.at(pos1).Binary(op, t, term2Rest(t1, TreeInfo.shiftPrec));
@@ -1145,8 +1145,8 @@ public class Parser {
                 case LBRACKET:
                     S.nextToken();
                     if (S.token() == RBRACKET) {
-                        // Ident { "." Ident } "[" "]" [ "<" RPL ">" ] BracketsOpt ["." CLASS]
-                	t = bracketsOptCont(t,pos,true);
+                        // Ident { "." Ident } "[" "]" BracketsOpt ["." CLASS]
+                	t = bracketsOptCont(t,pos);
                         t = bracketsSuffix(t);
                     } else {
                         // Ident { "." Ident } "[" Expression "]"
@@ -1237,7 +1237,7 @@ public class Parser {
         case DOUBLE: case BOOLEAN:
             if (rplArgs != null || typeArgs != null ||
         	    groupArgs != null) illegal();
-            t = bracketsSuffix(bracketsOpt(basicType(), true));
+            t = bracketsSuffix(bracketsOpt(basicType()));
             break;
         case VOID:
             if (rplArgs != null || typeArgs != null ||
@@ -1269,7 +1269,7 @@ public class Parser {
                     mode = TYPE;
                     // "[" "]"
                     if (S.token() == RBRACKET) {
-                	t = bracketsOptCont(t, pos1, true);
+                	t = bracketsOptCont(t, pos1);
                         return t;
                     }
                     mode = oldmode;
@@ -1565,40 +1565,21 @@ public class Parser {
     
     /** BracketsOpt = {"[" "]"}
      */
-    private JCExpression bracketsOpt(JCExpression t, boolean regionsAllowed) {
+    private JCExpression bracketsOpt(JCExpression t) {
         if (S.token() == LBRACKET) {
             int pos = S.pos();
             S.nextToken();
-            t = bracketsOptCont(t, pos, regionsAllowed);
+            t = bracketsOptCont(t, pos);
             F.at(pos);
         }
         return t;
     }
 
-    private JCArrayTypeTree bracketsOptCont(JCExpression t, int pos,
-	                                    boolean regionsAllowed) {
+    private JCArrayTypeTree bracketsOptCont(JCExpression t, int pos) {
         accept(RBRACKET);
         DPJRegionPathList rpl = null;
         JCIdent indexParam = null;
-        if (regionsAllowed) {
-            if (S.token() == LT) {
-        	S.nextToken();
-        	rpl = rpl();
-        	accept(GT);
-            } else if (S.token() == LTLT) {
-                // Deprecated syntax
-        	S.nextToken();
-        	rpl = rpl();
-        	accept(GTGT);
-            }
-            if (S.token() == NUMBER) {
-        	S.nextToken();
-        	indexParam = toP(F.at(S.pos()).Ident(ident()));
-            } else {
-        	indexParam = toP(F.at(S.pos()).Ident(names.fromString("_")));
-            }
-        }
-        t = bracketsOpt(t, regionsAllowed);
+        t = bracketsOpt(t);
         return toP(F.at(pos).TypeArray(t, rpl, indexParam));
     }
 
@@ -1711,7 +1692,7 @@ public class Parser {
         accept(LBRACKET);
         if (S.token() == RBRACKET) {
             accept(RBRACKET);
-            elemtype = bracketsOpt(elemtype, true);
+            elemtype = bracketsOpt(elemtype);
             if (S.token() == LBRACE) {
                 return arrayInitializer(newpos, elemtype);
             } else {
@@ -1719,64 +1700,19 @@ public class Parser {
             }
         } else {
             ListBuffer<JCExpression> dims = new ListBuffer<JCExpression>();
-            ListBuffer<DPJRegionPathList> rpls = new ListBuffer<DPJRegionPathList>();
-            ListBuffer<JCIdent> params = new ListBuffer<JCIdent>();
-            ListBuffer<JCIdent> indexVars = new ListBuffer<JCIdent>();
             dims.append(expression());
             accept(RBRACKET);
-            if (S.token() == LT) {
-        	S.nextToken();
-        	rpls.append(rpl());
-        	accept(GT);
-            } else if (S.token() == LTLT) {
-        	// Deprecated syntax
-        	S.nextToken();
-        	rpls.append(rpl());
-        	accept(GTGT);
-            } else {
-        	rpls.append(null);
-        	params.append(null);
-            }
-            if (S.token() == NUMBER) {
-        	S.nextToken();
-        	indexVars.append(toP(F.at(S.pos()).Ident(ident())));
-            } else {
-        	indexVars.append(toP(F.at(S.pos()).Ident(names.fromString("_"))));
-        	//indexVars.append(null);
-            }
             while (S.token() == LBRACKET) {
                 int pos = S.pos();
                 S.nextToken();
                 if (S.token() == RBRACKET) {
-                    elemtype = bracketsOptCont(elemtype, pos, true);
+                    elemtype = bracketsOptCont(elemtype, pos);
                 } else {
                     dims.append(expression());
                     accept(RBRACKET);
-                    if (S.token() == LT) {
-                	S.nextToken();
-                	rpls.append(rpl());
-                	accept(GT);
-                    } else if (S.token() == LTLT) {
-                	// Deprecated syntax
-                	S.nextToken();
-                	rpls.append(rpl());
-                	accept(GTGT);
-                    } else {
-                	params.append(null);
-                	rpls.append(null);
-                    }
-                    if (S.token() == NUMBER) {
-                	S.nextToken();
-                	indexVars.append(toP(F.at(S.pos()).Ident(ident())));
-                    } else {
-                	indexVars.append(toP(F.at(S.pos()).Ident(names.fromString("_"))));
-                    	//indexVars.append(null);
-                    }
                 }
             }
-            JCNewArray result = toP(F.at(newpos).NewArray(elemtype, dims.toList(), 
-        	             rpls.toList(), null));
-            result.indexVars = indexVars.toList();
+            JCNewArray result = toP(F.at(newpos).NewArray(elemtype, dims.toList(), null));
             return result;
         }
     }
@@ -1818,8 +1754,7 @@ public class Parser {
             }
         }
         accept(RBRACE);
-        return toP(F.at(newpos).NewArray(t, List.<JCExpression>nil(), 
-        	                         List.<DPJRegionPathList>nil(), elems.toList()));
+        return toP(F.at(newpos).NewArray(t, List.<JCExpression>nil(), elems.toList()));
     }
 
     /** VariableInitializer = ArrayInitializer | Expression
@@ -2468,8 +2403,7 @@ public class Parser {
                 }
             }
             accept(RBRACE);
-            return toP(F.at(pos).NewArray(null, List.<JCExpression>nil(), 
-        	                          List.<DPJRegionPathList>nil(), buf.toList()));
+            return toP(F.at(pos).NewArray(null, List.<JCExpression>nil(), buf.toList()));
         default:
             mode = EXPR;
             return term1();
@@ -2527,7 +2461,7 @@ public class Parser {
     JCVariableDecl variableDeclaratorRest(int pos, JCModifiers mods, JCExpression type, 
 	    				  Name name, boolean reqInit, 
 	    				  boolean regionOK, String dc) {
-        type = bracketsOpt(type, true);
+        type = bracketsOpt(type);
         JCTree.DPJRegionPathList rpl = null;
         if (regionOK) rpl = regionOpt(); // DPJ
         JCExpression init = null;
@@ -2548,7 +2482,7 @@ public class Parser {
         int pos = S.pos();
         Name name = ident();
         if ((mods.flags & Flags.VARARGS) == 0)
-            type = bracketsOpt(type, true);
+            type = bracketsOpt(type);
         JCTree.DPJRegionPathList rpl = regionOpt();
         return toP(F.at(pos).VarDef(mods, name, rpl, type, null));
     }
@@ -3241,7 +3175,7 @@ public class Parser {
                               boolean isInterface, boolean isVoid,
                               String dc) {
         List<JCVariableDecl> params = formalParameters();
-        if (!isVoid) type = bracketsOpt(type, false);
+        if (!isVoid) type = bracketsOpt(type);
         DPJEffect methodEffectSummary = effect(pos);
         List<JCExpression> thrown = List.nil();
         if (S.token() == THROWS) {

@@ -424,8 +424,7 @@ public class Lower extends TreeTranslator {
                 .Select(make.App(make.QualIdent(valuesMethod)),
                         syms.lengthVar);
             JCExpression mapVarInit = make
-                .NewArray(make.Type(syms.intType), List.of(size), 
-                	  List.<DPJRegionPathList>nil(), null)
+                .NewArray(make.Type(syms.intType), List.of(size), null)
                 .setType(new ArrayType(syms.intType, null, null, syms.arrayClass));
 
             // try { $SwitchMap$Color[red.ordinal()] = 1; } catch (java.lang.NoSuchFieldError ex) {}
@@ -1555,7 +1554,6 @@ public class Lower extends TreeTranslator {
 	    JCNewArray newcache = make.
 		NewArray(make.Type(outerCacheClass.type),
 			 List.<JCExpression>of(make.Literal(INT, 0).setType(syms.intType)),
-			 List.<DPJRegionPathList>nil(),
 			 null);
 	    newcache.type = new ArrayType(types.erasure(outerCacheClass.type),
 		    			  null, null,
@@ -2108,7 +2106,6 @@ public class Lower extends TreeTranslator {
 					    tree.type.tsym);
 	JCNewArray newArray = make.NewArray(make.Type(types.erasure(tree.type)),
 					  List.<JCExpression>nil(),
-					  List.<DPJRegionPathList>nil(),
 					  values.toList());
 	newArray.type = arrayType;
 	enumDefs.append(make.VarDef(valuesVar, newArray));
@@ -2562,7 +2559,6 @@ public class Lower extends TreeTranslator {
 	    }
 	    JCNewArray boxedArgs = make.NewArray(make.Type(varargsElement),
                                                List.<JCExpression>nil(),
-                                               List.<DPJRegionPathList>nil(),
                                                elems.toList());
 	    boxedArgs.type = new ArrayType(varargsElement, null, null, syms.arrayClass);
 	    result.append(boxedArgs);

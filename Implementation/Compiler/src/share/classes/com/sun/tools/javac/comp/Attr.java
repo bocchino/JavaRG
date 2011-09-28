@@ -2037,25 +2037,6 @@ public class Attr extends JCTree.Visitor {
 	    // If we're in an initializer, we need the actual scope 
 	    // so we can add params to it
 	    Scope scope = enter.enterScope(localEnv).getActualScope();
-	    while (!rpls.isEmpty()) {
-        	RPL rpl = null;
-        	VarSymbol indexVar = null;
-        	if (indexVars.head != null) {
-        	    indexVar =
-        		new VarSymbol(0, indexVars.head.name,
-        			syms.intType, scope.owner);
-        	    indexVars.head.sym = indexVar;
-        	    scope.enter(indexVar);
-        	}
-        	if (rpls.head != null) {
-        	    attribTree(rpls.head, localEnv, NIL, Type.noType);
-        	    rpl = rpls.head.rpl;
-        	}
-        	rplBuf.append(rpl);
-        	indexBuf.append(indexVar);
-        	rpls = rpls.tail;
-        	indexVars = indexVars.tail;
-            }
             elemtype = attribType(tree.elemtype, localEnv);
             chk.validate(tree.elemtype);
             owntype = elemtype;
@@ -2063,10 +2044,8 @@ public class Attr extends JCTree.Visitor {
             List<VarSymbol> indexSyms = indexBuf.toList().reverse();
             for (List<JCExpression> l = tree.dims; l.nonEmpty(); l = l.tail) {
                 attribExpr(l.head, env, syms.intType);
-                owntype = new ArrayType(owntype, rplSyms.head, 
-                	indexSyms.head, syms.arrayClass);
-                rplSyms = rplSyms.tail;
-                indexSyms = indexSyms.tail;
+                // FIXME
+                owntype = new ArrayType(owntype, null, null, syms.arrayClass);
             }
 	    localEnv.info.scope.leave();
         } else {

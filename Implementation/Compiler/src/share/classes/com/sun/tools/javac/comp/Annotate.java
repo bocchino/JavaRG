@@ -221,8 +221,7 @@ public class Annotate {
 	if (expected.tag == TypeTags.ARRAY) { // should really be isArray()
 	    if (tree.getTag() != JCTree.NEWARRAY) {
 		tree = make.at(tree.pos).
-		    NewArray(null, List.<JCExpression>nil(), 
-			     List.<DPJRegionPathList>nil(), List.of(tree));
+		    NewArray(null, List.<JCExpression>nil(), List.of(tree));
 	    }
 	    JCNewArray na = (JCNewArray)tree;
 	    if (na.elemtype != null) {
