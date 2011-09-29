@@ -33,4 +33,20 @@ public class ClassParams extends DPJTestCase {
 	compile("GroupParamsExtends");
     }
 
+    @Test public void testAllParamsExtends() throws Throwable {
+	compile("AllParamsExtends");
+    }
+    
+    @Test public void testRPLParamsImplements() throws Throwable {
+	compile("RPLParamsImplements");
+    }
+    
+    @Test public void testGroupParamsImplements() throws Throwable {
+	compile("GroupParamsImplements");
+    }
+    
+    @Test public void testAllParamsImplements() throws Throwable {
+	compile("AllParamsImplements");
+    }
+
 }

@@ -1143,13 +1143,10 @@ public abstract class Symbol implements Element {
         	new RegionParameterSymbol(flags_field, name, newOwner,
         		isAtomic);
             v.pos = pos;
-            //System.err.println("clone " + v + " in " + newOwner);//DEBUG
             return v;
         }
 
         public String toString() {
-            // TODO: Fix porting tool so code generation is not broken by
-            // printing the ID
             return name.toString() ;//+ " " + ID;
         }
         
