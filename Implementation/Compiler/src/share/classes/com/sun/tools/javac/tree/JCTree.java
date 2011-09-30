@@ -2403,6 +2403,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 	public JRGRefPerm(JCIdent group) {
 	    this.group = group;
 	}
+
+	public boolean isShared() {
+	    return group == null;
+	}
 	
 	@Override
 	public void accept(Visitor v) {

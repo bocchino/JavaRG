@@ -1880,13 +1880,13 @@ public class Parser {
                 }
                 /* fall through to default */
             default:
-        	if (tokenIsIdent("atomic") || tokenIsIdent("nonint")) {
-        	    stats.append(statement());
-        	    break;
-        	}
                 Name name = S.name();
+                JRGRefPerm refPerm = refPermOpt();
                 JCExpression t = term(EXPR | TYPE);
                 if (S.token() == COLON && t.getTag() == JCTree.IDENT) {
+                    if (!refPerm.isShared()) {
+                	syntaxError(S.pos(), "expected", "variable declaration");
+                    }
                     S.nextToken();
                     JCStatement stat = statement();
                     stats.append(F.at(pos).Labelled(name, stat));
@@ -1897,8 +1897,7 @@ public class Parser {
                     pos = S.pos();
                     JCModifiers mods = F.at(Position.NOPOS).Modifiers(0);
                     F.at(pos);
-                    // FIXME
-                    stats.appendList(variableDeclarators(mods, null, t, true,
+                    stats.appendList(variableDeclarators(mods, refPerm, t, true,
                                                          new ListBuffer<JCStatement>()));
                     // A "LocalVariableDeclarationStatement" subsumes the terminating semicolon
                     storeEnd(stats.elems.last(), S.endPos());
@@ -2214,18 +2213,18 @@ public class Parser {
     /** ForInit = StatementExpression MoreStatementExpressions
      *           |  { FINAL | '@' Annotation } Type VariableDeclarators
      */
-    boolean debug = false;
     List<JCStatement> forInit() {
         ListBuffer<JCStatement> stats = lb();
         int pos = S.pos();
         if (S.token() == FINAL || S.token() == MONKEYS_AT) {
             return variableDeclarators(optFinal(0), refPermOpt(), type(), false, stats).toList();
         } else {
+            JRGRefPerm refPerm = refPermOpt();
             JCExpression t = term(EXPR | TYPE);
             if ((lastmode & TYPE) != 0 &&
                 (S.token() == IDENTIFIER || S.token() == ASSERT || S.token() == ENUM)) {
-        	// FIXME
-        	return variableDeclarators(modifiersOpt(), null, t, false, stats).toList();
+        	return variableDeclarators(modifiersOpt(), refPerm, t, 
+        		false, stats).toList();
             }
             else
                 return moreStatementExpressions(pos, t, stats).toList();
@@ -3088,11 +3087,13 @@ public class Parser {
                 Name name = S.name();
                 pos = S.pos();
                 JCExpression type;
+                JRGRefPerm refPerm = null;
                 boolean isVoid = S.token() == VOID;
                 if (isVoid) {
                     type = to(F.at(pos).TypeIdent(TypeTags.VOID));
                     S.nextToken();
                 } else {
+                    refPerm = refPermOpt();
                     type = type();
                 }
                 if (S.token() == LPAREN && !isInterface && type.getTag() == JCTree.IDENT) {
@@ -3111,8 +3112,7 @@ public class Parser {
                     } else if (!isVoid && typarams.isEmpty() && 
                 	    (dpjParamInfo == null || !dpjParamInfo.hasParams())) {
                         List<JCTree> defs =
-                            // FIXME
-                            variableDeclaratorsRest(pos, mods, null, type, name, 
+                            variableDeclaratorsRest(pos, mods, refPerm, type, name, 
                         	    isInterface, true, dc, new ListBuffer<JCTree>()).toList();
                         storeEnd(defs.last(), S.endPos());
                         accept(SEMI);
