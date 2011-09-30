@@ -533,6 +533,18 @@ public class TreeMaker implements JCTree.Factory {
 	return tree;
     }
     
+    public JRGDerefSet DerefSet(JCExpression root, JCIdent group) {
+	JRGDerefSet tree = new JRGDerefSet(root, group);
+	tree.pos = pos;
+	return tree;
+    }
+
+    public JRGCopyPerm CopyPerm(JRGDerefSet derefSet, JCIdent targetGroup) {
+	JRGCopyPerm tree = new JRGCopyPerm(derefSet, targetGroup);
+	tree.pos = pos;
+	return tree;
+    }
+    
     public JRGEffectPerms EffectPerms(boolean isPure, List<DPJRegionPathList> readEffects,
 	    		    List<DPJRegionPathList> writeEffects) {
 	JRGEffectPerms tree = new JRGEffectPerms(isPure, readEffects, writeEffects);

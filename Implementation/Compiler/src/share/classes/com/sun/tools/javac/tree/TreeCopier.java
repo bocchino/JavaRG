@@ -43,7 +43,9 @@ import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.CompoundAssignmentTree;
 import com.sun.source.tree.ConditionalExpressionTree;
 import com.sun.source.tree.ContinueTree;
+import com.sun.source.tree.CopyPermTree;
 import com.sun.source.tree.DPJForLoopTree;
+import com.sun.source.tree.DerefSetTree;
 import com.sun.source.tree.DoWhileLoopTree;
 import com.sun.source.tree.EffectPermsTree;
 import com.sun.source.tree.EmptyStatementTree;
@@ -87,7 +89,6 @@ import com.sun.source.tree.VariableTree;
 import com.sun.source.tree.WhileLoopTree;
 import com.sun.source.tree.WildcardTree;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
-import com.sun.tools.javac.tree.JCTree.JRGEffectPerms;
 import com.sun.tools.javac.tree.JCTree.DPJForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
@@ -143,6 +144,9 @@ import com.sun.tools.javac.tree.JCTree.JCUnary;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JCWhileLoop;
 import com.sun.tools.javac.tree.JCTree.JCWildcard;
+import com.sun.tools.javac.tree.JCTree.JRGCopyPerm;
+import com.sun.tools.javac.tree.JCTree.JRGDerefSet;
+import com.sun.tools.javac.tree.JCTree.JRGEffectPerms;
 import com.sun.tools.javac.tree.JCTree.JRGMethodPerms;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
@@ -599,6 +603,20 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
 	JRGRefPerm refPerm = copy(t.refPerm, p);
 	// TODO:  More
 	return M.at(t.pos).MethodPerms(refPerm);
+    }
+    
+    public JCTree visitDerefSet(DerefSetTree node, P p) {
+	JRGDerefSet t = (JRGDerefSet) node;
+	JCExpression root = copy(t.root, p);
+	JCIdent group = copy(t.group, p);
+	return M.at(t.pos).DerefSet(root, group);
+    }
+    
+    public JCTree visitCopyPerm(CopyPermTree node, P p) {
+	JRGCopyPerm t = (JRGCopyPerm) node;
+	JRGDerefSet derefSet = copy(t.derefSet, p);
+	JCIdent targetGroup = copy(t.targetGroup, p);
+	return M.at(t.pos).CopyPerm(derefSet, targetGroup);
     }
     
     public JCTree visitEffectPerms(EffectPermsTree node, P p) {

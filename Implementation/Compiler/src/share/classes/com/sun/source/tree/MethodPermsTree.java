@@ -1,7 +1,7 @@
 package com.sun.source.tree;
 
 /**
- * A tree node for a set of method permissions.  These include
+ * A tree node for a set of method permissions.  These comprise
  * 1. A reference permission for 'this'.
  * 2. Copy permissions.
  * 3. Update permissions.

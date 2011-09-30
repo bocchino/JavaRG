@@ -180,6 +180,16 @@ public interface Tree {
          * Used for instances of {@link MethodPermsTree}.
          */
         METHOD_PERMS(MethodPermsTree.class),
+        
+        /**
+         * Used for instances of {@link CopyPermTree}.
+         */
+        COPY_PERM(CopyPermTree.class),
+
+        /**
+         * Used for instances of {@link DerefSetTree}.
+         */
+        DEREF_SET(DerefSetTree.class),
 
         /**
          * Used for instances of {@link MethodInvocationTree}.
