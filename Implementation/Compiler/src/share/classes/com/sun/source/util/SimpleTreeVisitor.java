@@ -280,6 +280,10 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
 	return defaultAction(node, p);
     }
 
+    public R visitUpdatePerm(UpdatePermTree node, P p) {
+	return defaultAction(node, p);
+    }
+
     public R visitEffectPerms(EffectPermsTree node, P p) { // DPJ
 	return defaultAction(node, p);
     }

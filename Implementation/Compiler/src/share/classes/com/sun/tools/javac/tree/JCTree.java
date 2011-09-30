@@ -93,6 +93,7 @@ import com.sun.source.tree.TryTree;
 import com.sun.source.tree.TypeCastTree;
 import com.sun.source.tree.TypeParameterTree;
 import com.sun.source.tree.UnaryTree;
+import com.sun.source.tree.UpdatePermTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.tree.WhileLoopTree;
 import com.sun.source.tree.WildcardTree;
@@ -421,10 +422,14 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     /** Copy permissions
      */
     public static final int COPY_PERM = DEREF_SET + 1;
+
+    /** Update permissions
+     */
+    public static final int UPDATE_PERM = COPY_PERM + 1;
     
     /** Effect permissions
      */
-    public static final int EFFECT_PERMS = COPY_PERM + 1;
+    public static final int EFFECT_PERMS = UPDATE_PERM + 1;
     
     /** Formal region parameter, of type RegionParameter.
      */
@@ -2508,14 +2513,24 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     
     public static class JRGCopyPerm extends JCTree implements CopyPermTree {
 
+	/** The dereference set D in 'copies D to G'.  Equals null for a 
+	 *  permission 'fresh G'.
+	 */
 	JRGDerefSet derefSet;
-	JCIdent targetGroup;
 	
-	protected JRGCopyPerm(JRGDerefSet derefSet, JCIdent targetGroup) {
+	/** The group G in 'copies D to G' or 'fresh G'.
+	 */
+	JCIdent group;
+	
+	protected JRGCopyPerm(JRGDerefSet derefSet, JCIdent group) {
 	    this.derefSet = derefSet;
-	    this.targetGroup = targetGroup;
+	    this.group = group;
 	}
 	
+	public boolean isFresh() {
+	    return derefSet == null;
+	}
+
 	@Override
 	public void accept(Visitor v) {
 	    v.visitCopyPerm(this);
@@ -2533,6 +2548,41 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
 	public Kind getKind() {
 	    return Kind.COPY_PERM;
+	}	
+    }
+
+    public static class JRGUpdatePerm extends JCTree implements UpdatePermTree {
+
+	public enum PermKind { PRESERVES, UPDATES };
+	
+	/** The kind of the group */
+	PermKind permKind; 
+	
+	/** The group G in 'preserves G' or 'updates G'. */
+	JCIdent group;
+	
+	protected JRGUpdatePerm(PermKind permKind, JCIdent group) {
+	    this.permKind = permKind;
+	    this.group = group;
+	}
+	
+	@Override
+	public void accept(Visitor v) {
+	    v.visitUpdatePerm(this);
+	}
+
+	@Override
+	public <R, D> R accept(TreeVisitor<R, D> v, D d) {
+	    return v.visitUpdatePerm(this, d);
+	}
+
+	@Override
+	public int getTag() {
+	    return UPDATE_PERM;
+	}
+
+	public Kind getKind() {
+	    return Kind.UPDATE_PERM;
 	}	
     }
 
@@ -2875,7 +2925,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         JRGRefPerm RefPerm(JCIdent group);
         JRGMethodPerms MethodPerms(JRGRefPerm refPerm);
         JRGDerefSet DerefSet(JCExpression root, JCIdent group);
-        JRGCopyPerm CopyPerm(JRGDerefSet derefSet, JCIdent targetGroup);
+        JRGCopyPerm CopyPerm(JRGDerefSet derefSet, JCIdent group);
         TypeBoundKind TypeBoundKind(BoundKind kind);
         JCAnnotation Annotation(JCTree annotationType, List<JCExpression> args);
         JCModifiers Modifiers(long flags, List<JCAnnotation> annotations);
@@ -2898,7 +2948,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitMethodPerms(JRGMethodPerms that)    { visitTree(that); }
         public void visitDerefSet(JRGDerefSet that)          { visitTree(that); }
         public void visitCopyPerm(JRGCopyPerm that)          { visitTree(that); }
-        public void visitEffectPerms(JRGEffectPerms that)              { visitTree(that); }
+        public void visitUpdatePerm(JRGUpdatePerm that)      { visitTree(that); }
+        public void visitEffectPerms(JRGEffectPerms that)    { visitTree(that); }
         public void visitSkip(JCSkip that)                   { visitTree(that); }
         public void visitBlock(JCBlock that)                 { visitTree(that); }
         public void visitDoLoop(JCDoWhileLoop that)          { visitTree(that); }

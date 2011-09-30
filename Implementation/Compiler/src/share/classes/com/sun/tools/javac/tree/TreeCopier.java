@@ -85,6 +85,7 @@ import com.sun.source.tree.TryTree;
 import com.sun.source.tree.TypeCastTree;
 import com.sun.source.tree.TypeParameterTree;
 import com.sun.source.tree.UnaryTree;
+import com.sun.source.tree.UpdatePermTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.tree.WhileLoopTree;
 import com.sun.source.tree.WildcardTree;
@@ -150,6 +151,7 @@ import com.sun.tools.javac.tree.JCTree.JRGEffectPerms;
 import com.sun.tools.javac.tree.JCTree.JRGMethodPerms;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
+import com.sun.tools.javac.tree.JCTree.JRGUpdatePerm;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.JCTree.TypeBoundKind;
 import com.sun.tools.javac.util.List;
@@ -615,8 +617,14 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitCopyPerm(CopyPermTree node, P p) {
 	JRGCopyPerm t = (JRGCopyPerm) node;
 	JRGDerefSet derefSet = copy(t.derefSet, p);
-	JCIdent targetGroup = copy(t.targetGroup, p);
+	JCIdent targetGroup = copy(t.group, p);
 	return M.at(t.pos).CopyPerm(derefSet, targetGroup);
+    }
+    
+    public JCTree visitUpdatePerm(UpdatePermTree node, P p) {
+	JRGUpdatePerm t = (JRGUpdatePerm) node;
+	JCIdent group = copy(t.group, p);
+	return M.at(t.pos).UpdatePerm(t.permKind, group);
     }
     
     public JCTree visitEffectPerms(EffectPermsTree node, P p) {

@@ -185,6 +185,11 @@ public interface Tree {
          * Used for instances of {@link CopyPermTree}.
          */
         COPY_PERM(CopyPermTree.class),
+        
+        /**
+         * Used for instances of {@link UpdatePermTree}.
+         */
+        UPDATE_PERM(UpdatePermTree.class),
 
         /**
          * Used for instances of {@link DerefSetTree}.

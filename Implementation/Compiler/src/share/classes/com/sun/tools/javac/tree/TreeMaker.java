@@ -539,8 +539,14 @@ public class TreeMaker implements JCTree.Factory {
 	return tree;
     }
 
-    public JRGCopyPerm CopyPerm(JRGDerefSet derefSet, JCIdent targetGroup) {
-	JRGCopyPerm tree = new JRGCopyPerm(derefSet, targetGroup);
+    public JRGCopyPerm CopyPerm(JRGDerefSet derefSet, JCIdent group) {
+	JRGCopyPerm tree = new JRGCopyPerm(derefSet, group);
+	tree.pos = pos;
+	return tree;
+    }
+    
+    public JRGUpdatePerm UpdatePerm(JRGUpdatePerm.PermKind permKind, JCIdent group) {
+	JRGUpdatePerm tree = new JRGUpdatePerm(permKind, group);
 	tree.pos = pos;
 	return tree;
     }

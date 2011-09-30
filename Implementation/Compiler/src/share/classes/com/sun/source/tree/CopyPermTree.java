@@ -5,5 +5,5 @@ package com.sun.source.tree;
  */
 
 public interface CopyPermTree extends Tree {
-
+    public boolean isFresh();
 }
