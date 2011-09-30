@@ -84,7 +84,7 @@ import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
-import com.sun.tools.javac.tree.JCTree.DPJEffect;
+import com.sun.tools.javac.tree.JCTree.JRGEffectPerms;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
@@ -426,7 +426,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                    List<JCVariableDecl> params,
                    JCTree res,
                    List<JCExpression> thrown,
-                   DPJEffect effects,
+                   JRGEffectPerms effects,
                    Env<AttrContext> env) {
 
         // Enter and attribute region and effect parameters.

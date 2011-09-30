@@ -172,7 +172,7 @@ public class TreeMaker implements JCTree.Factory {
                                List<JCExpression> thrown,
                                JCBlock body,
                                JCExpression defaultValue,
-                               DPJEffect effects)
+                               JRGEffectPerms effects)
     {
         JCMethodDecl tree = new JCMethodDecl(mods,
                                        name,
@@ -527,11 +527,15 @@ public class TreeMaker implements JCTree.Factory {
 	return tree;
     }
     
-    public DPJEffect Effect(boolean isPure, List<DPJRegionPathList> readEffects,
-	    		    List<DPJRegionPathList> writeEffects,
-	    		    List<JCIdent> variableEffects) {
-	DPJEffect tree = new DPJEffect(isPure, readEffects, writeEffects,
-				       variableEffects);
+    public JRGMethodPerms MethodPerms(JRGRefPerm refPerm) {
+	JRGMethodPerms tree = new JRGMethodPerms(refPerm);
+	tree.pos = pos;
+	return tree;
+    }
+    
+    public JRGEffectPerms EffectPerms(boolean isPure, List<DPJRegionPathList> readEffects,
+	    		    List<DPJRegionPathList> writeEffects) {
+	JRGEffectPerms tree = new JRGEffectPerms(isPure, readEffects, writeEffects);
 	tree.pos = pos;
 	return tree;
     }

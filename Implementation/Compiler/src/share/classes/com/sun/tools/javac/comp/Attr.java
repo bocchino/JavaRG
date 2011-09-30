@@ -118,7 +118,7 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
-import com.sun.tools.javac.tree.JCTree.DPJEffect;
+import com.sun.tools.javac.tree.JCTree.JRGEffectPerms;
 import com.sun.tools.javac.tree.JCTree.DPJForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
@@ -272,7 +272,7 @@ public class Attr extends JCTree.Visitor {
 
 	        if (tree.effects != null) {
 	            // Attribute method effects now!
-	            attr.visitEffect(tree.effects);
+	            attr.visitEffectPerms(tree.effects);
 
 	            // Store resolved effects in the method symbol
 	            m.effects = tree.effects.effects;
@@ -719,10 +719,10 @@ public class Attr extends JCTree.Visitor {
         return buf.toList();
     }
     
-    List<Effects> attribEffects(List<DPJEffect> trees) {
+    List<Effects> attribEffects(List<JRGEffectPerms> trees) {
 	//if (trees == null) return List.nil();
 	ListBuffer<Effects> buf = ListBuffer.lb();
-	for (DPJEffect tree : trees) {
+	for (JRGEffectPerms tree : trees) {
 	    attribTree(tree, env, Kinds.EFFECT, Type.noType);
 	    buf.append(tree.effects);
 	}
@@ -3713,31 +3713,21 @@ public class Attr extends JCTree.Visitor {
 	}
     }
     
-    public void visitEffect(DPJEffect tree) {
-	attribRPLs(tree.readEffects);
-	attribRPLs(tree.writeEffects);
-	for (JCIdent param : tree.variableEffects) {
-	    attribTree(param, env, Kinds.EFFECT, Type.noType);
-	}
+    public void visitEffectPerms(JRGEffectPerms tree) {
+	attribRPLs(tree.readEffectPerms);
+	attribRPLs(tree.writeEffectPerms);
 	tree.effects = new Effects();
 	if (tree.isPure) {
 	    // Nothing to do
-	} else if (tree.readEffects.nonEmpty() ||
-		tree.writeEffects.nonEmpty() ||
-		tree.variableEffects.nonEmpty()) {
-	    for (DPJRegionPathList treeRPL : tree.readEffects) {
+	} else if (tree.readEffectPerms.nonEmpty() ||
+		tree.writeEffectPerms.nonEmpty()) {
+	    for (DPJRegionPathList treeRPL : tree.readEffectPerms) {
 		tree.effects.add(new Effect.ReadEffect(rpls, treeRPL.rpl, 
 			false, false));
 	    }
-	    for (DPJRegionPathList treeRPL : tree.writeEffects) {
+	    for (DPJRegionPathList treeRPL : tree.writeEffectPerms) {
 		    tree.effects.add(new Effect.WriteEffect(rpls, treeRPL.rpl, 
 			false, false));
-	    }
-	    for (JCIdent treeEffectParam : tree.variableEffects) {
-		if (treeEffectParam.sym instanceof EffectParameterSymbol) {
-		    tree.effects.add(new Effect.VariableEffect((EffectParameterSymbol) 
-			treeEffectParam.sym));
-		}
 	    }
 	} else {
 	    // Default effect = writes Root : *

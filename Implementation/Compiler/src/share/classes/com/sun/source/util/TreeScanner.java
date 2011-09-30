@@ -43,7 +43,7 @@ import com.sun.source.tree.ConditionalExpressionTree;
 import com.sun.source.tree.ContinueTree;
 import com.sun.source.tree.DPJForLoopTree;
 import com.sun.source.tree.DoWhileLoopTree;
-import com.sun.source.tree.EffectTree;
+import com.sun.source.tree.EffectPermsTree;
 import com.sun.source.tree.EmptyStatementTree;
 import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.source.tree.ErroneousTree;
@@ -58,6 +58,7 @@ import com.sun.source.tree.LabeledStatementTree;
 import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.MethodPermsTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.NewArrayTree;
@@ -457,7 +458,11 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
 	return null;
     }
     
-    public R visitMethEffects(EffectTree node, P p) { // DPJ
+    public R visitMethodPerms(MethodPermsTree node, P p) {
+	return null;
+    }
+    
+    public R visitEffectPerms(EffectPermsTree node, P p) { // DPJ
 	return null; // DPJ FIXME
     }
     

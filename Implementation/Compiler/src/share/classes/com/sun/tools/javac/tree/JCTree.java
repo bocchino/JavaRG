@@ -52,7 +52,7 @@ import com.sun.source.tree.ConditionalExpressionTree;
 import com.sun.source.tree.ContinueTree;
 import com.sun.source.tree.DPJForLoopTree;
 import com.sun.source.tree.DoWhileLoopTree;
-import com.sun.source.tree.EffectTree;
+import com.sun.source.tree.EffectPermsTree;
 import com.sun.source.tree.EmptyStatementTree;
 import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.source.tree.ExpressionStatementTree;
@@ -66,6 +66,7 @@ import com.sun.source.tree.LabeledStatementTree;
 import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.MethodPermsTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.NewArrayTree;
 import com.sun.source.tree.NewClassTree;
@@ -399,21 +400,25 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      */
     public static final int RPL = RPLELEMENT + 1;
     
-    /** Reference permissions, of type RefPerm.
-     */
-    public static final int REFPERM = RPL + 1;
-    
     /** Region definitions, of type RegionDef. // DPJ
      */
-    public static final int REGIONDEF = REFPERM + 1;
+    public static final int REGIONDEF = RPL + 1;
     
-    /** Method effects // DPJ
+    /** Reference permissions, of type RefPerm.
      */
-    public static final int METHOD_EFFECTS = REGIONDEF + 1;
+    public static final int REFPERM = REGIONDEF + 1;
+    
+    /** Method permissions
+     */
+    public static final int METHOD_PERMS = REFPERM + 1;
+    
+    /** Effect permissions
+     */
+    public static final int EFFECT_PERMS = METHOD_PERMS + 1;
     
     /** Formal region parameter, of type RegionParameter.
      */
-    public static final int REGIONPARAMETER = METHOD_EFFECTS + 1;
+    public static final int REGIONPARAMETER = EFFECT_PERMS + 1;
     
     /** Region parameter info
      */
@@ -771,7 +776,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCExpression> thrown;
         public JCBlock body;
         public JCExpression defaultValue; // for annotation types
-        public DPJEffect effects;
+        public JRGEffectPerms effects;
         public MethodSymbol sym;
 	public Lint lint;
 
@@ -784,7 +789,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                             List<JCExpression> thrown,
                             JCBlock body,
                             JCExpression defaultValue,
-                            DPJEffect effects,
+                            JRGEffectPerms effects,
                             MethodSymbol sym)
         {
             this.mods = mods;
@@ -2429,40 +2434,70 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 	
     }
     
-    public static class DPJEffect extends JCTree implements EffectTree {
+    public static class JRGMethodPerms extends JCTree implements MethodPermsTree {
 
-	public boolean isPure;
-	public List<DPJRegionPathList> readEffects;
-	public List<DPJRegionPathList> writeEffects;
-	public List<JCIdent> variableEffects;
-	public Effects effects;
+	public JRGRefPerm refPerm;
+	// TODO: Copy perms
+	// TODO: Update perms
+	public JRGEffectPerms effectPerms;
 	
-	protected DPJEffect(boolean isPure, List<DPJRegionPathList> readEffects,
-		            List<DPJRegionPathList> writeEffects,
-		            List<JCIdent> variableEffects) {
-	    this.isPure = isPure;
-	    this.readEffects = readEffects;
-	    this.writeEffects = writeEffects;
-	    this.variableEffects = variableEffects;
+	protected JRGMethodPerms(JRGRefPerm refPerm) {
+	    this.refPerm = refPerm;
+	    // TODO:  More
 	}
 	
 	@Override
 	public void accept(Visitor v) {
-	    v.visitEffect(this);
+	    v.visitMethodPerms(this);
 	}
 
 	@Override
 	public <R, D> R accept(TreeVisitor<R, D> v, D d) {
-	    return v.visitMethEffects(this, d);
+	    return v.visitMethodPerms(this, d);
 	}
 
 	@Override
 	public int getTag() {
-	    return METHOD_EFFECTS;
+	    return METHOD_PERMS;
 	}
 
 	public Kind getKind() {
-	    return Kind.METHOD_EFFECTS;
+	    return Kind.METHOD_PERMS;
+	}	
+    }
+    
+    public static class JRGEffectPerms extends JCTree implements EffectPermsTree {
+
+	public boolean isPure;
+	// TODO:  Make read and write effect perms a List<JRGEffectPerm>.
+	public List<DPJRegionPathList> readEffectPerms;
+	public List<DPJRegionPathList> writeEffectPerms;
+	public Effects effects;
+	
+	protected JRGEffectPerms(boolean isPure, List<DPJRegionPathList> readEffectPerms,
+		            List<DPJRegionPathList> writeEffectPerms) {
+	    this.isPure = isPure;
+	    this.readEffectPerms = readEffectPerms;
+	    this.writeEffectPerms = writeEffectPerms;
+	}
+	
+	@Override
+	public void accept(Visitor v) {
+	    v.visitEffectPerms(this);
+	}
+
+	@Override
+	public <R, D> R accept(TreeVisitor<R, D> v, D d) {
+	    return v.visitEffectPerms(this, d);
+	}
+
+	@Override
+	public int getTag() {
+	    return EFFECT_PERMS;
+	}
+
+	public Kind getKind() {
+	    return Kind.EFFECT_PERMS;
 	}	
     }
     
@@ -2688,7 +2723,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                             List<JCExpression> thrown,
                             JCBlock body,
                             JCExpression defaultValue,
-                            DPJEffect effects);
+                            JRGEffectPerms effects);
         JCVariableDecl VarDef(JCModifiers mods,
                       Name name,
                       DPJRegionPathList rpl, // DPJ
@@ -2761,13 +2796,14 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         		List<JCIdent> effectParams);
         DPJRegionPathListElt RegionPathListElt(JCExpression exp, int t);
         DPJRegionPathList RegionPathList(List<DPJRegionPathListElt> elts);
-        DPJEffect Effect(boolean isPure,
+        JRGEffectPerms EffectPerms(boolean isPure,
 			               List<DPJRegionPathList> readEffects,
-			               List<DPJRegionPathList> writeEffects,
-			               List<JCIdent> variableEffects);
+			               List<DPJRegionPathList> writeEffects);
         DPJRegionDecl RegionDecl(JCModifiers mods, Name name);
         JRGPardo Pardo(JCStatement body, boolean isNonDet);
         JCWildcard Wildcard(TypeBoundKind kind, JCTree type);
+        JRGRefPerm RefPerm(JCIdent group);
+        JRGMethodPerms MethodPerms(JRGRefPerm refPerm);
         TypeBoundKind TypeBoundKind(BoundKind kind);
         JCAnnotation Annotation(JCTree annotationType, List<JCExpression> args);
         JCModifiers Modifiers(long flags, List<JCAnnotation> annotations);
@@ -2783,11 +2819,12 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitClassDef(JCClassDecl that)          { visitTree(that); }
         public void visitMethodDef(JCMethodDecl that)        { visitTree(that); }
         public void visitVarDef(JCVariableDecl that)         { visitTree(that); }
-        public void visitRegionDecl(DPJRegionDecl that)       { visitTree(that); } // DPJ
-        public void visitRPLElt(DPJRegionPathListElt that)   { visitTree(that); } // DPJ
-        public void visitRPL(DPJRegionPathList that)         { visitTree(that); } // DPJ
+        public void visitRegionDecl(DPJRegionDecl that)      { visitTree(that); }
+        public void visitRPLElt(DPJRegionPathListElt that)   { visitTree(that); }
+        public void visitRPL(DPJRegionPathList that)         { visitTree(that); }
         public void visitRefPerm(JRGRefPerm that)            { visitTree(that); }
-        public void visitEffect(DPJEffect that)  { visitTree(that); } // DPJ
+        public void visitMethodPerms(JRGMethodPerms that)    { visitTree(that); }
+        public void visitEffectPerms(JRGEffectPerms that)              { visitTree(that); }
         public void visitSkip(JCSkip that)                   { visitTree(that); }
         public void visitBlock(JCBlock that)                 { visitTree(that); }
         public void visitDoLoop(JCDoWhileLoop that)          { visitTree(that); }

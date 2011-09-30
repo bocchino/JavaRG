@@ -174,7 +174,12 @@ public interface Tree {
         /**
          * Used for instances of {@link MethodEffectsTree}.
          */
-        METHOD_EFFECTS(EffectTree.class),
+        EFFECT_PERMS(EffectPermsTree.class),
+        
+        /**
+         * Used for instances of {@link MethodPermsTree}.
+         */
+        METHOD_PERMS(MethodPermsTree.class),
 
         /**
          * Used for instances of {@link MethodInvocationTree}.

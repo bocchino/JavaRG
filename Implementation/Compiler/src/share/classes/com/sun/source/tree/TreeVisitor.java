@@ -108,7 +108,8 @@ public interface TreeVisitor<R,P> {
     R visitRPLElt(RPLEltTree node, P p); // DPJ
     R visitRPL(RPLTree node, P p); // DPJ
     R visitRefPerm(RefPermTree node, P p);
-    R visitMethEffects(EffectTree node, P p); // DPJ
+    R visitMethodPerms(MethodPermsTree node, P p);
+    R visitEffectPerms(EffectPermsTree node, P p); // DPJ
     R visitWhileLoop(WhileLoopTree node, P p);
     R visitWildcard(WildcardTree node, P p);
     R visitCobegin(PardoTree node, P p); // DPJ

@@ -45,7 +45,7 @@ import com.sun.source.tree.ConditionalExpressionTree;
 import com.sun.source.tree.ContinueTree;
 import com.sun.source.tree.DPJForLoopTree;
 import com.sun.source.tree.DoWhileLoopTree;
-import com.sun.source.tree.EffectTree;
+import com.sun.source.tree.EffectPermsTree;
 import com.sun.source.tree.EmptyStatementTree;
 import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.source.tree.ErroneousTree;
@@ -59,6 +59,7 @@ import com.sun.source.tree.LabeledStatementTree;
 import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.MethodPermsTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.NewArrayTree;
@@ -86,7 +87,7 @@ import com.sun.source.tree.VariableTree;
 import com.sun.source.tree.WhileLoopTree;
 import com.sun.source.tree.WildcardTree;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
-import com.sun.tools.javac.tree.JCTree.DPJEffect;
+import com.sun.tools.javac.tree.JCTree.JRGEffectPerms;
 import com.sun.tools.javac.tree.JCTree.DPJForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
@@ -142,6 +143,7 @@ import com.sun.tools.javac.tree.JCTree.JCUnary;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JCWhileLoop;
 import com.sun.tools.javac.tree.JCTree.JCWildcard;
+import com.sun.tools.javac.tree.JCTree.JRGMethodPerms;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
@@ -370,7 +372,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         List<JCExpression> thrown = copy(t.thrown, p);
         JCBlock body = copy(t.body, p);
         JCExpression defaultValue = copy(t.defaultValue, p);
-        DPJEffect effects = t.effects;
+        JRGEffectPerms effects = t.effects;
         JCMethodDecl result = M.at(t.pos).MethodDef(mods, t.name, restype, rgnParamInfo,
         	typarams, params, thrown, body, defaultValue, effects);
         result.sym = t.sym;
@@ -592,13 +594,18 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
 	return M.at(t.pos).RefPerm(group);
     }
     
-    public JCTree visitMethEffects(EffectTree node, P p) {
-	DPJEffect t = (DPJEffect) node;
-	List<DPJRegionPathList> readEffects = copy(t.readEffects, p);
-	List<DPJRegionPathList> writeEffects = copy(t.writeEffects, p);
-	List<JCIdent> variableEffects = copy(t.variableEffects, p);
-	return M.at(t.pos).Effect(t.isPure, readEffects, writeEffects,
-		variableEffects);
+    public JCTree visitMethodPerms(MethodPermsTree node, P p) {
+	JRGMethodPerms t = (JRGMethodPerms) node;
+	JRGRefPerm refPerm = copy(t.refPerm, p);
+	// TODO:  More
+	return M.at(t.pos).MethodPerms(refPerm);
+    }
+    
+    public JCTree visitEffectPerms(EffectPermsTree node, P p) {
+	JRGEffectPerms t = (JRGEffectPerms) node;
+	List<DPJRegionPathList> readEffects = copy(t.readEffectPerms, p);
+	List<DPJRegionPathList> writeEffects = copy(t.writeEffectPerms, p);
+	return M.at(t.pos).EffectPerms(t.isPure, readEffects, writeEffects);
     }
     
     public JCTree visitRegionParameter(RegionParameterTree node, P p) {

@@ -589,13 +589,13 @@ public class Pretty extends JCTree.Visitor {
         	if (tree.effects.isPure) {
         	    print(" pure");          
         	} else {        	    
-        	    if (tree.effects.readEffects.nonEmpty()) {
+        	    if (tree.effects.readEffectPerms.nonEmpty()) {
         		print(" reads ");
-        		printExprs(tree.effects.readEffects);
+        		printExprs(tree.effects.readEffectPerms);
         	    }
-        	    if (tree.effects.writeEffects.nonEmpty()) {
+        	    if (tree.effects.writeEffectPerms.nonEmpty()) {
         		print(" writes ");
-        		printExprs(tree.effects.writeEffects);
+        		printExprs(tree.effects.writeEffectPerms);
         	    }
         	}
             }

@@ -5,7 +5,7 @@ import java.util.HashSet;
 
 import com.sun.tools.javac.parser.Parser;
 import com.sun.tools.javac.tree.TreeScanner;
-import com.sun.tools.javac.tree.JCTree.DPJEffect;
+import com.sun.tools.javac.tree.JCTree.JRGEffectPerms;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
@@ -340,9 +340,9 @@ public class DPJAnnotationCounter extends TreeScanner {
     }
     
     @Override
-    public void visitEffect(DPJEffect tree) {
-	if (tree.isPure || tree.readEffects.nonEmpty() ||
-		tree.writeEffects.nonEmpty())
+    public void visitEffectPerms(JRGEffectPerms tree) {
+	if (tree.isPure || tree.readEffectPerms.nonEmpty() ||
+		tree.writeEffectPerms.nonEmpty())
 	    addLineFor(tree.pos);
 	else
 	    return;
@@ -360,15 +360,15 @@ public class DPJAnnotationCounter extends TreeScanner {
 	    assert false;
 	}
 	Context savedContext = context;	
-	if (tree.readEffects != null && tree.readEffects.size() > 0) {
+	if (tree.readEffectPerms != null && tree.readEffectPerms.size() > 0) {
 	    ++readEffectCount;
 	    context = Context.READ_EFFECT;
-	    scan(tree.readEffects);
+	    scan(tree.readEffectPerms);
 	}
-	if (tree.writeEffects != null && tree.writeEffects.size() > 0) {
+	if (tree.writeEffectPerms != null && tree.writeEffectPerms.size() > 0) {
 	    ++writeEffectCount;
 	    context = Context.WRITE_EFFECT;
-	    scan(tree.writeEffects);
+	    scan(tree.writeEffectPerms);
 	}
 	context = savedContext;
     }
