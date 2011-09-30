@@ -502,8 +502,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     /** Enter members from a list of trees.
      */
     void memberEnter(List<? extends JCTree> trees, Env<AttrContext> env) {
-        for (List<? extends JCTree> l = trees; l.nonEmpty(); l = l.tail)
-            memberEnter(l.head, env);
+	if (trees != null)
+	    for (List<? extends JCTree> l = trees; l.nonEmpty(); l = l.tail)
+		memberEnter(l.head, env);
     }
 
     /** Enter members for a class.

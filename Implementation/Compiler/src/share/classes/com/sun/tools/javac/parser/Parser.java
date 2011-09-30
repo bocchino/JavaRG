@@ -3040,7 +3040,7 @@ public class Parser {
      *      ( RefPermOpt Type Ident
      *        ( VariableDeclaratorsRest ";" | MethodDeclaratorRest )
      *      | VOID Ident MethodDeclaratorRest
-     *      | Parameters (Type | VOID) Ident MethodDeclaratorRest
+     *      | Parameters (RefPermOpt Type | VOID) Ident MethodDeclaratorRest
      *      | Ident ConstructorDeclaratorRest
      *      | Parameters Ident ConstructorDeclaratorRest
      *      | ClassOrInterfaceOrEnumDeclaration
@@ -3100,14 +3100,14 @@ public class Parser {
                     if (isInterface || name != className)
                         log.error(pos, "invalid.meth.decl.ret.type.req");
                     return List.of(methodDeclaratorRest(
-                        pos, mods, null, names.init, dpjParamInfo, typarams,
+                        pos, mods, null, null, names.init, dpjParamInfo, typarams,
                         isInterface, true, dc));
                 } else {
                     pos = S.pos();
                     name = ident();
                     if (S.token() == LPAREN) {
                         return List.of(methodDeclaratorRest(
-                            pos, mods, type, name, dpjParamInfo, typarams,
+                            pos, mods, refPerm, type, name, dpjParamInfo, typarams,
                             isInterface, isVoid, dc));
                     } else if (!isVoid && typarams.isEmpty() && 
                 	    (dpjParamInfo == null || !dpjParamInfo.hasParams())) {
@@ -3190,6 +3190,7 @@ public class Parser {
      */
     JCTree methodDeclaratorRest(int pos,
                               JCModifiers mods,
+                              JRGRefPerm refPerm,
                               JCExpression type,
                               Name name,
                               JCTree.DPJParamInfo rgnParamInfo,
