@@ -3120,41 +3120,39 @@ public class Attr extends JCTree.Visitor {
         	} while (counter++ < size);
             }
 
-            // Use the # of RPL params to separate the RPL args from the group args
-            counter = 0;
-            size = rplFormals.size();
-            listptr = rplArgs;
-            List<JCExpression> groupArgs = List.nil();
-            if (size > rplArgs.size() && rplArgs.nonEmpty()) {
-        	log.error(tree.pos(), "wrong.number.rpl.args",
-        		Integer.toString(size));
-            } else {
-        	do {
-        	    if (counter >= size) {
-        		if (counter == 0) {
-        		    // No RPL arguments expected!
-        		    groupArgs = rplArgs;
-        		    rplArgs = List.nil();
-        		} else {
-        		    // Rest of list from listptr.tail is rpl args
-        		    groupArgs = listptr.tail;
-        		    listptr.tail = List.nil();
-        		}
-        	    } else {
-        		if (listptr == null || listptr.head == null) {
-        		    log.error(tree.pos(), "wrong.number.rpl.args",
-        			    Integer.toString(typeFormals.length()));
-        	    		break;
-        		} else {
-        		    if (counter > 0)
-        			listptr = listptr.tail;
-        		}
-        	    }
-        	} while (counter++ < size);
-            }
-
-
             if (tree.rplArgs == null) {
+        	// Use the # of RPL params to separate the RPL args from the group args
+        	counter = 0;
+        	size = rplFormals.size();
+        	listptr = rplArgs;
+        	List<JCExpression> groupArgs = List.nil();
+        	if (size > rplArgs.size() && rplArgs.nonEmpty()) {
+        	    log.error(tree.pos(), "wrong.number.rpl.args",
+        		    Integer.toString(size));
+        	} else {
+        	    do {
+        		if (counter >= size) {
+        		    if (counter == 0) {
+        			// No RPL arguments expected!
+        			groupArgs = rplArgs;
+        			rplArgs = List.nil();
+        		    } else {
+        			// Rest of list from listptr.tail is rpl args
+        			groupArgs = listptr.tail;
+        			listptr.tail = List.nil();
+        		    }
+        		} else {
+        		    if (listptr == null || listptr.head == null) {
+        			log.error(tree.pos(), "wrong.number.rpl.args",
+        				Integer.toString(typeFormals.length()));
+        			break;
+        		    } else {
+        			if (counter > 0)
+        			    listptr = listptr.tail;
+        		    }
+        		}
+        	    } while (counter++ < size);
+        	}
         	// Construct the list of rpl arguments and store it in the AST
         	tree.rplArgs = asRPLs(rplArgs);
             } else {
@@ -3729,11 +3727,11 @@ public class Attr extends JCTree.Visitor {
 		tree.variableEffects.nonEmpty()) {
 	    for (DPJRegionPathList treeRPL : tree.readEffects) {
 		tree.effects.add(new Effect.ReadEffect(rpls, treeRPL.rpl, 
-			treeRPL.isAtomic, treeRPL.isNonint));
+			false, false));
 	    }
 	    for (DPJRegionPathList treeRPL : tree.writeEffects) {
 		    tree.effects.add(new Effect.WriteEffect(rpls, treeRPL.rpl, 
-			treeRPL.isAtomic, treeRPL.isNonint));
+			false, false));
 	    }
 	    for (JCIdent treeEffectParam : tree.variableEffects) {
 		if (treeEffectParam.sym instanceof EffectParameterSymbol) {

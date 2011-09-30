@@ -264,6 +264,10 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
 	return defaultAction(node, p);
     }
     
+    public R visitRefPerm(RefPermTree node, P p) {
+	return defaultAction(node, p);
+    }
+    
     public R visitMethEffects(EffectTree node, P p) { // DPJ
 	return defaultAction(node, p);
     }
@@ -288,7 +292,7 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
 	return defaultAction(node, p);
     }
     
-    public R visitCobegin(CobeginTree node, P p) {
+    public R visitCobegin(PardoTree node, P p) {
 	return defaultAction(node, p);
     }
     

@@ -662,8 +662,6 @@ public class Pretty extends JCTree.Visitor {
             printDocComment(tree);
             printExpr(tree.mods);
             print("region ");
-            if (tree.isAtomic)
-        	print("atomic ");
             print(tree.name);
             print(";");
         } catch (IOException e) {

@@ -354,7 +354,7 @@ public class Enter extends JCTree.Visitor {
         if (env.info.scope.owner.kind == TYP) {
             Scope enclScope = enterScope(env);
             RegionNameSymbol v =
-        	new RegionNameSymbol(0, tree.name, enclScope.owner, tree.isAtomic);
+        	new RegionNameSymbol(0, tree.name, enclScope.owner, false);
             v.flags_field = STATIC | chk.checkFlags(tree.pos(), tree.mods.flags, v, tree);
             tree.sym = v;
             if (chk.checkUnique(tree.pos(), v, enclScope)) {

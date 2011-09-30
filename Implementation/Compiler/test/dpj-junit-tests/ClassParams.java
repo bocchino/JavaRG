@@ -1,5 +1,5 @@
 /**
- * Some placeholder tests
+ * Tests for class parameters
  * 
  * @author Rob Bocchino
  */

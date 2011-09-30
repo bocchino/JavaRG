@@ -521,6 +521,12 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
     
+    public JRGRefPerm RefPerm(JCIdent group) {
+	JRGRefPerm tree = new JRGRefPerm(group);
+	tree.pos = pos;
+	return tree;
+    }
+    
     public DPJEffect Effect(boolean isPure, List<DPJRegionPathList> readEffects,
 	    		    List<DPJRegionPathList> writeEffects,
 	    		    List<JCIdent> variableEffects) {

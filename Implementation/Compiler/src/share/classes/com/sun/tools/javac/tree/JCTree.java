@@ -40,14 +40,12 @@ import com.sun.source.tree.ArrayAccessTree;
 import com.sun.source.tree.ArrayTypeTree;
 import com.sun.source.tree.AssertTree;
 import com.sun.source.tree.AssignmentTree;
-import com.sun.source.tree.AtomicTree;
 import com.sun.source.tree.BinaryTree;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.BreakTree;
 import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.CatchTree;
 import com.sun.source.tree.ClassTree;
-import com.sun.source.tree.CobeginTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.CompoundAssignmentTree;
 import com.sun.source.tree.ConditionalExpressionTree;
@@ -59,7 +57,6 @@ import com.sun.source.tree.EmptyStatementTree;
 import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.source.tree.ExpressionStatementTree;
 import com.sun.source.tree.ExpressionTree;
-import com.sun.source.tree.FinishTree;
 import com.sun.source.tree.ForLoopTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.IfTree;
@@ -72,18 +69,17 @@ import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.NewArrayTree;
 import com.sun.source.tree.NewClassTree;
-import com.sun.source.tree.NonintTree;
 import com.sun.source.tree.ParamInfoTree;
 import com.sun.source.tree.ParameterizedTypeTree;
+import com.sun.source.tree.PardoTree;
 import com.sun.source.tree.ParenthesizedTree;
 import com.sun.source.tree.PrimitiveTypeTree;
 import com.sun.source.tree.RPLEltTree;
 import com.sun.source.tree.RPLTree;
-import com.sun.source.tree.RegionParamTypeTree;
+import com.sun.source.tree.RefPermTree;
 import com.sun.source.tree.RegionParameterTree;
 import com.sun.source.tree.RegionTree;
 import com.sun.source.tree.ReturnTree;
-import com.sun.source.tree.SpawnTree;
 import com.sun.source.tree.StatementTree;
 import com.sun.source.tree.SwitchTree;
 import com.sun.source.tree.SynchronizedTree;
@@ -105,23 +101,22 @@ import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLElement;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.TypeTags;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.RegionNameSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.MethodType;
+import com.sun.tools.javac.code.TypeTags;
 import com.sun.tools.javac.comp.Attr;
-import com.sun.tools.javac.parser.Parser;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Pair;
 import com.sun.tools.javac.util.Position;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 /**
  * Root class for abstract syntax tree nodes. It provides definitions
@@ -404,9 +399,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      */
     public static final int RPL = RPLELEMENT + 1;
     
+    /** Reference permissions, of type RefPerm.
+     */
+    public static final int REFPERM = RPL + 1;
+    
     /** Region definitions, of type RegionDef. // DPJ
      */
-    public static final int REGIONDEF = RPL + 1;
+    public static final int REGIONDEF = REFPERM + 1;
     
     /** Method effects // DPJ
      */
@@ -890,7 +889,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCModifiers mods;
         public Name name;
         public RegionNameSymbol sym;
-        public boolean isAtomic;
         protected DPJRegionDecl(JCModifiers mods,
 			 Name name,
 			 RegionNameSymbol sym) {
@@ -904,10 +902,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public Kind getKind() { return Kind.REGION; }
         public JCModifiers getModifiers() { return mods; }
         public Name getName() { return name; }
-        //public JCTree getType() { return vartype; }
-        //public JCExpression getInitializer() {
-        //    return init;
-        //}
         @Override
         public <R,D> R accept(TreeVisitor<R,D> v, D d) {
             return v.visitRegion(this, d);
@@ -1030,7 +1024,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     /**
      * A DPJ cobegin statement
      */
-    public static class JRGPardo extends JCStatement implements CobeginTree {
+    public static class JRGPardo extends JCStatement implements PardoTree {
 	/**
 	 * Is this a cobegin_nd?
 	 */
@@ -1072,7 +1066,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public void accept(Visitor v) { v.visitCobegin(this); }
 
-        public Kind getKind() { return Kind.COBEGIN; }
+        public Kind getKind() { return Kind.PARDO; }
         public JCStatement getStatement() { return body; }
         @Override
         public <R,D> R accept(TreeVisitor<R,D> v, D d) {
@@ -2368,12 +2362,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     public static class DPJRegionPathList extends JCExpression implements RPLTree {
 
-	/** For atomic effects */
-	public boolean isAtomic;
-	
-	/** For nonint effect */
-	public boolean isNonint;
-	
 	public List<DPJRegionPathListElt> elts;
 	
 	/** Associated RPL */
@@ -2404,6 +2392,39 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 	
     }
         
+    public static class JRGRefPerm extends JCExpression implements RefPermTree {
+
+	/** Group G in 'unique(G)'; set to 'null' if permission is 'shared' */
+	public JCIdent group;
+	
+	/** Internal representation */
+	// public RefPerm refPerm;
+	
+	public JRGRefPerm(JCIdent group) {
+	    this.group = group;
+	}
+	
+	@Override
+	public void accept(Visitor v) {
+	    v.visitRefPerm(this);
+	}
+
+	@Override
+	public <R, D> R accept(TreeVisitor<R, D> v, D d) {
+	    return v.visitRefPerm(this, d);
+	}
+
+	@Override
+	public int getTag() {
+	    return REFPERM;
+	}
+
+	public Kind getKind() {
+	    return Kind.REFPERM;
+	}
+	
+    }
+    
     public static class DPJEffect extends JCTree implements EffectTree {
 
 	public boolean isPure;
@@ -2761,6 +2782,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitRegionDecl(DPJRegionDecl that)       { visitTree(that); } // DPJ
         public void visitRPLElt(DPJRegionPathListElt that)   { visitTree(that); } // DPJ
         public void visitRPL(DPJRegionPathList that)         { visitTree(that); } // DPJ
+        public void visitRefPerm(JRGRefPerm that)            { visitTree(that); }
         public void visitEffect(DPJEffect that)  { visitTree(that); } // DPJ
         public void visitSkip(JCSkip that)                   { visitTree(that); }
         public void visitBlock(JCBlock that)                 { visitTree(that); }

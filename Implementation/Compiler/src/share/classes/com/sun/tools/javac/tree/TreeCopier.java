@@ -33,14 +33,12 @@ import com.sun.source.tree.ArrayAccessTree;
 import com.sun.source.tree.ArrayTypeTree;
 import com.sun.source.tree.AssertTree;
 import com.sun.source.tree.AssignmentTree;
-import com.sun.source.tree.AtomicTree;
 import com.sun.source.tree.BinaryTree;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.BreakTree;
 import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.CatchTree;
 import com.sun.source.tree.ClassTree;
-import com.sun.source.tree.CobeginTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.CompoundAssignmentTree;
 import com.sun.source.tree.ConditionalExpressionTree;
@@ -52,7 +50,6 @@ import com.sun.source.tree.EmptyStatementTree;
 import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.source.tree.ErroneousTree;
 import com.sun.source.tree.ExpressionStatementTree;
-import com.sun.source.tree.FinishTree;
 import com.sun.source.tree.ForLoopTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.IfTree;
@@ -66,18 +63,17 @@ import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.NewArrayTree;
 import com.sun.source.tree.NewClassTree;
-import com.sun.source.tree.NonintTree;
 import com.sun.source.tree.ParamInfoTree;
 import com.sun.source.tree.ParameterizedTypeTree;
+import com.sun.source.tree.PardoTree;
 import com.sun.source.tree.ParenthesizedTree;
 import com.sun.source.tree.PrimitiveTypeTree;
 import com.sun.source.tree.RPLEltTree;
 import com.sun.source.tree.RPLTree;
-import com.sun.source.tree.RegionParamTypeTree;
+import com.sun.source.tree.RefPermTree;
 import com.sun.source.tree.RegionParameterTree;
 import com.sun.source.tree.RegionTree;
 import com.sun.source.tree.ReturnTree;
-import com.sun.source.tree.SpawnTree;
 import com.sun.source.tree.SwitchTree;
 import com.sun.source.tree.SynchronizedTree;
 import com.sun.source.tree.ThrowTree;
@@ -90,10 +86,10 @@ import com.sun.source.tree.VariableTree;
 import com.sun.source.tree.WhileLoopTree;
 import com.sun.source.tree.WildcardTree;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
-import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.DPJEffect;
 import com.sun.tools.javac.tree.JCTree.DPJForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
+import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathListElt;
@@ -132,7 +128,6 @@ import com.sun.tools.javac.tree.JCTree.JCNewArray;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCParens;
 import com.sun.tools.javac.tree.JCTree.JCPrimitiveTypeTree;
-import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.JCReturn;
 import com.sun.tools.javac.tree.JCTree.JCSkip;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
@@ -147,6 +142,8 @@ import com.sun.tools.javac.tree.JCTree.JCUnary;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JCWhileLoop;
 import com.sun.tools.javac.tree.JCTree.JCWildcard;
+import com.sun.tools.javac.tree.JCTree.JRGPardo;
+import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.JCTree.TypeBoundKind;
 import com.sun.tools.javac.util.List;
@@ -589,6 +586,12 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
 	return M.at(t.pos).RegionPathList(elts);
     }
     
+    public JCTree visitRefPerm(RefPermTree node, P p) {
+	JRGRefPerm t = (JRGRefPerm) node;
+	JCIdent group = copy(t.group, p);
+	return M.at(t.pos).RefPerm(group);
+    }
+    
     public JCTree visitMethEffects(EffectTree node, P p) {
 	DPJEffect t = (DPJEffect) node;
 	List<DPJRegionPathList> readEffects = copy(t.readEffects, p);
@@ -620,7 +623,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         	effectParams);
     }
     
-    public JCTree visitCobegin(CobeginTree node, P p) {
+    public JCTree visitCobegin(PardoTree node, P p) {
 	JRGPardo t = (JRGPardo) node;
 	JCStatement body = copy(t.body, p);
 	JRGPardo result = M.at(t.pos).Pardo(body, t.isNondet);

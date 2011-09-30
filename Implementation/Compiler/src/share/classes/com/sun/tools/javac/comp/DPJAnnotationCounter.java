@@ -298,13 +298,9 @@ public class DPJAnnotationCounter extends TreeScanner {
 	    break;
 	case READ_EFFECT:
 	    ++readEffectRPLCount;
-	    if (tree.isAtomic)
-		++atomicReadEffectRPLCount;
 	    break;
 	case WRITE_EFFECT:
 	    ++writeEffectRPLCount;
-	    if (tree.isAtomic)
-		++atomicWriteEffectRPLCount;
 	    break;
 	default:
 	    assert false;
@@ -317,13 +313,9 @@ public class DPJAnnotationCounter extends TreeScanner {
 	switch (context) {
 	case CLASS:
 	    ++fieldRegionDeclCount;
-	    if (tree.isAtomic)
-		++atomicFieldRegionDeclCount;
 	    break;
 	case METHOD_DEF:
 	    ++localRegionDeclCount;
-	    if (tree.isAtomic)
-		++atomicLocalRegionDeclCount;
 	    break;
 	default:
 	    assert false;

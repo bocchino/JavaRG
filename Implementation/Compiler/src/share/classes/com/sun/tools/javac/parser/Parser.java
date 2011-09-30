@@ -83,6 +83,7 @@ import static com.sun.tools.javac.parser.Token.SUBSUB;
 import static com.sun.tools.javac.parser.Token.SUPER;
 import static com.sun.tools.javac.parser.Token.THROWS;
 import static com.sun.tools.javac.parser.Token.TRUE;
+import static com.sun.tools.javac.parser.Token.UNIQUE;
 import static com.sun.tools.javac.parser.Token.VOID;
 import static com.sun.tools.javac.parser.Token.WHILE;
 import static com.sun.tools.javac.parser.Token.WRITES;
@@ -131,6 +132,7 @@ import com.sun.tools.javac.tree.JCTree.JCThrow;
 import com.sun.tools.javac.tree.JCTree.JCTypeApply;
 import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
+import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
 import com.sun.tools.javac.tree.JCTree.TypeBoundKind;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
@@ -324,6 +326,7 @@ public class Parser {
                 case MONKEYS_AT:
                 case EOF:
                 case CLASS:
+                case ARRAYCLASS:
                 case INTERFACE:
                 case ENUM:
                     return;
@@ -1831,8 +1834,9 @@ public class Parser {
                     allowEnums && S.token() == ENUM) {
                     stats.append(classOrInterfaceOrEnumDeclaration(mods, dc));
                 } else {
+                    JRGRefPerm refPerm = refPermOpt();
                     JCExpression t = type();
-                    stats.appendList(variableDeclarators(mods, t, false,
+                    stats.appendList(variableDeclarators(mods, refPerm, t, false,
                                                          new ListBuffer<JCStatement>()));
                     // A "LocalVariableDeclarationStatement" subsumes the terminating semicolon
                     storeEnd(stats.elems.last(), S.endPos());
@@ -1859,6 +1863,9 @@ public class Parser {
                 stats.append(classOrInterfaceOrEnumDeclaration(modifiersOpt(),
                                                                S.docComment()));
                 break;
+            case ARRAYCLASS:
+        	stats.append(arrayDeclaration(modifiersOpt(), S.docComment()));
+        	break;
             case ENUM:
             case ASSERT:
                 if (allowEnums && S.token() == ENUM) {
@@ -1890,7 +1897,8 @@ public class Parser {
                     pos = S.pos();
                     JCModifiers mods = F.at(Position.NOPOS).Modifiers(0);
                     F.at(pos);
-                    stats.appendList(variableDeclarators(mods, t, true,
+                    // FIXME
+                    stats.appendList(variableDeclarators(mods, null, t, true,
                                                          new ListBuffer<JCStatement>()));
                     // A "LocalVariableDeclarationStatement" subsumes the terminating semicolon
                     storeEnd(stats.elems.last(), S.endPos());
@@ -2211,12 +2219,13 @@ public class Parser {
         ListBuffer<JCStatement> stats = lb();
         int pos = S.pos();
         if (S.token() == FINAL || S.token() == MONKEYS_AT) {
-            return variableDeclarators(optFinal(0), type(), false, stats).toList();
+            return variableDeclarators(optFinal(0), refPermOpt(), type(), false, stats).toList();
         } else {
             JCExpression t = term(EXPR | TYPE);
             if ((lastmode & TYPE) != 0 &&
                 (S.token() == IDENTIFIER || S.token() == ASSERT || S.token() == ENUM)) {
-                return variableDeclarators(modifiersOpt(), t, false, stats).toList();
+        	// FIXME
+        	return variableDeclarators(modifiersOpt(), null, t, false, stats).toList();
             }
             else
                 return moreStatementExpressions(pos, t, stats).toList();
@@ -2399,11 +2408,13 @@ public class Parser {
     /** VariableDeclarators = VariableDeclarator { "," VariableDeclarator }
      */
     public <T extends ListBuffer<? super JCVariableDecl>> T variableDeclarators(JCModifiers mods,
+	    								 JRGRefPerm refPerm,
                                                                          JCExpression type,
                                                                          boolean regionOK,
                                                                          T vdefs)
     {
-        return variableDeclaratorsRest(S.pos(), mods, type, ident(), false, regionOK, null, vdefs);
+        return variableDeclaratorsRest(S.pos(), mods, refPerm, type, 
+        	ident(), false, regionOK, null, vdefs);
     }
 
     /** VariableDeclaratorsRest = VariableDeclaratorRest { "," VariableDeclarator }
@@ -2414,6 +2425,7 @@ public class Parser {
      */
     <T extends ListBuffer<? super JCVariableDecl>> T variableDeclaratorsRest(int pos,
                                                                      JCModifiers mods,
+                                                                     JRGRefPerm refPerm,
                                                                      JCExpression type,
                                                                      Name name,
                                                                      boolean reqInit,
@@ -2421,12 +2433,12 @@ public class Parser {
                                                                      String dc,
                                                                      T vdefs)
     {
-        vdefs.append(variableDeclaratorRest(pos, mods, type, name, reqInit, regionOK, dc));
+        vdefs.append(variableDeclaratorRest(pos, mods, refPerm, type, name, reqInit, regionOK, dc));
         while (S.token() == COMMA) {
             // All but last of multiple declarators subsume a comma
             storeEnd((JCTree)vdefs.elems.last(), S.endPos());
             S.nextToken();
-            vdefs.append(variableDeclarator(mods, type, reqInit, regionOK, dc));
+            vdefs.append(variableDeclarator(mods, refPerm, type, reqInit, regionOK, dc));
         }
         return vdefs;
     }
@@ -2434,8 +2446,9 @@ public class Parser {
     /** VariableDeclarator = Ident VariableDeclaratorRest
      *  ConstantDeclarator = Ident ConstantDeclaratorRest
      */
-    JCVariableDecl variableDeclarator(JCModifiers mods, JCExpression type, boolean reqInit, boolean regionOK, String dc) {
-        return variableDeclaratorRest(S.pos(), mods, type, ident(), reqInit, regionOK, dc);
+    JCVariableDecl variableDeclarator(JCModifiers mods, JRGRefPerm refPerm, JCExpression type, 
+	    boolean reqInit, boolean regionOK, String dc) {
+        return variableDeclaratorRest(S.pos(), mods, refPerm, type, ident(), reqInit, regionOK, dc);
     }
 
     /** VariableDeclaratorRest = BracketsOpt RegionOpt ["=" VariableInitializer]
@@ -2444,7 +2457,8 @@ public class Parser {
      *  @param reqInit  Is an initializer always required?
      *  @param dc       The documentation comment for the variable declarations, or null.
      */
-    JCVariableDecl variableDeclaratorRest(int pos, JCModifiers mods, JCExpression type, 
+    JCVariableDecl variableDeclaratorRest(int pos, JCModifiers mods, 
+	    				  JRGRefPerm refPerm, JCExpression type, 
 	    				  Name name, boolean reqInit, 
 	    				  boolean regionOK, String dc) {
         type = bracketsOpt(type);
@@ -2689,7 +2703,7 @@ public class Parser {
     }
 
     /** TypeDeclaration = ClassOrInterfaceOrEnumDeclaration
-     *                  | ";"
+     *                  | ArrayDeclaration | ";"
      */
     JCTree typeDeclaration(JCModifiers mods) {
         int pos = S.pos();
@@ -2698,6 +2712,9 @@ public class Parser {
             return toP(F.at(pos).Skip());
         } else {
             String dc = S.docComment();
+            if (S.token() == ARRAYCLASS) {
+        	return arrayDeclaration(modifiersOpt(mods), dc);
+            }
             return classOrInterfaceOrEnumDeclaration(modifiersOpt(mods), dc);
         }
     }
@@ -2824,9 +2841,10 @@ public class Parser {
 
         List<JCTree> defs = arrayBody(name);
         JCModifiers newMods =
-            F.at(mods.pos).Modifiers(mods.flags|Flags.ENUM, mods.annotations);
+            F.at(mods.pos).Modifiers(mods.flags, mods.annotations);
         JCClassDecl result = toP(F.at(pos).
-            ClassDef(newMods, name, dpjParamInfo, typarams, null, null, defs));
+            ClassDef(newMods, name, dpjParamInfo, typarams, null, 
+        	    List.<JCExpression>nil(), defs));
         attach(result, dc);
         return result;
     }
@@ -2850,14 +2868,30 @@ public class Parser {
         }
 
         // Get field decl        
+        JRGRefPerm refPerm = refPermOpt();
         JCExpression type = type();
         JCVariableDecl var = 
-        	variableDeclaratorRest(S.pos(), mods, type, arrayName, false, true, dc);
+        	variableDeclaratorRest(S.pos(), mods, refPerm, type, arrayName, false, true, dc);
         storeEnd(var, S.endPos());
         defs.append(var);
         accept(SEMI);
         accept(RBRACE);
         return defs.toList();
+    }
+
+    /** RefPermOpt = [ RefPerm ]
+     *  RefPerm = UNIQUE "(" Ident ")"
+     */
+    JRGRefPerm refPermOpt() {
+	JCIdent group = null;
+	int pos = S.pos();
+	if (S.token() == UNIQUE) {
+	    S.nextToken();
+	    accept(LPAREN);
+	    group = toP(F.at(S.pos()).Ident(ident()));
+	    accept(RPAREN);
+	}
+	return toP(F.at(pos).RefPerm(group));
     }
     
     /** EnumDeclaration = ENUM Ident [IMPLEMENTS TypeList] EnumBody
@@ -3030,6 +3064,8 @@ public class Parser {
                 S.token() == INTERFACE ||
                 allowEnums && S.token() == ENUM) {
                 return List.<JCTree>of(classOrInterfaceOrEnumDeclaration(mods, dc));
+            } else if (S.token() == ARRAYCLASS) {
+        	return List.<JCTree>of(arrayDeclaration(mods, dc));
             } else if (S.token() == REGION) {
         	ListBuffer<JCTree> rdefs = new ListBuffer<JCTree>();
         	return regionDeclarations(pos, mods, dc, rdefs).toList();
@@ -3075,8 +3111,9 @@ public class Parser {
                     } else if (!isVoid && typarams.isEmpty() && 
                 	    (dpjParamInfo == null || !dpjParamInfo.hasParams())) {
                         List<JCTree> defs =
-                            variableDeclaratorsRest(pos, mods, type, name, isInterface, true, dc,
-                                                    new ListBuffer<JCTree>()).toList();
+                            // FIXME
+                            variableDeclaratorsRest(pos, mods, null, type, name, 
+                        	    isInterface, true, dc, new ListBuffer<JCTree>()).toList();
                         storeEnd(defs.last(), S.endPos());
                         accept(SEMI);
                         return defs;
@@ -3242,14 +3279,12 @@ public class Parser {
             List<JCIdent> groupParams = List.nil();
             if (S.token() != REGION && S.token() != REFGROUP) {
         	typarams = typeParameters();
-        	if (S.token() == SEMI) S.nextToken();
             } else {
         	typarams = List.nil();
             }
             int pos = S.pos();
             if (S.token() == REGION) {
         	rplParams = regionParameters();
-        	if (S.token() == SEMI) S.nextToken();
             }
             if (S.token() == REFGROUP) {
         	groupParams = groups();

@@ -750,7 +750,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             Scope enclScope = enter.enterScope(env);
             RegionNameSymbol v =
         	new RegionNameSymbol(0, tree.name,
-        	    enclScope.owner, tree.isAtomic);
+        	    enclScope.owner, false);
             v.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, v, tree);
             tree.sym = v;
             if (chk.checkUnique(tree.pos(), v, enclScope)) {

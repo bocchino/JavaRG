@@ -37,7 +37,6 @@ import com.sun.source.tree.BreakTree;
 import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.CatchTree;
 import com.sun.source.tree.ClassTree;
-import com.sun.source.tree.CobeginTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.CompoundAssignmentTree;
 import com.sun.source.tree.ConditionalExpressionTree;
@@ -66,10 +65,12 @@ import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.NonintTree;
 import com.sun.source.tree.ParamInfoTree;
 import com.sun.source.tree.ParameterizedTypeTree;
+import com.sun.source.tree.PardoTree;
 import com.sun.source.tree.ParenthesizedTree;
 import com.sun.source.tree.PrimitiveTypeTree;
 import com.sun.source.tree.RPLEltTree;
 import com.sun.source.tree.RPLTree;
+import com.sun.source.tree.RefPermTree;
 import com.sun.source.tree.RegionParamTypeTree;
 import com.sun.source.tree.RegionParameterTree;
 import com.sun.source.tree.RegionTree;
@@ -452,6 +453,10 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
 	return null; // DPJ FIXME
     }
     
+    public R visitRefPerm(RefPermTree node, P p) {
+	return null;
+    }
+    
     public R visitMethEffects(EffectTree node, P p) { // DPJ
 	return null; // DPJ FIXME
     }
@@ -476,7 +481,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
 	return null; // DPJ FIXME
     }
     
-    public R visitCobegin(CobeginTree node, P p) {
+    public R visitCobegin(PardoTree node, P p) {
 	return null; // DPJ FIXME
     }
 

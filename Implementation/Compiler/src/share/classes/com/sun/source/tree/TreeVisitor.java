@@ -107,10 +107,11 @@ public interface TreeVisitor<R,P> {
     R visitRegion(RegionTree node, P p); // DPJ
     R visitRPLElt(RPLEltTree node, P p); // DPJ
     R visitRPL(RPLTree node, P p); // DPJ
+    R visitRefPerm(RefPermTree node, P p);
     R visitMethEffects(EffectTree node, P p); // DPJ
     R visitWhileLoop(WhileLoopTree node, P p);
     R visitWildcard(WildcardTree node, P p);
-    R visitCobegin(CobeginTree node, P p); // DPJ
+    R visitCobegin(PardoTree node, P p); // DPJ
     R visitDPJForLoop(DPJForLoopTree node, P p);
     R visitOther(Tree node, P p);
 }

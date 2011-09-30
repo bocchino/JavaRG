@@ -99,7 +99,7 @@ public interface Tree {
          * Used for instances of {@link CobeginTree} representing a
          * cobegin statement.
          */
-        COBEGIN(CobeginTree.class),
+        PARDO(PardoTree.class),
 
         /**
          * Used for instances of {@link CompilationUnitTree}.
@@ -220,6 +220,11 @@ public interface Tree {
          * Used for instances of {@link RPLTree}. // DPJ
          */
         RPL(RPLTree.class),
+        
+        /**
+         * Used for instances of {@link RefPermTree}.
+         */
+        REFPERM(RefPermTree.class),
         
         /**
          * Used for instances of {@link ReturnTree}.

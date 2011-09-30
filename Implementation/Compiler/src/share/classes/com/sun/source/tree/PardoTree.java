@@ -10,6 +10,6 @@ package com.sun.source.tree;
  *
  * @author Rob Bocchino
  */
-public interface CobeginTree extends StatementTree {
+public interface PardoTree extends StatementTree {
     StatementTree getStatement();
 }
