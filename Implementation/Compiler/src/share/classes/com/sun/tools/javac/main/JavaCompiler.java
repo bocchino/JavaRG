@@ -70,7 +70,6 @@ import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.FJTaskHarness;
 import com.sun.tools.javac.comp.Flow;
-import com.sun.tools.javac.comp.InsertBarriers;
 import com.sun.tools.javac.comp.Lower;
 import com.sun.tools.javac.comp.Todo;
 import com.sun.tools.javac.comp.TransTypes;
