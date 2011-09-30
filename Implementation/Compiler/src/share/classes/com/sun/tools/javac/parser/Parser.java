@@ -2841,7 +2841,7 @@ public class Parser {
 
         List<JCTree> defs = arrayBody(name);
         JCModifiers newMods =
-            F.at(mods.pos).Modifiers(mods.flags, mods.annotations);
+            F.at(mods.pos).Modifiers(mods.flags|Flags.ARRAYCLASS, mods.annotations);
         JCClassDecl result = toP(F.at(pos).
             ClassDef(newMods, name, dpjParamInfo, typarams, null, 
         	    List.<JCExpression>nil(), defs));
