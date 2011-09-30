@@ -377,7 +377,7 @@ public class TreeTranslator extends JCTree.Visitor {
 	result = tree;
     }
     
-    public void visitCobegin(DPJCobegin tree) {
+    public void visitCobegin(JRGPardo tree) {
 	tree.body = translate(tree.body);
 	result = tree;
     }

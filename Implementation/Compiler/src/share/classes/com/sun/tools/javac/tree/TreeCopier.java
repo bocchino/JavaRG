@@ -90,7 +90,7 @@ import com.sun.source.tree.VariableTree;
 import com.sun.source.tree.WhileLoopTree;
 import com.sun.source.tree.WildcardTree;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
-import com.sun.tools.javac.tree.JCTree.DPJCobegin;
+import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.DPJEffect;
 import com.sun.tools.javac.tree.JCTree.DPJForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
@@ -621,9 +621,9 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     }
     
     public JCTree visitCobegin(CobeginTree node, P p) {
-	DPJCobegin t = (DPJCobegin) node;
+	JRGPardo t = (JRGPardo) node;
 	JCStatement body = copy(t.body, p);
-	DPJCobegin result = M.at(t.pos).Cobegin(body, t.isNondet);
+	JRGPardo result = M.at(t.pos).Pardo(body, t.isNondet);
 	
 	result.bodySize = t.bodySize;
 	result.declaredVars = new Set[t.bodySize];

@@ -1410,7 +1410,7 @@ public class Pretty extends JCTree.Visitor {
     }
     
     private int dpj_tname = 0;    
-    public void visitCobegin(DPJCobegin tree) {
+    public void visitCobegin(JRGPardo tree) {
 	if (codeGenMode == NONE) {
 	    try {
 		if (tree.isNondet) {
@@ -1429,7 +1429,7 @@ public class Pretty extends JCTree.Visitor {
 	}	
     }
     
-    public void seqCobegin(DPJCobegin tree) {
+    public void seqCobegin(JRGPardo tree) {
 	try {
 	    if(codeGenMode == SEQ_INST) print("DPJRuntime.Instrument.enterCobegin();\n");
 	    align();
@@ -1452,7 +1452,7 @@ public class Pretty extends JCTree.Visitor {
 	}
     }
 
-    public void parCobegin(DPJCobegin tree) {
+    public void parCobegin(JRGPardo tree) {
 	Types.printDPJ = false;
 	try {
 	    JCBlock body = (JCBlock)(tree.body);

@@ -21,7 +21,7 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.DPJCobegin;
+import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.DPJForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJNegationExpression;
 import com.sun.tools.javac.tree.JCTree.JCArrayAccess;
@@ -651,7 +651,7 @@ public class CheckEffects extends EnvScanner { // DPJ
 	}
     }
     
-    @Override public void visitCobegin(DPJCobegin tree) {
+    @Override public void visitCobegin(JRGPardo tree) {
 	super.visitCobegin(tree);
 	tree.effects = tree.body.effects;
 	if (inConstructor(parentEnv))

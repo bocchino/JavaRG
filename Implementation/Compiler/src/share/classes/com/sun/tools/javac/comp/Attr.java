@@ -117,7 +117,7 @@ import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
-import com.sun.tools.javac.tree.JCTree.DPJCobegin;
+import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.DPJEffect;
 import com.sun.tools.javac.tree.JCTree.DPJForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
@@ -3582,7 +3582,7 @@ public class Attr extends JCTree.Visitor {
         }
     }
 
-    public void visitCobegin(DPJCobegin tree) {
+    public void visitCobegin(JRGPardo tree) {
 	attribStat(tree.body, env);
 	result = null;
     }

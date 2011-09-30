@@ -538,8 +538,8 @@ public class TreeMaker implements JCTree.Factory {
 	return tree;
     }
     
-    public DPJCobegin Cobegin(JCStatement body, boolean isNonDet) {
-	DPJCobegin tree = new DPJCobegin(body, isNonDet);
+    public JRGPardo Pardo(JCStatement body, boolean isNonDet) {
+	JRGPardo tree = new JRGPardo(body, isNonDet);
 	tree.pos = pos;
 	return tree;
     }

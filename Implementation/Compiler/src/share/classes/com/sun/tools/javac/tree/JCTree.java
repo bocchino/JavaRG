@@ -420,13 +420,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      */
     public static final int REGIONPARAMINFO = REGIONPARAMETER + 1;
     
-    /** Cobegin statements, of type Cobegin
+    /** Pardo statements, of type Pardo
      */
-    public static final int COBEGIN = REGIONPARAMINFO + 1;    
+    public static final int PARDO = REGIONPARAMINFO + 1;    
     
     /** DPJ for loop, of type DPJForLoop
      */
-    public static final int DPJFORLOOP = COBEGIN + 1;
+    public static final int DPJFORLOOP = PARDO + 1;
     
     /** The offset between assignment operators and normal operators.
      */
@@ -1030,7 +1030,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     /**
      * A DPJ cobegin statement
      */
-    public static class DPJCobegin extends JCStatement implements CobeginTree {
+    public static class JRGPardo extends JCStatement implements CobeginTree {
 	/**
 	 * Is this a cobegin_nd?
 	 */
@@ -1060,7 +1060,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
          */
         public Set<VarSymbol> declaredVars[];
         
-        protected DPJCobegin(JCStatement body, boolean isNonDet) {
+        protected JRGPardo(JCStatement body, boolean isNonDet) {
             this.body = body;
             JCBlock realBody = (JCBlock)(body);
             bodySize = realBody.stats.size();
@@ -1081,7 +1081,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         @Override
         public int getTag() {
-            return COBEGIN;
+            return PARDO;
         }
     }
 
@@ -2741,7 +2741,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 			               List<DPJRegionPathList> writeEffects,
 			               List<JCIdent> variableEffects);
         DPJRegionDecl RegionDecl(JCModifiers mods, Name name);
-        DPJCobegin Cobegin(JCStatement body, boolean isNonDet);
+        JRGPardo Pardo(JCStatement body, boolean isNonDet);
         JCWildcard Wildcard(TypeBoundKind kind, JCTree type);
         TypeBoundKind TypeBoundKind(BoundKind kind);
         JCAnnotation Annotation(JCTree annotationType, List<JCExpression> args);
@@ -2808,7 +2808,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitModifiers(JCModifiers that)         { visitTree(that); }
         public void visitErroneous(JCErroneous that)         { visitTree(that); }
         public void visitLetExpr(LetExpr that)               { visitTree(that); }
-        public void visitCobegin(DPJCobegin that)            { visitTree(that); }
+        public void visitCobegin(JRGPardo that)            { visitTree(that); }
         public void visitDPJForLoop(DPJForLoop that)         { visitTree(that); }
         public void visitNegationExpression(DPJNegationExpression that) {visitTree(that); }
 

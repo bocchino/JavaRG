@@ -362,9 +362,9 @@ public class Flow extends TreeScanner {
 	/* What we really need here is a superclass containing all
 	 * and only the DPJ constructs.
 	 */
-	if(enclosingDPJ!=null && enclosingDPJ instanceof DPJCobegin)
+	if(enclosingDPJ!=null && enclosingDPJ instanceof JRGPardo)
 	{
-	    DPJCobegin enclosing = (DPJCobegin)(enclosingDPJ);
+	    JRGPardo enclosing = (JRGPardo)(enclosingDPJ);
 	    enclosing.declaredVars[cobegin_index].add(sym);
 	}
 	else if(enclosingDPJ!=null && enclosingDPJ instanceof DPJForLoop)
@@ -383,9 +383,9 @@ public class Flow extends TreeScanner {
 	/*What we really need here is a superclass containing all
 	 * and only the DPJ constructs
 	 */
-	if(enclosingDPJ!=null && enclosingDPJ instanceof DPJCobegin)
+	if(enclosingDPJ!=null && enclosingDPJ instanceof JRGPardo)
 	{
-	    DPJCobegin enclosing = (DPJCobegin)(enclosingDPJ);
+	    JRGPardo enclosing = (JRGPardo)(enclosingDPJ);
 	    enclosing.definedVars[cobegin_index].add(sym);
 	}
 	if(enclosingDPJ!=null && enclosingDPJ instanceof DPJForLoop)
@@ -447,9 +447,9 @@ public class Flow extends TreeScanner {
 	/*What we really need here is a superclass containing all
 	 * and only the DPJ constructs
 	 */
-	if(enclosingDPJ!=null && enclosingDPJ instanceof DPJCobegin)
+	if(enclosingDPJ!=null && enclosingDPJ instanceof JRGPardo)
 	{
-	    DPJCobegin enclosing = (DPJCobegin)(enclosingDPJ);
+	    JRGPardo enclosing = (JRGPardo)(enclosingDPJ);
 	    enclosing.usedVars[cobegin_index].add(sym);
 	}
 	else if(enclosingDPJ!=null && enclosingDPJ instanceof DPJForLoop)
@@ -997,8 +997,8 @@ public class Flow extends TreeScanner {
 	externalUses.removeAll(tree.declaredVars);
 	Set<VarSymbol> externalDefines = new HashSet<VarSymbol>(tree.definedVars);
 	externalDefines.removeAll(tree.declaredVars);
-	if(oldEnclosure instanceof DPJCobegin)
-	    ((DPJCobegin)oldEnclosure).usedVars[cobegin_index].addAll(externalUses);
+	if(oldEnclosure instanceof JRGPardo)
+	    ((JRGPardo)oldEnclosure).usedVars[cobegin_index].addAll(externalUses);
 	else if(oldEnclosure instanceof DPJForLoop)
 	    ((DPJForLoop)oldEnclosure).usedVars.addAll(externalUses);
 	
@@ -1350,7 +1350,7 @@ public class Flow extends TreeScanner {
 	}
     }
     
-    public void visitCobegin(DPJCobegin tree) {
+    public void visitCobegin(JRGPardo tree) {
 	JCTree oldEnclosure = enclosingDPJ;
 	enclosingDPJ = tree;
 	JCBlock realBody = (JCBlock)(tree.body);
@@ -1375,8 +1375,8 @@ public class Flow extends TreeScanner {
 	    externalUses.addAll(x_extUse);
 	}
 
-	if(oldEnclosure instanceof DPJCobegin) {
-	    DPJCobegin parentCobegin = (DPJCobegin)(oldEnclosure);
+	if(oldEnclosure instanceof JRGPardo) {
+	    JRGPardo parentCobegin = (JRGPardo)(oldEnclosure);
 	    parentCobegin.definedVars[oldIndex].addAll(externalDefines);
 	    parentCobegin.usedVars[oldIndex].addAll(externalUses);
 	}

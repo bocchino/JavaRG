@@ -320,7 +320,7 @@ public class TreeScanner extends Visitor {
 	scan(tree.expr);
     }
 
-    public void visitCobegin(DPJCobegin tree) {
+    public void visitCobegin(JRGPardo tree) {
 	scan(tree.body);
     }
     
