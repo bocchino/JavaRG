@@ -639,12 +639,10 @@ public class Pretty extends JCTree.Visitor {
                     printExpr(tree.vartype);
                     print(" " + tree.name);
                 }
-                // DPJ BEGIN
                 if ((codeGenMode == NONE) && tree.rpl != null && !tree.rpl.elts.isEmpty()) {
                     print(" in ");
                     print(tree.rpl);
                 }
-                // DPJ END
                 if (tree.init != null) {
                     print(" = ");
                     printExpr(tree.init);
@@ -656,7 +654,7 @@ public class Pretty extends JCTree.Visitor {
         }
     }
 
-    public void visitRegionDecl(DPJRegionDecl tree) { // DPJ -- based on visitVarDef
+    public void visitRegionDecl(DPJRegionDecl tree) { 
         try {
             if (docComments != null && docComments.get(tree) != null) {
                 println(); align();
@@ -673,23 +671,14 @@ public class Pretty extends JCTree.Visitor {
         }
     }
 
-    public void visitRPLElt(DPJRegionPathListElt tree) { // DPJ
+    public void visitRPLElt(DPJRegionPathListElt tree) { 
 	try {
 	    switch (tree.type) {
 	    case DPJRegionPathListElt.STAR:
 		print("*");
 		break;
 	    case DPJRegionPathListElt.NAME:
-	   // case DPJRegionPathListElt.FIELD_REGION:
 		print(tree.exp);
-		break;
-	    case DPJRegionPathListElt.ARRAY_INDEX:
-		print("[");
-		print(tree.exp);
-		print("]");
-		break;
-	    case DPJRegionPathListElt.ARRAY_UNKNOWN:
-		print("[?]");
 		break;
 	    default:
 		print("Unknown RPL element");
@@ -700,7 +689,7 @@ public class Pretty extends JCTree.Visitor {
 	}
     }	
 
-    public void visitRPL(DPJRegionPathList tree) { // DPJ
+    public void visitRPL(DPJRegionPathList tree) { 
 	try {
 	    int size = tree.elts.size();
 	    int idx = 0;
@@ -1420,51 +1409,6 @@ public class Pretty extends JCTree.Visitor {
         }
     }
     
-    public void visitSpawn(DPJSpawn tree) {
-	try {
-	    if (codeGenMode == NONE) {
-		print("spawn ");
-	    } else {
-		print("{\n");
-		indent();
-		align();
-		if(codeGenMode == SEQ_INST) print("DPJRuntime.Instrument.enterSpawn();");
-		println();
-		align();
-	    }
-	    printStat(tree.body);
-	    if (codeGenMode != NONE) {
-		println();
-		align();
-		if(codeGenMode == SEQ_INST) print("DPJRuntime.Instrument.exitSpawn();\n");
-		undent();
-		align();
-		print("}");
-	    }
-	} catch (IOException e) {
-	    throw new UncheckedIOException(e);
-	}
-    }
-
-    public void visitFinish(DPJFinish tree) {
-	try {
-	    if (codeGenMode == NONE) {
-		print("dpjfinish ");
-	    } else {
-		if(codeGenMode == SEQ_INST) print("DPJRuntime.Instrument.enterFinish();\n");
-		align();
-	    }
-	    printStat(tree.body);
-	    if (codeGenMode != NONE) {
-		println();
-		align();
-		if(codeGenMode == SEQ_INST) print("DPJRuntime.Instrument.exitFinish();");
-	    }
-	} catch (IOException e) {
-	    throw new UncheckedIOException(e);
-	}
-    }
-    
     private int dpj_tname = 0;    
     public void visitCobegin(DPJCobegin tree) {
 	if (codeGenMode == NONE) {
@@ -1485,31 +1429,6 @@ public class Pretty extends JCTree.Visitor {
 	}	
     }
     
-    public void visitAtomic(DPJAtomic tree) {
-	try {
-	    if (codeGenMode == NONE) {
-		print("atomic ");
-	    } else if (codeGenMode == PAR) {
-		//TODO Use javac's normal error logging
-		throw new Error("Nondeterministic constructs are not supported");
-	    }
-	    printStat(tree.body);
-	} catch(IOException e) {
-	    throw new UncheckedIOException(e);
-	}
-    }
-    
-    public void visitNonint(DPJNonint tree) {
-	try {
-	    if (codeGenMode == NONE) {
-		print("nonint ");
-	    }
-	    printStat(tree.body);
-	} catch(IOException e) {
-	    throw new UncheckedIOException(e);
-	}
-    }
-
     public void seqCobegin(DPJCobegin tree) {
 	try {
 	    if(codeGenMode == SEQ_INST) print("DPJRuntime.Instrument.enterCobegin();\n");

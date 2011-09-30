@@ -332,22 +332,6 @@ public class TreeScanner extends Visitor {
 	scan(tree.body);
     }
     
-    public void visitFinish(DPJFinish tree) {
-	scan(tree.body);
-    }
-    
-    public void visitAtomic(DPJAtomic tree) {
-	scan(tree.body);
-    }
-
-    public void visitNonint(DPJNonint tree) {
-	scan(tree.body);
-    }
-    
-    public void visitSpawn(DPJSpawn tree) {
-	scan(tree.body);
-    }
-
     public void visitParamInfo(DPJParamInfo tree) {
 	scan(tree.rplParams);
     }

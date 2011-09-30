@@ -365,12 +365,6 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public DPJSpawn Spawn(JCStatement body) {
-	DPJSpawn tree = new DPJSpawn(body);
-	tree.pos = pos;
-	return tree;
-    }
-    
     public JCAssign Assign(JCExpression lhs, JCExpression rhs) {
         JCAssign tree = new JCAssign(lhs, rhs);
         tree.pos = pos;
@@ -544,30 +538,12 @@ public class TreeMaker implements JCTree.Factory {
 	return tree;
     }
     
-    public DPJFinish Finish(JCStatement body) {
-	DPJFinish tree = new DPJFinish(body);
-	tree.pos = pos;
-	return tree;
-    }
-    
     public DPJCobegin Cobegin(JCStatement body, boolean isNonDet) {
 	DPJCobegin tree = new DPJCobegin(body, isNonDet);
 	tree.pos = pos;
 	return tree;
     }
 
-    public DPJAtomic Atomic(JCStatement body) {
-	DPJAtomic tree = new DPJAtomic(body);
-	tree.pos = pos;
-	return tree;
-    }
-    
-    public DPJNonint Nonint(JCStatement body) {
-	DPJNonint tree = new DPJNonint(body);
-	tree.pos = pos;
-	return tree;
-    }
-    
     public DPJForLoop DPJForLoop(JCVariableDecl var, JCExpression start, JCExpression length,
                                  JCExpression stride, JCStatement body, boolean isNonDet) {
 	DPJForLoop tree = new DPJForLoop(var, start, length, stride, body, isNonDet);

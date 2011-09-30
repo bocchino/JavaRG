@@ -110,11 +110,7 @@ public interface TreeVisitor<R,P> {
     R visitMethEffects(EffectTree node, P p); // DPJ
     R visitWhileLoop(WhileLoopTree node, P p);
     R visitWildcard(WildcardTree node, P p);
-    R visitSpawn(SpawnTree node, P p); // DPJ
-    R visitFinish(FinishTree node, P p); // DPJ
     R visitCobegin(CobeginTree node, P p); // DPJ
-    R visitAtomic(AtomicTree node, P p);
-    R visitNonint(NonintTree node, P p);
     R visitDPJForLoop(DPJForLoopTree node, P p);
     R visitOther(Tree node, P p);
 }

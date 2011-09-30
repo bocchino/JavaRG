@@ -377,30 +377,10 @@ public class TreeTranslator extends JCTree.Visitor {
 	result = tree;
     }
     
-    public void visitSpawn(DPJSpawn tree) {
-	tree.body = translate(tree.body);
-	result = tree;
-    }
-    
-    public void visitFinish(DPJFinish tree) {
-	tree.body = translate(tree.body);
-	result = tree;
-    }
-
     public void visitCobegin(DPJCobegin tree) {
 	tree.body = translate(tree.body);
 	result = tree;
     }
-    
-    public void visitAtomic(DPJAtomic tree) {
-	tree.body = translate(tree.body);
-	result = tree;
-    }
-
-    public void visitNonint(DPJNonint tree) {
-	tree.body = translate(tree.body);
-	result = tree;
-    }    
     
     public void visitTypeParameter(JCTypeParameter tree) {
 	tree.bounds = translate(tree.bounds);

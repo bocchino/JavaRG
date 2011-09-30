@@ -90,17 +90,13 @@ import com.sun.source.tree.VariableTree;
 import com.sun.source.tree.WhileLoopTree;
 import com.sun.source.tree.WildcardTree;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
-import com.sun.tools.javac.tree.JCTree.DPJAtomic;
 import com.sun.tools.javac.tree.JCTree.DPJCobegin;
 import com.sun.tools.javac.tree.JCTree.DPJEffect;
-import com.sun.tools.javac.tree.JCTree.DPJFinish;
 import com.sun.tools.javac.tree.JCTree.DPJForLoop;
-import com.sun.tools.javac.tree.JCTree.DPJNonint;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathListElt;
-import com.sun.tools.javac.tree.JCTree.DPJSpawn;
 import com.sun.tools.javac.tree.JCTree.JCAnnotation;
 import com.sun.tools.javac.tree.JCTree.JCArrayAccess;
 import com.sun.tools.javac.tree.JCTree.JCArrayTypeTree;
@@ -624,18 +620,6 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         	effectParams);
     }
     
-    public JCTree visitSpawn(SpawnTree node, P p) {
-	DPJSpawn t = (DPJSpawn) node;
-	JCStatement body = copy(t.body, p);
-	return M.at(t.pos).Spawn(body);
-    }
-    
-    public JCTree visitFinish(FinishTree node, P p) {
-	DPJFinish t = (DPJFinish) node;
-	JCStatement body = copy(t.body, p);
-	return M.at(t.pos).Finish(body);
-    }
-    
     public JCTree visitCobegin(CobeginTree node, P p) {
 	DPJCobegin t = (DPJCobegin) node;
 	JCStatement body = copy(t.body, p);
@@ -654,26 +638,6 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
 	return result;
     }
     
-    public JCTree visitAtomic(AtomicTree node, P p) {
-	DPJAtomic t = (DPJAtomic) node;
-	JCStatement body = copy(t.body, p);
-	DPJAtomic result = M.at(t.pos).Atomic(body);
-	
-	result.declaredVars = new HashSet<VarSymbol>(t.declaredVars);
-	result.definedVars = new HashSet<VarSymbol>(t.definedVars);
-	result.usedVars = new HashSet<VarSymbol>(t.usedVars);
-	result.aliveAtEnd = t.aliveAtEnd;
-	
-	return result;
-    }
-    
-    public JCTree visitNonint(NonintTree node, P p) {
-	DPJNonint t = (DPJNonint) node;
-	JCStatement body = copy(t.body, p);
-	DPJNonint result = M.at(t.pos).Nonint(body);
-	return result;	
-    }
-
     public JCTree visitDPJForLoop(DPJForLoopTree node, P p) {
 	DPJForLoop t = (DPJForLoop) node;
 	JCExpression start = copy(t.start, p);

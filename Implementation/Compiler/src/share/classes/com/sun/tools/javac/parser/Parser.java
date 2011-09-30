@@ -26,6 +26,7 @@
 package com.sun.tools.javac.parser;
 
 import static com.sun.tools.javac.parser.Token.AMP;
+import static com.sun.tools.javac.parser.Token.ARRAYCLASS;
 import static com.sun.tools.javac.parser.Token.ASSERT;
 import static com.sun.tools.javac.parser.Token.BAR;
 import static com.sun.tools.javac.parser.Token.CASE;
@@ -1466,8 +1467,9 @@ public class Parser {
         List<JCIdent> groupArgs = List.nil();
         if (S.token() == LT) {
             S.nextToken();
-            // Get the args that may be type or RPL args, if any.  Which they are 
-            // will be resolved at type checking time.
+            // Get the args that may be type (or group) or RPL args, if any.  
+            // (Potential group args are parsed the same as types.)
+            // Which they are will be resolved at type checking time.
             if (S.token() != REGION && S.token() != REFGROUP) {
         	typeArgs.append(((mode & EXPR) == 0) ? typeOrRPLArgument() : type());
         	while (S.token() == COMMA) {
@@ -1521,7 +1523,7 @@ public class Parser {
      *               | "?" EXTENDS Type {"&" Type}
      *               | "?" SUPER Type
      *               | RPLElement { ":" RPLElement}
-     *  RPLElement = Type | THIS | "[" Expr "]" | "[?]"
+     *  RPLElement = Ident | THIS | "[" Expr "]" | "[?]"
      */
     JCExpression typeOrRPLArgument() {
         if (S.token() != QUES) return typeOrRPL();
@@ -2081,16 +2083,6 @@ public class Parser {
         }
         case ENUM:
         default:
-            if (tokenIsIdent("atomic")) {
-        	S.nextToken();
-        	JCStatement body = statement();
-        	return F.at(pos).Atomic(body);
-            }
-            if (tokenIsIdent("nonint")) {
-        	S.nextToken();
-        	JCStatement body = statement();
-        	return F.at(pos).Nonint(body);
-            }
             Name name = S.name();
             JCExpression expr = expression();
             if (S.token() == COLON && expr.getTag() == JCTree.IDENT) {
@@ -2308,6 +2300,7 @@ public class Parser {
         switch (S.token()) {
         case ENUM: flags |= Flags.ENUM; break;
         case INTERFACE: flags |= Flags.INTERFACE; break;
+        case ARRAYCLASS: flags |= Flags.ARRAYCLASS; break;
         default: break;
         }
 
@@ -2515,23 +2508,6 @@ public class Parser {
         case STAR:
             elt = toP(F.at(pos).RegionPathListElt(null, DPJRegionPathListElt.STAR));
             S.nextToken();
-            break;
-        case LBRACKET:
-            S.nextToken();
-            if (S.token() == QUES) {
-    	    	S.nextToken();
-    	    	elt = toP(F.at(pos).RegionPathListElt(null, DPJRegionPathListElt.ARRAY_UNKNOWN));   
-            } else {
-    	    	elt = toP(F.at(pos).RegionPathListElt(expression(), DPJRegionPathListElt.ARRAY_INDEX));
-            }
-            accept(RBRACKET);
-            break;
-        case THIS:
-            S.nextToken();
-            elt = toP(F.at(pos).RegionPathListElt(to(F.at(pos).Ident(names._this)), 
-        	    DPJRegionPathListElt.NAME));
-            if (!thisOK)
-        	syntaxError("illegal.rpl");
             break;
         }
 	return elt;
@@ -2786,7 +2762,7 @@ public class Parser {
 
         Pair<List<JCTypeParameter>,DPJParamInfo> params = 
             parametersOpt();
-        DPJParamInfo rgnparamInfo = params.snd;
+        DPJParamInfo dpjParamInfo = params.snd;
         List<JCTypeParameter> typarams = params.fst;
 
         JCTree extending = null;
@@ -2801,7 +2777,7 @@ public class Parser {
         }
         List<JCTree> defs = classOrInterfaceBody(name, false);
         JCClassDecl result = toP(F.at(pos).ClassDef(
-            mods, name, rgnparamInfo, typarams, extending, 
+            mods, name, dpjParamInfo, typarams, extending, 
             implementing, defs));
         attach(result, dc);
         return result;
@@ -2810,7 +2786,7 @@ public class Parser {
     /** InterfaceDeclaration = INTERFACE Ident ParametersOpt
      *                         [EXTENDS TypeList] InterfaceBody
      *  @param mods    The modifiers starting the interface declaration
-     *  @param dc       The documentation comment for the interface, or null.
+     *  @param dc      The documentation comment for the interface, or null.
      */
     JCClassDecl interfaceDeclaration(JCModifiers mods, String dc) {
         int pos = S.pos();
@@ -2819,7 +2795,7 @@ public class Parser {
 
         Pair<List<JCTypeParameter>,DPJParamInfo> params = parametersOpt();
         List<JCTypeParameter> typarams = params.fst;
-        DPJParamInfo rgnparamInfo = params.snd;
+        DPJParamInfo dpjParamInfo = params.snd;
 
         List<JCExpression> extending = List.nil();
         if (S.token() == EXTENDS) {
@@ -2828,11 +2804,62 @@ public class Parser {
         }
         List<JCTree> defs = classOrInterfaceBody(name, true);
         JCClassDecl result = toP(F.at(pos).ClassDef(
-            mods, name, rgnparamInfo, typarams, null, extending, defs));
+            mods, name, dpjParamInfo, typarams, null, extending, defs));
         attach(result, dc);
         return result;
     }
 
+    /** ArrayDeclaration = ARRAYCLASS Ident ParametersOpt ArrayBody
+     *  @param mods   The modifiers starting the array declaration
+     *  @param dc     The documentation comment for the array, or null
+     */
+    JCClassDecl arrayDeclaration(JCModifiers mods, String dc) {
+        int pos = S.pos();
+        accept(ARRAYCLASS);
+        Name name = ident();
+
+        Pair<List<JCTypeParameter>,DPJParamInfo> params = parametersOpt();
+        List<JCTypeParameter> typarams = params.fst;
+        DPJParamInfo dpjParamInfo = params.snd;
+
+        List<JCTree> defs = arrayBody(name);
+        JCModifiers newMods =
+            F.at(mods.pos).Modifiers(mods.flags|Flags.ENUM, mods.annotations);
+        JCClassDecl result = toP(F.at(pos).
+            ClassDef(newMods, name, dpjParamInfo, typarams, null, null, defs));
+        attach(result, dc);
+        return result;
+    }
+    
+    /** ArrayBody = { RegionDeclarations }
+     *              RefPermOpt Type VariableDeclaratorRest ";"
+     * 
+     */
+    List<JCTree> arrayBody(Name arrayName) {
+        accept(LBRACE);
+        int flags = Flags.PUBLIC;
+        String dc = S.docComment();
+        List<JCAnnotation> annotations = annotationsOpt();
+        JCModifiers mods = F.at(annotations.isEmpty() ? 
+        	Position.NOPOS : S.pos()).Modifiers(flags, annotations);
+        ListBuffer<JCTree> defs = new ListBuffer<JCTree>();
+        
+        // Get region decls, if any
+        if (S.token() == REGION) {
+            regionDeclarations(S.pos(), mods, dc, defs).toList();
+        }
+
+        // Get field decl        
+        JCExpression type = type();
+        JCVariableDecl var = 
+        	variableDeclaratorRest(S.pos(), mods, type, arrayName, false, true, dc);
+        storeEnd(var, S.endPos());
+        defs.append(var);
+        accept(SEMI);
+        accept(RBRACE);
+        return defs.toList();
+    }
+    
     /** EnumDeclaration = ENUM Ident [IMPLEMENTS TypeList] EnumBody
      *  @param mods    The modifiers starting the enum declaration
      *  @param dc       The documentation comment for the enum, or null.
@@ -2933,7 +2960,7 @@ public class Parser {
         if (createPos != Position.NOPOS)
             storeEnd(create, S.prevEndPos());
         ident = F.at(Position.NOPOS).Ident(enumName);
-        JCTree result = toP(F.at(pos).VarDef(mods, name, null, ident, create)); // DPJ: null region
+        JCTree result = toP(F.at(pos).VarDef(mods, name, null, ident, create));
         attach(result, dc);
         return result;
     }
@@ -3416,7 +3443,7 @@ public class Parser {
         case JCTree.SL_ASG: case JCTree.SR_ASG: case JCTree.USR_ASG:
         case JCTree.PLUS_ASG: case JCTree.MINUS_ASG:
         case JCTree.MUL_ASG: case JCTree.DIV_ASG: case JCTree.MOD_ASG:
-        case JCTree.APPLY: case JCTree.NEWCLASS: case JCTree.SPAWN:
+        case JCTree.APPLY: case JCTree.NEWCLASS:
         case JCTree.ERRONEOUS:
             return t;
         default:

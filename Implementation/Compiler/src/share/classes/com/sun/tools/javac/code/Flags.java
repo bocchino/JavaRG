@@ -106,8 +106,12 @@ public class Flags {
      */
     public static final int ISCOMMUTATIVE    = 1<<15;
     
+    /** Flag that denotes an array class
+     */
+    public static final int ARRAYCLASS            = 1<<16;
+    
     public static final int StandardFlags = 0x0fff;
-    public static final int DPJStandardFlags = StandardFlags | ISCOMMUTATIVE;
+    public static final int DPJStandardFlags = StandardFlags | ISCOMMUTATIVE | ARRAYCLASS;
 
     // Because the following access flags are overloaded with other
     // bit positions, we translate them when reading and writing class

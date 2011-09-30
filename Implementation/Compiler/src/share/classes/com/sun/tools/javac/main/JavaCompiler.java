@@ -304,10 +304,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
      */
     Lower lower;
     
-    /** The transactional memory barrier inserter.
-     */
-    InsertBarriers insertBarriers;
-
     /** The annotation annotator.
      */
     protected Annotate annotate;
@@ -389,7 +385,6 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
         harness = FJTaskHarness.instance(context);
         transTypes = TransTypes.instance(context);
         lower = Lower.instance(context);
-        insertBarriers = InsertBarriers.instance(context);
         annotate = Annotate.instance(context);
         types = Types.instance(context);
         taskListener = context.get(TaskListener.class);
@@ -1437,15 +1432,7 @@ public class JavaCompiler implements ClassReader.SourceCompleter {
 
     public Pair<Env<AttrContext>, JCClassDecl> insertBarriers(
 	    Pair<Env<AttrContext>, JCClassDecl> env) {
-	// Only do barrier insertion if "-nondet" option is given
-	if (nondet) {
-    	    JCTree newTree = insertBarriers.translate(env.fst.tree);
-    	    // TODO Is this the appropriate thing to do here?
-    	    env.fst.tree = newTree;
-    	    return new Pair(env.fst, (JCClassDecl)newTree);
-	} else {
-	    return env;
-	}
+	return env;
     }
     
     /** Generates the source or class file for a list of classes.

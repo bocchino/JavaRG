@@ -117,18 +117,14 @@ import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
-import com.sun.tools.javac.tree.JCTree.DPJAtomic;
 import com.sun.tools.javac.tree.JCTree.DPJCobegin;
 import com.sun.tools.javac.tree.JCTree.DPJEffect;
-import com.sun.tools.javac.tree.JCTree.DPJFinish;
 import com.sun.tools.javac.tree.JCTree.DPJForLoop;
-import com.sun.tools.javac.tree.JCTree.DPJNonint;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathListElt;
-import com.sun.tools.javac.tree.JCTree.DPJSpawn;
 import com.sun.tools.javac.tree.JCTree.JCAnnotation;
 import com.sun.tools.javac.tree.JCTree.JCArrayAccess;
 import com.sun.tools.javac.tree.JCTree.JCArrayTypeTree;
@@ -3586,22 +3582,7 @@ public class Attr extends JCTree.Visitor {
         }
     }
 
-    public void visitFinish(DPJFinish tree) {
-        attribStat(tree.body, env);
-        result = null;
-    }
-
     public void visitCobegin(DPJCobegin tree) {
-	attribStat(tree.body, env);
-	result = null;
-    }
-    
-    public void visitAtomic(DPJAtomic tree) {
-	attribStat(tree.body, env);
-	result = null;
-    }
-
-    public void visitNonint(DPJNonint tree) {
 	attribStat(tree.body, env);
 	result = null;
     }
@@ -3620,13 +3601,6 @@ public class Attr extends JCTree.Visitor {
 	attribStat(tree.body, loopEnv);
 	loopEnv.info.scope.leave();
 	result = null;	
-    }
-    
-    /** Visitor method for spawn.
-     */
-    public void visitSpawn(DPJSpawn tree) {
-        attribStat(tree.body, env);
-        result = null;
     }
     
     /** Visitor method for region parameter declarations, including disjointness constraints.
@@ -3735,13 +3709,6 @@ public class Attr extends JCTree.Visitor {
             break;
 	case DPJRegionPathListElt.STAR:
 	    elt.rplElt = RPLElement.STAR;
-	    break;
-	case DPJRegionPathListElt.ARRAY_INDEX:
-	    attribExpr(elt.exp, env);
-	    elt.rplElt = new RPLElement.ArrayIndexRPLElement(elt.exp);
-	    break;
-	case DPJRegionPathListElt.ARRAY_UNKNOWN:
-	    elt.rplElt = new RPLElement.ArrayIndexRPLElement(null);
 	    break;
 	default:
 	    log.error(elt.pos(), "unknown.rpl.element");

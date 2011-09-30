@@ -21,13 +21,9 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.DPJAtomic;
 import com.sun.tools.javac.tree.JCTree.DPJCobegin;
-import com.sun.tools.javac.tree.JCTree.DPJFinish;
 import com.sun.tools.javac.tree.JCTree.DPJForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJNegationExpression;
-import com.sun.tools.javac.tree.JCTree.DPJNonint;
-import com.sun.tools.javac.tree.JCTree.DPJSpawn;
 import com.sun.tools.javac.tree.JCTree.JCArrayAccess;
 import com.sun.tools.javac.tree.JCTree.JCAssert;
 import com.sun.tools.javac.tree.JCTree.JCAssign;
@@ -407,30 +403,6 @@ public class CheckEffects extends EnvScanner { // DPJ
     }
 
     @Override
-    public void visitFinish(DPJFinish tree) {
-	super.visitFinish(tree);
-	addAll(tree.body, tree);
-    }
-
-    @Override
-    public void visitAtomic(DPJAtomic tree) {
-	boolean savedInAtomic = inAtomic;
-	inAtomic = true;
-	super.visitAtomic(tree);
-	addAll(tree.body, tree);
-	inAtomic = savedInAtomic;
-    }
-    
-    @Override
-    public void visitNonint(DPJNonint tree) {
-	boolean savedInNonint = inNonint;
-	inNonint = true;
-	super.visitNonint(tree);
-	addAll(tree.body, tree);
-	inNonint = savedInNonint;	
-    }
-    
-    @Override
     public void visitForeachLoop(JCEnhancedForLoop tree) {
 	super.visitForeachLoop(tree);
 	if (tree.var.init != null) addAllWithRead(tree.var.init, tree);
@@ -473,12 +445,6 @@ public class CheckEffects extends EnvScanner { // DPJ
     public void visitNewArray(JCNewArray tree) {
 	// TODO Constructor effects
 	super.visitNewArray(tree);
-    }
-
-    @Override
-    public void visitSpawn(DPJSpawn tree) {
-	super.visitSpawn(tree);
-	addAll(tree.body, tree);
     }
 
     @Override

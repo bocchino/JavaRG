@@ -420,33 +420,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      */
     public static final int REGIONPARAMINFO = REGIONPARAMETER + 1;
     
-    /** Region parameterized types, of type RegionApply.
-     */
-    public static final int REGIONAPPLY = REGIONPARAMINFO + 1;
-    
-    /** Spawn statements, of type Spawn
-     */
-    public static final int SPAWN = REGIONAPPLY + 1;
-    
-    /** Finish statements, of type Finish
-     */
-    public static final int FINISH = SPAWN + 1;
-    
     /** Cobegin statements, of type Cobegin
      */
-    public static final int COBEGIN = FINISH + 1;    
+    public static final int COBEGIN = REGIONPARAMINFO + 1;    
     
     /** DPJ for loop, of type DPJForLoop
      */
     public static final int DPJFORLOOP = COBEGIN + 1;
-    
-    /** DPJ atomic statement
-     */
-    public static final int ATOMIC = DPJFORLOOP + 1;
-    
-    /** DPJ nonint statement
-     */
-    public static final int NONINT = ATOMIC + 1;
     
     /** The offset between assignment operators and normal operators.
      */
@@ -1048,30 +1028,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
-     * A DPJ finish block
-     */
-    public static class DPJFinish extends JCStatement implements FinishTree {
-        public JCStatement body;
-        protected DPJFinish(JCStatement body) {
-            this.body = body;
-        }
-        @Override
-        public void accept(Visitor v) { v.visitFinish(this); }
-
-        public Kind getKind() { return Kind.FINISH; }
-        public JCStatement getStatement() { return body; }
-        @Override
-        public <R,D> R accept(TreeVisitor<R,D> v, D d) {
-            return v.visitFinish(this, d);
-        }
-
-        @Override
-        public int getTag() {
-            return FINISH;
-        }
-    }
-
-    /**
      * A DPJ cobegin statement
      */
     public static class DPJCobegin extends JCStatement implements CobeginTree {
@@ -1126,80 +1082,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public int getTag() {
             return COBEGIN;
-        }
-    }
-
-    /**
-     * A DPJ atomic statement
-     */
-    public static class DPJAtomic extends JCStatement implements AtomicTree {
-        /**
-         * Variables assigned in body of atomic
-         */
-        public Set<VarSymbol> definedVars = new HashSet<VarSymbol>();
-        /**
-         * Variables used in body of atomic
-         */
-        public Set<VarSymbol> usedVars = new HashSet<VarSymbol>();
-        /**
-         * Variables declared in body of atomic
-         */
-        public Set<VarSymbol> declaredVars = new HashSet<VarSymbol>();
-        /**
-         * Can control flow reach the end of this atomic block?
-         */
-        public boolean aliveAtEnd;
-	
-	/**
-	 * Statement to execute in a transaction
-	 */
-        public JCStatement body;
-        
-        protected DPJAtomic(JCStatement body) {
-            this.body = body;
-        }
-        @Override
-        public void accept(Visitor v) { v.visitAtomic(this); }
-
-        public Kind getKind() { return Kind.COBEGIN; }
-        public JCStatement getStatement() { return body; }
-        @Override
-        public <R,D> R accept(TreeVisitor<R,D> v, D d) {
-            return v.visitAtomic(this, d);
-        }
-
-        @Override
-        public int getTag() {
-            return ATOMIC;
-        }
-    }
-
-    /**
-     * A DPJ nonint statement
-     */
-    public static class DPJNonint extends JCStatement implements NonintTree {
-
-	/**
-	 * Statement to execute with no barriers if in a transaction
-	 */
-        public JCStatement body;
-        
-        protected DPJNonint(JCStatement body) {
-            this.body = body;
-        }
-        @Override
-        public void accept(Visitor v) { v.visitNonint(this); }
-
-        public Kind getKind() { return Kind.COBEGIN; }
-        public JCStatement getStatement() { return body; }
-        @Override
-        public <R,D> R accept(TreeVisitor<R,D> v, D d) {
-            return v.visitNonint(this, d);
-        }
-
-        @Override
-        public int getTag() {
-            return NONINT;
         }
     }
 
@@ -1875,29 +1757,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
-     * A spawn statement
-     */
-    public static class DPJSpawn extends JCStatement implements SpawnTree {
-        public JCStatement body;
-        protected DPJSpawn(JCStatement body) {
-            this.body = body;
-        }
-        @Override
-        public void accept(Visitor v) { v.visitSpawn(this); }
-
-        public Kind getKind() { return Kind.SPAWN; }
-        public JCStatement getStatement() { return body; }
-        @Override
-        public <R,D> R accept(TreeVisitor<R,D> v, D d) {
-            return v.visitSpawn(this, d);
-        }
-        @Override
-        public int getTag() {
-            return SPAWN;
-        }	
-    }
-    
-    /**
      * A assignment with "=".
      */
     public static class JCAssign extends JCExpression implements AssignmentTree {
@@ -2478,10 +2337,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 	public static final int NAME = 0;
 	/** A '*' RPL element. */
 	public static final int STAR = NAME + 1;
-	/** A '[exp]' RPL element.  exp will be non-null. */
-	public static final int ARRAY_INDEX = STAR + 1;
-	/** A '[?]' RPL element. */
-	public static final int ARRAY_UNKNOWN = ARRAY_INDEX + 1;
 	
 	public int type = NAME;
 	
@@ -2521,8 +2376,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 	
 	public List<DPJRegionPathListElt> elts;
 	
-	/** Associated {@link RPL} -- set in {@link Attr} */
-	public RPL rpl; // Set in DPJAttrRgnResolve
+	/** Associated RPL */
+	public RPL rpl;
 	
 	public DPJRegionPathList(List<DPJRegionPathListElt> e) {
 	    elts = e;
@@ -2886,10 +2741,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 			               List<DPJRegionPathList> writeEffects,
 			               List<JCIdent> variableEffects);
         DPJRegionDecl RegionDecl(JCModifiers mods, Name name);
-        DPJSpawn Spawn(JCStatement expr);
-        DPJFinish Finish(JCStatement body);
         DPJCobegin Cobegin(JCStatement body, boolean isNonDet);
-        DPJAtomic Atomic(JCStatement body);
         JCWildcard Wildcard(TypeBoundKind kind, JCTree type);
         TypeBoundKind TypeBoundKind(BoundKind kind);
         JCAnnotation Annotation(JCTree annotationType, List<JCExpression> args);
@@ -2956,11 +2808,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitModifiers(JCModifiers that)         { visitTree(that); }
         public void visitErroneous(JCErroneous that)         { visitTree(that); }
         public void visitLetExpr(LetExpr that)               { visitTree(that); }
-        public void visitSpawn(DPJSpawn that)                { visitTree(that); }
-        public void visitFinish(DPJFinish that)              { visitTree(that); }
         public void visitCobegin(DPJCobegin that)            { visitTree(that); }
-        public void visitAtomic(DPJAtomic that)	             { visitTree(that); }
-        public void visitNonint(DPJNonint that)              { visitTree(that); }
         public void visitDPJForLoop(DPJForLoop that)         { visitTree(that); }
         public void visitNegationExpression(DPJNegationExpression that) {visitTree(that); }
 

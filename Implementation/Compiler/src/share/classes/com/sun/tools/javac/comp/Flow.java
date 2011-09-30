@@ -372,11 +372,6 @@ public class Flow extends TreeScanner {
 	    DPJForLoop enclosing = (DPJForLoop)(enclosingDPJ);
 	    enclosing.declaredVars.add(sym);
 	}
-	else if(enclosingDPJ!=null && enclosingDPJ instanceof DPJAtomic)
-	{
-	    DPJAtomic enclosing = (DPJAtomic)(enclosingDPJ);
-	    enclosing.declaredVars.add(sym);
-	}
 	
 	nextadr++;
     }
@@ -396,11 +391,6 @@ public class Flow extends TreeScanner {
 	if(enclosingDPJ!=null && enclosingDPJ instanceof DPJForLoop)
 	{
 	    DPJForLoop enclosing = (DPJForLoop)(enclosingDPJ);
-	    enclosing.definedVars.add(sym);
-	}
-	if(enclosingDPJ!=null && enclosingDPJ instanceof DPJAtomic)
-	{
-	    DPJAtomic enclosing = (DPJAtomic)(enclosingDPJ);
 	    enclosing.definedVars.add(sym);
 	}
 	
@@ -465,11 +455,6 @@ public class Flow extends TreeScanner {
 	else if(enclosingDPJ!=null && enclosingDPJ instanceof DPJForLoop)
 	{
 	    DPJForLoop enclosing = (DPJForLoop)(enclosingDPJ);
-	    enclosing.usedVars.add(sym);
-	}
-	else if(enclosingDPJ!=null && enclosingDPJ instanceof DPJAtomic)
-	{
-	    DPJAtomic enclosing = (DPJAtomic)(enclosingDPJ);
 	    enclosing.usedVars.add(sym);
 	}
 	
@@ -1016,10 +1001,6 @@ public class Flow extends TreeScanner {
 	    ((DPJCobegin)oldEnclosure).usedVars[cobegin_index].addAll(externalUses);
 	else if(oldEnclosure instanceof DPJForLoop)
 	    ((DPJForLoop)oldEnclosure).usedVars.addAll(externalUses);
-	else if(oldEnclosure instanceof DPJAtomic) {
-	    ((DPJAtomic)oldEnclosure).usedVars.addAll(externalUses);
-	    ((DPJAtomic)oldEnclosure).definedVars.addAll(externalDefines);
-	}
 	
 	enclosingDPJ = oldEnclosure;
     }
@@ -1404,63 +1385,11 @@ public class Flow extends TreeScanner {
 	    ((DPJForLoop)oldEnclosure).usedVars.addAll(externalUses);
 	    assert(externalDefines.size()==0);
 	}
-	else if(oldEnclosure instanceof DPJAtomic)
-	{
-	    ((DPJAtomic)oldEnclosure).usedVars.addAll(externalUses);
-	    ((DPJAtomic)oldEnclosure).definedVars.addAll(externalDefines);
-	    assert(externalDefines.size()==0);
-	}
 	
 	enclosingDPJ = oldEnclosure;
 	cobegin_index=oldIndex;
     }
-    
-    public void visitAtomic(DPJAtomic tree) {
-	JCTree oldEnclosure = enclosingDPJ;
-	enclosingDPJ = tree;
-	
-	Bits initsIn = inits.dup();
-	
-	scan(tree.body);
-	tree.aliveAtEnd = alive;
-	
-	//Recursively propagate non-declared uses and defines to the construct above
-	Set<VarSymbol> externalUses = new HashSet<VarSymbol>(tree.usedVars);
-	externalUses.removeAll(tree.declaredVars);
-	Set<VarSymbol> externalDefines = new HashSet<VarSymbol>(tree.definedVars);
-	externalDefines.removeAll(tree.declaredVars);
-	if(oldEnclosure instanceof DPJCobegin) {
-	    ((DPJCobegin)oldEnclosure).usedVars[cobegin_index].addAll(externalUses);
-	    ((DPJCobegin)oldEnclosure).definedVars[cobegin_index].addAll(externalDefines);
-	}
-	else if(oldEnclosure instanceof DPJForLoop) {
-	    ((DPJForLoop)oldEnclosure).usedVars.addAll(externalUses);
-	    ((DPJForLoop)oldEnclosure).definedVars.addAll(externalDefines);
-	}
-	else if(oldEnclosure instanceof DPJAtomic) {
-	    ((DPJAtomic)oldEnclosure).usedVars.addAll(externalUses);
-	    ((DPJAtomic)oldEnclosure).definedVars.addAll(externalDefines);
-	}
-	
-	// Don't include potentially uninitialized local variables in the
-	// write set for atomic blocks: Since they're potentially
-	// uninitialized going into the atomic block, code in or after
-	// the atomic block cannot read them without first writing them,
-	// so the existing value (if any) is inaccessible and doesn't
-	// need to be backed up and restored in the atomic block.
-	// Furthermore, the code to back them up would generate an error,
-	// since it accesses a potentially uninitialized variable.
-	Set<VarSymbol> newDefinedVars = new HashSet<VarSymbol>();
-	for(VarSymbol v : tree.definedVars) {
-	    if (initsIn.isMember(v.adr)) {
-		newDefinedVars.add(v);
-	    }
-	}
-	tree.definedVars = newDefinedVars;
-	
-	enclosingDPJ = oldEnclosure;
-    }
-    
+        
     public void visitTopLevel(JCCompilationUnit tree) {
         // Do nothing for TopLevel since each class is visited individually
     }
