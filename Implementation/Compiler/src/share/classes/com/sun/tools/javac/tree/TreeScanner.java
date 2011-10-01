@@ -336,7 +336,7 @@ public class TreeScanner extends Visitor {
 	scan(tree.rplParams);
     }
     
-    public void visitEffectPerms(JRGEffectPerms tree)  {
+    public void visitEffectPerms(JRGEffectPerm tree)  {
 	
     }
 

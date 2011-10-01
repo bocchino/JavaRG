@@ -5,7 +5,7 @@ import java.util.HashSet;
 
 import com.sun.tools.javac.parser.Parser;
 import com.sun.tools.javac.tree.TreeScanner;
-import com.sun.tools.javac.tree.JCTree.JRGEffectPerms;
+import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
@@ -340,7 +340,8 @@ public class DPJAnnotationCounter extends TreeScanner {
     }
     
     @Override
-    public void visitEffectPerms(JRGEffectPerms tree) {
+    public void visitEffectPerms(JRGEffectPerm tree) {
+	/*
 	if (tree.isPure || tree.readEffectPerms.nonEmpty() ||
 		tree.writeEffectPerms.nonEmpty())
 	    addLineFor(tree.pos);
@@ -371,6 +372,7 @@ public class DPJAnnotationCounter extends TreeScanner {
 	    scan(tree.writeEffectPerms);
 	}
 	context = savedContext;
+	*/
     }
     
     public void visitTypeCast(JCTypeCast tree) {

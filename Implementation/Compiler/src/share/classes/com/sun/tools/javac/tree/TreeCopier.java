@@ -47,7 +47,7 @@ import com.sun.source.tree.CopyPermTree;
 import com.sun.source.tree.DPJForLoopTree;
 import com.sun.source.tree.DerefSetTree;
 import com.sun.source.tree.DoWhileLoopTree;
-import com.sun.source.tree.EffectPermsTree;
+import com.sun.source.tree.EffectPermTree;
 import com.sun.source.tree.EmptyStatementTree;
 import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.source.tree.ErroneousTree;
@@ -85,7 +85,6 @@ import com.sun.source.tree.TryTree;
 import com.sun.source.tree.TypeCastTree;
 import com.sun.source.tree.TypeParameterTree;
 import com.sun.source.tree.UnaryTree;
-import com.sun.source.tree.UpdatePermTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.tree.WhileLoopTree;
 import com.sun.source.tree.WildcardTree;
@@ -147,11 +146,10 @@ import com.sun.tools.javac.tree.JCTree.JCWhileLoop;
 import com.sun.tools.javac.tree.JCTree.JCWildcard;
 import com.sun.tools.javac.tree.JCTree.JRGCopyPerm;
 import com.sun.tools.javac.tree.JCTree.JRGDerefSet;
-import com.sun.tools.javac.tree.JCTree.JRGEffectPerms;
+import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
 import com.sun.tools.javac.tree.JCTree.JRGMethodPerms;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
-import com.sun.tools.javac.tree.JCTree.JRGUpdatePerm;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.JCTree.TypeBoundKind;
 import com.sun.tools.javac.util.List;
@@ -378,7 +376,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         List<JCExpression> thrown = copy(t.thrown, p);
         JCBlock body = copy(t.body, p);
         JCExpression defaultValue = copy(t.defaultValue, p);
-        JRGEffectPerms effects = t.effects;
+        JRGEffectPerm effects = t.effects;
         JCMethodDecl result = M.at(t.pos).MethodDef(mods, t.name, restype, rgnParamInfo,
         	typarams, params, thrown, body, defaultValue, effects);
         result.sym = t.sym;
@@ -599,12 +597,17 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
 	JCIdent group = copy(t.group, p);
 	return M.at(t.pos).RefPerm(group);
     }
-    
+
     public JCTree visitMethodPerms(MethodPermsTree node, P p) {
 	JRGMethodPerms t = (JRGMethodPerms) node;
 	JRGRefPerm refPerm = copy(t.refPerm, p);
-	// TODO:  More
-	return M.at(t.pos).MethodPerms(refPerm);
+	List<JCIdent> freshGroups = copy(t.freshGroups, p);
+	List<JRGCopyPerm> copyPerms = copy(t.copyPerms, p);
+	List<JCIdent> preservedGroups = copy(t.preservedGroups, p);
+	List<JCIdent> updatedGroups = copy(t.updatedGroups, p);
+	JRGEffectPerm effectPerms = copy(t.effectPerms, p);
+	return M.at(t.pos).MethodPerms(refPerm, freshGroups, copyPerms, 
+		preservedGroups, updatedGroups, effectPerms);
     }
     
     public JCTree visitDerefSet(DerefSetTree node, P p) {
@@ -621,17 +624,11 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
 	return M.at(t.pos).CopyPerm(derefSet, targetGroup);
     }
     
-    public JCTree visitUpdatePerm(UpdatePermTree node, P p) {
-	JRGUpdatePerm t = (JRGUpdatePerm) node;
-	JCIdent group = copy(t.group, p);
-	return M.at(t.pos).UpdatePerm(t.permKind, group);
-    }
-    
-    public JCTree visitEffectPerms(EffectPermsTree node, P p) {
-	JRGEffectPerms t = (JRGEffectPerms) node;
-	List<DPJRegionPathList> readEffects = copy(t.readEffectPerms, p);
-	List<DPJRegionPathList> writeEffects = copy(t.writeEffectPerms, p);
-	return M.at(t.pos).EffectPerms(t.isPure, readEffects, writeEffects);
+    public JCTree visitEffectPerms(EffectPermTree node, P p) {
+	JRGEffectPerm t = (JRGEffectPerm) node;
+	DPJRegionPathList rpl = copy(t.rpl, p);
+	JRGDerefSet derefSet = copy(t.derefSet, p);
+	return M.at(t.pos).EffectPerms(rpl, derefSet);
     }
     
     public JCTree visitRegionParameter(RegionParameterTree node, P p) {

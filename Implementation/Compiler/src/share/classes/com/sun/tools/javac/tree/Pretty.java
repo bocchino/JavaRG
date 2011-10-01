@@ -585,6 +585,7 @@ public class Pretty extends JCTree.Visitor {
             print("(");
             printExprs(tree.params);
             print(")");
+            /*
             if (tree.effects != null && (codeGenMode == NONE)) {
         	if (tree.effects.isPure) {
         	    print(" pure");          
@@ -599,6 +600,7 @@ public class Pretty extends JCTree.Visitor {
         	    }
         	}
             }
+            */
             if (tree.thrown.nonEmpty()) {
                 print(" throws ");
                 printExprs(tree.thrown);

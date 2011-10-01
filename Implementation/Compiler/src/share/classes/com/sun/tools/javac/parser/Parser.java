@@ -97,7 +97,7 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.TypeTags;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.JRGEffectPerms;
+import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
@@ -3157,8 +3157,7 @@ public class Parser {
      * ReadEffects := READS RPLList
      * WriteEffects := WRITES RPLList
      */
-    JRGEffectPerms effectPerms(int pos) {	
-        boolean isPure = false;
+    JRGEffectPerm effectPerms(int pos) {	
         List<JCTree.DPJRegionPathList> readEffects = List.nil();
         List<JCTree.DPJRegionPathList> writeEffects = List.nil();
         if (S.token() == READS) {
@@ -3169,8 +3168,9 @@ public class Parser {
             S.nextToken();
             writeEffects = RPLList();
         }
-        JCTree.JRGEffectPerms result = 
-            toP(F.at(pos).EffectPerms(isPure, readEffects, writeEffects));
+        // FIXME
+        JCTree.JRGEffectPerm result = 
+            toP(F.at(pos).EffectPerms(null, null));
         return result;
     }
     
@@ -3197,7 +3197,7 @@ public class Parser {
                               String dc) {
         List<JCVariableDecl> params = formalParameters();
         if (!isVoid) type = bracketsOpt(type);
-        JRGEffectPerms methodEffectSummary = effectPerms(pos);
+        JRGEffectPerm methodEffectSummary = effectPerms(pos);
         List<JCExpression> thrown = List.nil();
         if (S.token() == THROWS) {
             S.nextToken();

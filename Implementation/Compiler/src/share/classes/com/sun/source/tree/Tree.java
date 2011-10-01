@@ -174,7 +174,7 @@ public interface Tree {
         /**
          * Used for instances of {@link MethodEffectsTree}.
          */
-        EFFECT_PERMS(EffectPermsTree.class),
+        EFFECT_PERM(EffectPermTree.class),
         
         /**
          * Used for instances of {@link MethodPermsTree}.
@@ -186,11 +186,6 @@ public interface Tree {
          */
         COPY_PERM(CopyPermTree.class),
         
-        /**
-         * Used for instances of {@link UpdatePermTree}.
-         */
-        UPDATE_PERM(UpdatePermTree.class),
-
         /**
          * Used for instances of {@link DerefSetTree}.
          */

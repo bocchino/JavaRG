@@ -111,8 +111,7 @@ public interface TreeVisitor<R,P> {
     R visitMethodPerms(MethodPermsTree node, P p);
     R visitDerefSet(DerefSetTree node, P p);
     R visitCopyPerm(CopyPermTree node, P p);
-    R visitUpdatePerm(UpdatePermTree node, P p);
-    R visitEffectPerms(EffectPermsTree node, P p); // DPJ
+    R visitEffectPerms(EffectPermTree node, P p); // DPJ
     R visitWhileLoop(WhileLoopTree node, P p);
     R visitWildcard(WildcardTree node, P p);
     R visitCobegin(PardoTree node, P p); // DPJ

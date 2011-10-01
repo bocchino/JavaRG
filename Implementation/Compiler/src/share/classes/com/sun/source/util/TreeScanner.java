@@ -45,7 +45,7 @@ import com.sun.source.tree.CopyPermTree;
 import com.sun.source.tree.DPJForLoopTree;
 import com.sun.source.tree.DerefSetTree;
 import com.sun.source.tree.DoWhileLoopTree;
-import com.sun.source.tree.EffectPermsTree;
+import com.sun.source.tree.EffectPermTree;
 import com.sun.source.tree.EmptyStatementTree;
 import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.source.tree.ErroneousTree;
@@ -88,7 +88,6 @@ import com.sun.source.tree.TryTree;
 import com.sun.source.tree.TypeCastTree;
 import com.sun.source.tree.TypeParameterTree;
 import com.sun.source.tree.UnaryTree;
-import com.sun.source.tree.UpdatePermTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.tree.WhileLoopTree;
 import com.sun.source.tree.WildcardTree;
@@ -473,11 +472,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
 	return null;
     }
 
-    public R visitUpdatePerm(UpdatePermTree node, P p) {
-	return null;
-    }
-    
-    public R visitEffectPerms(EffectPermsTree node, P p) { // DPJ
+    public R visitEffectPerms(EffectPermTree node, P p) { // DPJ
 	return null; // DPJ FIXME
     }
     

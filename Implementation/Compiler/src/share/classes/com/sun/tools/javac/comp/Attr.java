@@ -118,7 +118,7 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
-import com.sun.tools.javac.tree.JCTree.JRGEffectPerms;
+import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
 import com.sun.tools.javac.tree.JCTree.DPJForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
@@ -275,7 +275,7 @@ public class Attr extends JCTree.Visitor {
 	            attr.visitEffectPerms(tree.effects);
 
 	            // Store resolved effects in the method symbol
-	            m.effects = tree.effects.effects;
+	            //m.effects = tree.effects.effects;
 	        }
 	        
 		parentEnv = savedEnv;
@@ -719,12 +719,12 @@ public class Attr extends JCTree.Visitor {
         return buf.toList();
     }
     
-    List<Effects> attribEffects(List<JRGEffectPerms> trees) {
+    List<Effects> attribEffects(List<JRGEffectPerm> trees) {
 	//if (trees == null) return List.nil();
 	ListBuffer<Effects> buf = ListBuffer.lb();
-	for (JRGEffectPerms tree : trees) {
+	for (JRGEffectPerm tree : trees) {
 	    attribTree(tree, env, Kinds.EFFECT, Type.noType);
-	    buf.append(tree.effects);
+	    //buf.append(tree.effects);
 	}
 	return buf.toList();
     }
@@ -3713,7 +3713,8 @@ public class Attr extends JCTree.Visitor {
 	}
     }
     
-    public void visitEffectPerms(JRGEffectPerms tree) {
+    public void visitEffectPerms(JRGEffectPerm tree) {
+	/*
 	attribRPLs(tree.readEffectPerms);
 	attribRPLs(tree.writeEffectPerms);
 	tree.effects = new Effects();
@@ -3735,6 +3736,7 @@ public class Attr extends JCTree.Visitor {
 		    new RPL(List.<RPLElement>of(RPLElement.ROOT_ELEMENT, 
 			    RPLElement.STAR)), false, true));            
 	}            
+	*/
     }
 
 }

@@ -172,7 +172,7 @@ public class TreeMaker implements JCTree.Factory {
                                List<JCExpression> thrown,
                                JCBlock body,
                                JCExpression defaultValue,
-                               JRGEffectPerms effects)
+                               JRGEffectPerm effects)
     {
         JCMethodDecl tree = new JCMethodDecl(mods,
                                        name,
@@ -527,8 +527,11 @@ public class TreeMaker implements JCTree.Factory {
 	return tree;
     }
     
-    public JRGMethodPerms MethodPerms(JRGRefPerm refPerm) {
-	JRGMethodPerms tree = new JRGMethodPerms(refPerm);
+    public JRGMethodPerms MethodPerms(JRGRefPerm refPerm, List<JCIdent> freshGroups,
+	    List<JRGCopyPerm> copyPerms, List<JCIdent> preservedGroups,
+	    List<JCIdent> updatedGroups, JRGEffectPerm effectPerms) {
+	JRGMethodPerms tree = new JRGMethodPerms(refPerm, freshGroups, copyPerms, 
+		preservedGroups, updatedGroups, effectPerms);
 	tree.pos = pos;
 	return tree;
     }
@@ -545,15 +548,8 @@ public class TreeMaker implements JCTree.Factory {
 	return tree;
     }
     
-    public JRGUpdatePerm UpdatePerm(JRGUpdatePerm.PermKind permKind, JCIdent group) {
-	JRGUpdatePerm tree = new JRGUpdatePerm(permKind, group);
-	tree.pos = pos;
-	return tree;
-    }
-    
-    public JRGEffectPerms EffectPerms(boolean isPure, List<DPJRegionPathList> readEffects,
-	    		    List<DPJRegionPathList> writeEffects) {
-	JRGEffectPerms tree = new JRGEffectPerms(isPure, readEffects, writeEffects);
+    public JRGEffectPerm EffectPerms(DPJRegionPathList rpl, JRGDerefSet derefSet) {
+	JRGEffectPerm tree = new JRGEffectPerm(rpl, derefSet);
 	tree.pos = pos;
 	return tree;
     }
