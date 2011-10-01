@@ -786,7 +786,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCExpression> thrown;
         public JCBlock body;
         public JCExpression defaultValue; // for annotation types
-        public JRGEffectPerm effects;
+        public JRGMethodPerms perms;
         public MethodSymbol sym;
 	public Lint lint;
 
@@ -799,7 +799,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                             List<JCExpression> thrown,
                             JCBlock body,
                             JCExpression defaultValue,
-                            JRGEffectPerm effects,
+                            JRGMethodPerms perms,
                             MethodSymbol sym)
         {
             this.mods = mods;
@@ -811,7 +811,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             this.thrown = thrown;
             this.body = body;
             this.defaultValue = defaultValue;
-            this.effects = effects;
+            this.perms = perms;
             this.sym = sym;
         }
         @Override
@@ -2808,7 +2808,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                             List<JCExpression> thrown,
                             JCBlock body,
                             JCExpression defaultValue,
-                            JRGEffectPerm effects);
+                            JRGMethodPerms perms);
         JCVariableDecl VarDef(JCModifiers mods,
                       Name name,
                       DPJRegionPathList rpl, // DPJ

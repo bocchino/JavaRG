@@ -358,11 +358,13 @@ public class CheckEffects extends EnvScanner { // DPJ
 		    tree.body.getConstructorEffects().inEnvironment(rs, childEnvs.head, true);
 	    }
 	}
+	/*
 	if (!actualEffects.areSubeffectsOf(m.effects)) {
 	    System.err.println("Effect summary does not cover " + 
 		    actualEffects.missingFrom(m.effects));
 	    log.error(tree.effects.pos(), "bad.effect.summary");
 	}
+	*/
     }
 	
     @Override

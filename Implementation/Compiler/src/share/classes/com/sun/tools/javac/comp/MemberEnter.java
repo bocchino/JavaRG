@@ -677,7 +677,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         // compute the method type
         m.type = signature(tree.typarams, tree.paramInfo, tree.params,
                            tree.restype, tree.thrown,
-                           tree.effects, localEnv);
+                           null, localEnv); // FIXME
         ListBuffer<Type> typarams = ListBuffer.lb();
         for (JCTypeParameter param : tree.typarams) {
             typarams.append(param.type);

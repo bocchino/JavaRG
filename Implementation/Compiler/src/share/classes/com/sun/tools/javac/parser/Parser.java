@@ -3197,7 +3197,6 @@ public class Parser {
                               String dc) {
         List<JCVariableDecl> params = formalParameters();
         if (!isVoid) type = bracketsOpt(type);
-        JRGEffectPerm methodEffectSummary = effectPerms(pos);
         List<JCExpression> thrown = List.nil();
         if (S.token() == THROWS) {
             S.nextToken();
@@ -3225,9 +3224,10 @@ public class Parser {
             }
         }
         JCMethodDecl result =
+        	// FIXME:  null should be method perms
             toP(F.at(pos).MethodDef(mods, name, type, rgnParamInfo, 
         	    		    typarams, params, thrown,
-                                    body, defaultValue, methodEffectSummary));
+                                    body, defaultValue, null));
         ++methodCount;
         attach(result, dc);
         return result;

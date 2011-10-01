@@ -376,9 +376,9 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         List<JCExpression> thrown = copy(t.thrown, p);
         JCBlock body = copy(t.body, p);
         JCExpression defaultValue = copy(t.defaultValue, p);
-        JRGEffectPerm effects = t.effects;
+        JRGMethodPerms perms = copy(t.perms, p);
         JCMethodDecl result = M.at(t.pos).MethodDef(mods, t.name, restype, rgnParamInfo,
-        	typarams, params, thrown, body, defaultValue, effects);
+        	typarams, params, thrown, body, defaultValue, perms);
         result.sym = t.sym;
         return result;
     }

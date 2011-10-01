@@ -172,7 +172,7 @@ public class TreeMaker implements JCTree.Factory {
                                List<JCExpression> thrown,
                                JCBlock body,
                                JCExpression defaultValue,
-                               JRGEffectPerm effects)
+                               JRGMethodPerms perms)
     {
         JCMethodDecl tree = new JCMethodDecl(mods,
                                        name,
@@ -183,7 +183,7 @@ public class TreeMaker implements JCTree.Factory {
                                        thrown,
                                        body,
                                        defaultValue,
-                                       effects,
+                                       perms,
                                        null);
         tree.pos = pos;
         return tree;

@@ -270,6 +270,7 @@ public class Attr extends JCTree.Visitor {
 	        }
 	        attr.env = parentEnv;
 
+	        /*
 	        if (tree.effects != null) {
 	            // Attribute method effects now!
 	            attr.visitEffectPerms(tree.effects);
@@ -277,6 +278,7 @@ public class Attr extends JCTree.Visitor {
 	            // Store resolved effects in the method symbol
 	            //m.effects = tree.effects.effects;
 	        }
+	        */
 	        
 		parentEnv = savedEnv;
 	    }
@@ -1054,11 +1056,12 @@ public class Attr extends JCTree.Visitor {
             if (tree.rgnParamInfo != null) {
         	attribTree(tree.rgnParamInfo, localEnv, NIL, Type.noType);
             }
-            */
 	
             if (tree.effects != null) {
         	attribTree(tree.effects, localEnv, NIL, Type.noType);
             }
+            */
+
             // Compute the effect set from the syntactic effect specification
             // and store it in the method symbol for later use in effect
             // checking
