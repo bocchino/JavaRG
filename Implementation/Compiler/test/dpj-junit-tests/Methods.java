@@ -25,4 +25,24 @@ public class Methods extends DPJTestCase {
 	compile("ParamsAndReturnType");
     }
 
+    @Test public void testThisRefPerm() throws Throwable {
+	compile("ThisRefPerm");
+    }
+
+    @Test public void testFreshGroups() throws Throwable {
+	compile("FreshGroups");
+    }
+    
+    @Test public void testCopyPerms() throws Throwable {
+	compile("CopyPerms");
+    }
+
+    @Test public void testEffectPerms() throws Throwable {
+	compile("EffectPerms");
+    }
+
+    @Test public void testUpdatePerms() throws Throwable {
+	compile("UpdatePerms");
+    }
+    
 }

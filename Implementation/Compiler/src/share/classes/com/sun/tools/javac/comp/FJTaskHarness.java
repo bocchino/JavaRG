@@ -165,8 +165,8 @@ public class FJTaskHarness extends TreeScanner {
 	    tree.defs = tree.defs.append(make.MethodDef(
     		    make.Modifiers(PUBLIC | STATIC), names.fromString("main"),
     		    make.TypeIdent(TypeTags.VOID), null,
-    		    List.<JCTypeParameter>nil(), params, thrown,
-    		    make.Block(0, block), null, null));
+    		    List.<JCTypeParameter>nil(), params, null, thrown,
+    		    make.Block(0, block), null));
     	}
 
     	classCanBeRun = oldClassCanBeRun;

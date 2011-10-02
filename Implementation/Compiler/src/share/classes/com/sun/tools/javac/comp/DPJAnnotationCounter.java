@@ -340,7 +340,7 @@ public class DPJAnnotationCounter extends TreeScanner {
     }
     
     @Override
-    public void visitEffectPerms(JRGEffectPerm tree) {
+    public void visitEffectPerm(JRGEffectPerm tree) {
 	/*
 	if (tree.isPure || tree.readEffectPerms.nonEmpty() ||
 		tree.writeEffectPerms.nonEmpty())

@@ -34,6 +34,7 @@ import static com.sun.tools.javac.parser.Token.CATCH;
 import static com.sun.tools.javac.parser.Token.CLASS;
 import static com.sun.tools.javac.parser.Token.COLON;
 import static com.sun.tools.javac.parser.Token.COMMA;
+import static com.sun.tools.javac.parser.Token.COPIES;
 import static com.sun.tools.javac.parser.Token.DEFAULT;
 import static com.sun.tools.javac.parser.Token.DOT;
 import static com.sun.tools.javac.parser.Token.ELLIPSIS;
@@ -45,6 +46,7 @@ import static com.sun.tools.javac.parser.Token.ERROR;
 import static com.sun.tools.javac.parser.Token.EXTENDS;
 import static com.sun.tools.javac.parser.Token.FINAL;
 import static com.sun.tools.javac.parser.Token.FINALLY;
+import static com.sun.tools.javac.parser.Token.FRESH;
 import static com.sun.tools.javac.parser.Token.GT;
 import static com.sun.tools.javac.parser.Token.GTEQ;
 import static com.sun.tools.javac.parser.Token.GTGT;
@@ -68,6 +70,7 @@ import static com.sun.tools.javac.parser.Token.NUMBER;
 import static com.sun.tools.javac.parser.Token.PACKAGE;
 import static com.sun.tools.javac.parser.Token.PLUSEQ;
 import static com.sun.tools.javac.parser.Token.PLUSPLUS;
+import static com.sun.tools.javac.parser.Token.PRESERVES;
 import static com.sun.tools.javac.parser.Token.QUES;
 import static com.sun.tools.javac.parser.Token.RBRACE;
 import static com.sun.tools.javac.parser.Token.RBRACKET;
@@ -84,6 +87,7 @@ import static com.sun.tools.javac.parser.Token.SUPER;
 import static com.sun.tools.javac.parser.Token.THROWS;
 import static com.sun.tools.javac.parser.Token.TRUE;
 import static com.sun.tools.javac.parser.Token.UNIQUE;
+import static com.sun.tools.javac.parser.Token.UPDATES;
 import static com.sun.tools.javac.parser.Token.VOID;
 import static com.sun.tools.javac.parser.Token.WHILE;
 import static com.sun.tools.javac.parser.Token.WRITES;
@@ -97,7 +101,6 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.TypeTags;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
@@ -132,6 +135,10 @@ import com.sun.tools.javac.tree.JCTree.JCThrow;
 import com.sun.tools.javac.tree.JCTree.JCTypeApply;
 import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
+import com.sun.tools.javac.tree.JCTree.JRGCopyPerm;
+import com.sun.tools.javac.tree.JCTree.JRGDerefSet;
+import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
+import com.sun.tools.javac.tree.JCTree.JRGMethodPerms;
 import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
 import com.sun.tools.javac.tree.JCTree.TypeBoundKind;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -2607,12 +2614,13 @@ public class Parser {
         	elts.append(F.at(pos).RegionPathListElt(null, DPJRegionPathListElt.STAR));
         	S.nextToken();
         	break;
-            case COLON:
-        	S.nextToken();
-        	break;
             default:
-        	done = true;
             	break;
+            }
+            if (S.token() == COLON) {
+        	accept(COLON);
+            } else {
+        	done = true;
             }
         } while (!done);
         if (elts.size() == 0) {
@@ -3122,7 +3130,7 @@ public class Parser {
                         List<JCTree> err = isVoid
                             ? List.<JCTree>of(toP(F.at(pos).MethodDef(mods, name, type, 
                         	    dpjParamInfo, typarams,
-                                List.<JCVariableDecl>nil(), List.<JCExpression>nil(), null, null, null)))
+                                List.<JCVariableDecl>nil(), null, List.<JCExpression>nil(), null, null)))
                             : null;
                         return List.<JCTree>of(syntaxError(S.pos(), err, "expected", keywords.token2string(LPAREN)));
                     }
@@ -3170,7 +3178,7 @@ public class Parser {
         }
         // FIXME
         JCTree.JRGEffectPerm result = 
-            toP(F.at(pos).EffectPerms(null, null));
+            toP(F.at(pos).EffectPerm(null, null));
         return result;
     }
     
@@ -3197,6 +3205,7 @@ public class Parser {
                               String dc) {
         List<JCVariableDecl> params = formalParameters();
         if (!isVoid) type = bracketsOpt(type);
+        JRGMethodPerms perms = methodPermsOpt();
         List<JCExpression> thrown = List.nil();
         if (S.token() == THROWS) {
             S.nextToken();
@@ -3224,15 +3233,128 @@ public class Parser {
             }
         }
         JCMethodDecl result =
-        	// FIXME:  null should be method perms
             toP(F.at(pos).MethodDef(mods, name, type, rgnParamInfo, 
-        	    		    typarams, params, thrown,
-                                    body, defaultValue, null));
+        	    		    typarams, params, perms, thrown,
+                                    body, defaultValue));
         ++methodCount;
         attach(result, dc);
         return result;
     }
 
+    /** MethodPermsOpt = RefPermOpt [FRESH IdentList] CopyPermsOpt
+     *                   [READS EffectPermList] [WRITES EffectPermList]
+     *                   [PRESERVES IdentList] [UPDATES IdentList]
+     */
+    JRGMethodPerms methodPermsOpt() {
+	int pos = S.pos();
+	JRGRefPerm refPerm = refPermOpt();
+	List<JCIdent> freshGroups = List.nil();
+	if (S.token() == FRESH) {
+	    accept(FRESH);
+	    freshGroups = identList();
+	}
+	List<JRGCopyPerm> copyPerms = copyPermsOpt();
+	boolean defaultEffectPerms = true;
+	List<JRGEffectPerm> readEffectPerms = List.nil();
+	if (S.token() == READS) {
+	    S.nextToken();
+	    defaultEffectPerms = false;
+	    readEffectPerms = effectPermList();
+	}
+	List<JRGEffectPerm> writeEffectPerms = List.nil();
+	if (S.token() == WRITES) {
+	    S.nextToken();
+	    defaultEffectPerms = false;
+	    writeEffectPerms = effectPermList();	    
+	}
+	List<JCIdent> preservedGroups = List.nil();
+	if (S.token() == PRESERVES) {
+	    accept(PRESERVES);
+	    preservedGroups = identList();
+	}
+	List<JCIdent> updatedGroups = List.nil();
+	if (S.token() == UPDATES) {
+	    accept(UPDATES);
+	    updatedGroups = identList();
+	}
+	return toP(F.at(pos).MethodPerms(refPerm, freshGroups, copyPerms, 
+		defaultEffectPerms, readEffectPerms, writeEffectPerms,
+		preservedGroups, updatedGroups));
+    }
+    
+    /** CopyPermsOpt = [COPIES DerefSet "to" Ident {"," DerefSet "to" Ident}]
+     */
+    List<JRGCopyPerm> copyPermsOpt() {
+	ListBuffer<JRGCopyPerm> buf = ListBuffer.lb();
+	if (S.token() == COPIES) {
+	    accept(COPIES);
+	    int pos = S.pos();
+	    JRGDerefSet derefSet = derefSet();
+	    acceptIdent("to");
+	    JCIdent group = toP(F.at(S.pos()).Ident(ident()));
+	    buf.append(toP(F.at(pos).CopyPerm(derefSet, group)));
+	    while (S.token() == COMMA) {
+		accept(COMMA);
+		pos = S.pos();
+		derefSet = derefSet();
+		group = toP(F.at(S.pos()).Ident(ident()));
+		buf.append(toP(F.at(pos).CopyPerm(derefSet, group)));
+	    }
+	}
+	return buf.toList();
+    }
+
+    /** EffectPermList = EffectPerm {"," EffectPerm}
+     */
+    List<JRGEffectPerm> effectPermList() {
+	ListBuffer<JRGEffectPerm> buf = ListBuffer.lb();
+	buf.append(effectPerm());
+	while (S.token() == COMMA) {
+	    S.nextToken();
+	    buf.append(effectPerm());
+	}
+	return buf.toList();
+    }
+    
+    /** EffectPerm = RPL ["via" DerefSet]
+     */
+    JRGEffectPerm effectPerm() {
+	int pos = S.pos();
+	DPJRegionPathList rpl = rpl();
+	JRGDerefSet derefSet = null;
+	if (tokenIsIdent("via")) {	    
+	    S.nextToken();
+	    derefSet = derefSet();
+	}
+	return toP(F.at(pos).EffectPerm(rpl, derefSet));
+    }    
+    
+    /** DerefSet = Expression3 [ DOT DOT Ident ]
+     */
+    JRGDerefSet derefSet() {
+	int pos = S.pos();
+        mode = EXPR;
+	JCExpression root = term3();
+	JCIdent group = null;
+	if (S.token() == ELLIPSIS) {
+	    accept(ELLIPSIS);
+	    group = toP(F.at(S.pos()).Ident(ident()));
+	}
+	return toP(F.at(pos).DerefSet(root, group));	
+    }
+    
+    /** IdentList = Ident {"," Ident}
+     */
+    List<JCIdent> identList() {
+	ListBuffer<JCIdent> buf = ListBuffer.lb();
+	buf.append(toP(F.at(S.pos()).Ident(ident())));
+	while (S.token() == COMMA) {
+	    S.nextToken();
+	    buf.append(toP(F.at(S.pos()).Ident(ident())));
+	}
+	return buf.toList();
+    }
+    
     /** QualidentList = Qualident {"," Qualident}
      */
     List<JCExpression> qualidentList() {
@@ -3308,6 +3430,15 @@ public class Parser {
     private void skipIdent(String name) {
 	if (tokenIsIdent(name))
 	    S.nextToken();
+    }
+    
+    // Accept required marker
+    private void acceptIdent(String name) {
+	if (!tokenIsIdent(name)) {
+            reportSyntaxError(S.pos(), "expected", name);
+	} else {
+	    skipIdent(name);
+	}
     }
     
     private boolean tokenIsIdent(String name) {

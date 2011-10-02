@@ -531,9 +531,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                       null,
                       List.<JCTypeParameter>nil(),
                       List.<JCVariableDecl>nil(),
+                      null,
                       List.<JCExpression>nil(), // thrown
                       null, //make.Block(0, Tree.emptyList.prepend(make.Return(make.Ident(names._null)))),
-                      null,
                       null);
         memberEnter(values, env);
 
@@ -548,9 +548,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                                             names.fromString("name"),
                                             null, // DPJ: null region
                                             make.Type(syms.stringType), null)),
+                      null,
                       List.<JCExpression>nil(), // thrown
                       null, //make.Block(0, Tree.emptyList.prepend(make.Return(make.Ident(names._null)))),
-                      null,
                       null);
         memberEnter(valueOf, env);
 
@@ -565,8 +565,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                       null,
                       List.<JCTypeParameter>nil(),
                       List.<JCVariableDecl>nil(),
-                      List.<JCExpression>nil(),
                       null,
+                      List.<JCExpression>nil(),
                       null,
                       null);
         memberEnter(ordinal, env);
@@ -579,8 +579,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                       null,
                       List.<JCTypeParameter>nil(),
                       List.<JCVariableDecl>nil(),
-                      List.<JCExpression>nil(),
                       null,
+                      List.<JCExpression>nil(),
                       null,
                       null);
         memberEnter(name, env);
@@ -1254,10 +1254,10 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             null, // DPJ FIXME
             make.TypeParams(typarams),
             params,
+            null, // JRG FIXME
             make.Types(thrown),
             make.Block(0, stats),
-            null, null // DPJ FIXME
-         	);
+            null);
         return result;
     }
 

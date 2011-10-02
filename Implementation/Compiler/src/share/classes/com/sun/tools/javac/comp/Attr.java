@@ -3716,7 +3716,7 @@ public class Attr extends JCTree.Visitor {
 	}
     }
     
-    public void visitEffectPerms(JRGEffectPerm tree) {
+    public void visitEffectPerm(JRGEffectPerm tree) {
 	/*
 	attribRPLs(tree.readEffectPerms);
 	attribRPLs(tree.writeEffectPerms);

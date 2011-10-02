@@ -378,7 +378,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCExpression defaultValue = copy(t.defaultValue, p);
         JRGMethodPerms perms = copy(t.perms, p);
         JCMethodDecl result = M.at(t.pos).MethodDef(mods, t.name, restype, rgnParamInfo,
-        	typarams, params, thrown, body, defaultValue, perms);
+        	typarams, params, perms, thrown, body, defaultValue);
         result.sym = t.sym;
         return result;
     }
@@ -605,9 +605,11 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
 	List<JRGCopyPerm> copyPerms = copy(t.copyPerms, p);
 	List<JCIdent> preservedGroups = copy(t.preservedGroups, p);
 	List<JCIdent> updatedGroups = copy(t.updatedGroups, p);
-	JRGEffectPerm effectPerms = copy(t.effectPerms, p);
+	List<JRGEffectPerm> readEffectPerms = copy(t.readEffectPerms, p);
+	List<JRGEffectPerm> writeEffectPerms = copy(t.writeEffectPerms, p);
 	return M.at(t.pos).MethodPerms(refPerm, freshGroups, copyPerms, 
-		preservedGroups, updatedGroups, effectPerms);
+		t.defaultEffectPerms, readEffectPerms, writeEffectPerms,
+		preservedGroups, updatedGroups);
     }
     
     public JCTree visitDerefSet(DerefSetTree node, P p) {
@@ -628,7 +630,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
 	JRGEffectPerm t = (JRGEffectPerm) node;
 	DPJRegionPathList rpl = copy(t.rpl, p);
 	JRGDerefSet derefSet = copy(t.derefSet, p);
-	return M.at(t.pos).EffectPerms(rpl, derefSet);
+	return M.at(t.pos).EffectPerm(rpl, derefSet);
     }
     
     public JCTree visitRegionParameter(RegionParameterTree node, P p) {

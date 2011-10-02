@@ -336,13 +336,20 @@ public class TreeScanner extends Visitor {
 	scan(tree.rplParams);
     }
     
-    public void visitEffectPerms(JRGEffectPerm tree)  {
-	
+    public void visitRefPerm(JRGRefPerm tree) {
+	// TODO
+    }
+    
+    public void visitMethodPerms(JRGMethodPerms tree) {
+	// TODO
+    }
+    
+    public void visitEffectPerm(JRGEffectPerm tree)  {
+	// TODO	
     }
 
     public void visitTree(JCTree tree) {
 	assert false;
     }
     
-
 }
