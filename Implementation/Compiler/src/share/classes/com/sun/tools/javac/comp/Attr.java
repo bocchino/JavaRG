@@ -2237,6 +2237,12 @@ public class Attr extends JCTree.Visitor {
         	owntype = types.substIndices(owntype, List.<VarSymbol>of(at.indexVar),
         		List.<JCExpression>of(tree.index));
             }
+        } 
+        else if (types.isArrayClass(atype)) {
+            ClassType ct = (ClassType) atype;
+            System.out.println("ct="+ct);
+            Symbol sym = rs.findField(env, ct, ct.tsym.name, ct.tsym);
+            owntype = sym.type;
         }
         else if (atype.tag != ERROR)
             log.error(tree.pos(), "array.req.but.found", atype);

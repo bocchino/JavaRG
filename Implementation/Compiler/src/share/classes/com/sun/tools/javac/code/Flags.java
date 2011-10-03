@@ -232,7 +232,7 @@ public class Flags {
      */
     public static final int
         AccessFlags           = PUBLIC | PROTECTED | PRIVATE,
-        LocalClassFlags       = FINAL | ABSTRACT | STRICTFP | ENUM | SYNTHETIC,
+        LocalClassFlags       = FINAL | ABSTRACT | STRICTFP | ENUM | SYNTHETIC | ARRAYCLASS,
         MemberClassFlags      = LocalClassFlags | INTERFACE | AccessFlags,
         ClassFlags            = LocalClassFlags | INTERFACE | PUBLIC | ANNOTATION,
         InterfaceVarFlags     = FINAL | STATIC | PUBLIC,

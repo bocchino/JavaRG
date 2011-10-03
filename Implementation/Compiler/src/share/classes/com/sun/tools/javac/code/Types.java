@@ -1430,6 +1430,12 @@ public class Types {
             t = upperBound(t);
         return t.tag == ARRAY;
     }
+    
+    public boolean isArrayClass(Type t) {
+	while (t.tag == WILDCARD)
+	    t = upperBound(t);
+	return  (t.tsym.flags() & Flags.ARRAYCLASS) != 0;
+    }
 
     /**
      * The element type of an array.

@@ -29,4 +29,8 @@ public class ArrayClass extends DPJTestCase {
 	compile("AllParams");
     }
 
+    @Test public void testIndexExpression() throws Throwable {
+	compile("IndexExpression");
+    }
+    
 }
