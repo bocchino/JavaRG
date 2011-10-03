@@ -4,10 +4,10 @@
 
 class Data {}
 
-arrayclass DataArray<region R, refgroup G> { 
-    unique(G) Data in R; 
+arrayclass DataArray<region R1, refgroup G1> { 
+    unique(G1) Data in R1; 
 }
 
-class IndexExpression {
-    unique(G) Data m(DataArray a) { return a[0]; }
+class IndexExpression<region R2, refgroup G2> {
+    unique(G2) Data m(DataArray<R2,G2> a) { return a[0]; }
 }
