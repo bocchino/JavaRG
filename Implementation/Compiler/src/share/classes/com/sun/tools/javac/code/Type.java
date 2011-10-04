@@ -663,6 +663,10 @@ public class Type implements PrimitiveType {
          */
         public List<Type> interfaces_field;
 
+        /** Type of an array cell, if this is an array class
+         */
+        public Type cellType;
+        
         public ClassType(Type outer, List<Type> typarams, 
         		List<RegionParameterSymbol> rgnparams,
         		List<RPL> rgnactuals, List<Effects> effectparams,

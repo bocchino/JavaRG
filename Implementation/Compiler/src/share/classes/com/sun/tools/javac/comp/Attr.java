@@ -2252,7 +2252,7 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitIdent(JCIdent tree) {
-	
+		
 	Symbol sym;
         boolean varArgs = false;
 
@@ -2339,6 +2339,12 @@ public class Attr extends JCTree.Visitor {
 	env.info.siteVar = null;
 	env.info.siteExp = null;
         result = checkId(tree, env1.enclClass.sym.type, sym, env, pkind, pt, varArgs);
+        if (sym.kind == TYP && types.isArrayClass(result)) {
+            Symbol cellSym = rs.findIdentInType(env1, result, result.tsym.name, VAR);
+            Type cellType = cellSym.type;
+            ClassType ct = (ClassType) tree.sym.type;
+            ct.cellType = cellType;
+        }
     }
 
 

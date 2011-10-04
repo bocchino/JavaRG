@@ -285,8 +285,9 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCVariableDecl VarDef(JCModifiers mods, Name name, DPJRegionPathList rpl, 
-	    JCExpression vartype, JCExpression init) { // DPJ
+    public JCVariableDecl VarDef(JCModifiers mods, Name name, 
+	    DPJRegionPathList rpl, JCExpression vartype, 
+	    JCExpression init) {
         JCVariableDecl tree = new JCVariableDecl(mods, name, rpl, vartype, init, null); // DPJ
         tree.pos = pos;
         return tree;

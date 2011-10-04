@@ -227,6 +227,11 @@ public class Flags {
      * Flag that marks a Sun proprietary class.
      */
     public static final long PROPRIETARY = 1L<<38;
+    
+    /**
+     * Flag that marks an array class constructor
+     */
+    public static final long ARRAYCONSTR = 1L<<39;
 
     /** Modifier masks.
      */

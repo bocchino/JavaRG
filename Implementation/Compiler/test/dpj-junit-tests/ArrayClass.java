@@ -37,4 +37,16 @@ public class ArrayClass extends DPJTestCase {
 	compile("IndexExpressionGeneric");
     }
     
+    @Test public void testIndexExpressionInt() throws Throwable {
+	compile("IndexExpressionInt");
+    }
+    
+    @Test public void testArrayCreationInt() throws Throwable {
+	compile("ArrayCreationInt");
+    }
+    
+    @Test public void testArrayAccessInt() throws Throwable {
+	compile("ArrayAccessInt");
+    }
+    
 }
