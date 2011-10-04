@@ -1402,7 +1402,7 @@ public class Pretty extends JCTree.Visitor {
                 printExpr(tree.encl);
                 print(".");
             }
-            if ((tree.constructor.flags() | ARRAYCONSTR) != 0) {
+            if ((tree.constructor.flags() & ARRAYCONSTR) != 0) {
         	// Convert array constructor call to regular Java array
         	ClassType ct = (ClassType) tree.clazz.type;
         	print("new " + ct.cellType + "[");

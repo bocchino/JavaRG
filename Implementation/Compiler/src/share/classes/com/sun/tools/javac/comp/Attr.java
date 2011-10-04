@@ -2339,14 +2339,23 @@ public class Attr extends JCTree.Visitor {
 	env.info.siteVar = null;
 	env.info.siteExp = null;
         result = checkId(tree, env1.enclClass.sym.type, sym, env, pkind, pt, varArgs);
-        if (sym.kind == TYP && types.isArrayClass(result)) {
-            Symbol cellSym = rs.findIdentInType(env1, result, result.tsym.name, VAR);
-            Type cellType = cellSym.type;
-            ClassType ct = (ClassType) tree.sym.type;
-            ct.cellType = cellType;
-        }
+        computeCellType(env1, tree.sym, result);
     }
 
+    /**
+     * Compute the cell type for an array class
+     * @param env   The current environment
+     * @param sym   The type or class symbol whose cell type we are computing
+     * @param type  The instantiated type of the class
+     */
+    private void computeCellType(Env<AttrContext> env, Symbol sym, Type type) {
+        if ((sym.kind == TYP || sym.kind == CLASS) && 
+        	types.isArrayClass(type)) {
+            Symbol cellSym = rs.findIdentInType(env, type, type.tsym.name, VAR);
+            Type cellType = cellSym.type;
+            ((ClassType) type).cellType = cellType;
+        }
+    }
 
     public void visitSelect(JCFieldAccess tree) {
         // Determine the expected kind of the qualifier expression.
@@ -3042,41 +3051,7 @@ public class Attr extends JCTree.Visitor {
         // Attribute functor part of application
         Type functortype = attribType(tree.functor, env); 
         
-        // If functor is a type var, handle it
-        if (functortype.tag == TYPEVAR) {
-            
-            TypeVar tvartype = (TypeVar) functortype;
-            
-            // Collect all the RPL args, some of which may have been parsed as
-            // types
-            List<DPJRegionPathList> rplArgs = 
-        	(tree.rplArgs == null) ? List.<DPJRegionPathList>nil() : tree.rplArgs;
-            tree.rplArgs = asRPLs(tree.typeArgs);
-            tree.typeArgs = List.nil();
-            tree.rplArgs = rplArgs.appendList(tree.rplArgs);
-            
-            // Attribute the RPL args
-            List<RPL> rplargs = attribRPLs(tree.rplArgs);
-            //tvartype.rplargs = rplargs;
-            
-            // Check # of args
-            if (rplargs.size() != tvartype.rplparams.size()) {
-        	log.error(tree.pos(), "wrong.number.type.args",
-			Integer.toString(tvartype.rplparams.size()));
-            } else {
-        	TypeVar newtvar = null;
-        	owntype = newtvar = 
-        	    new TypeVar(tvartype.tsym, tvartype.getUpperBound(), tvartype.lower);
-        	newtvar.rplparams = newtvar.rplparams;
-        	newtvar.rplargs = rplargs;
-        	newtvar.prototype = tvartype;
-            }
-            
-            result = check(tree, owntype, TYP, pkind, pt);
-            return;
-        }
-
-        // Otherwise make sure it's a class...
+        // Make sure it's a class...
         chk.checkClassType(tree.functor.pos(), functortype);
         // ...and handle it
         if (functortype.tag == CLASS) {
@@ -3246,6 +3221,7 @@ public class Attr extends JCTree.Visitor {
         	    functortype.tsym);
         }
         result = check(tree, owntype, TYP, pkind, pt);
+        computeCellType(env, tree.functor.getSymbol(), result);
 
     }
 
