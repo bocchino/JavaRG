@@ -1131,7 +1131,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 	make.Literal(new Integer(0)));
                 tree.defs = tree.defs.prepend(fieldDef);
             }
-
             
             // If this is a class, enter symbols for this and super into
             // current scope.
