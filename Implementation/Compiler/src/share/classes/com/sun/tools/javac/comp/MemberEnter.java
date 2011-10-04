@@ -1124,11 +1124,11 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 
                 // Add length field for array class
                 JCTree fieldDef = make.VarDef(
-                	make.Modifiers(ctorFlags),
+                	make.Modifiers(ctorFlags | FINAL),
                 	names.length,
                 	null,
                 	make.Type(syms.typeOfTag[TypeTags.INT]),
-                	null);
+                	make.Literal(new Integer(0)));
                 tree.defs = tree.defs.prepend(fieldDef);
             }
 
