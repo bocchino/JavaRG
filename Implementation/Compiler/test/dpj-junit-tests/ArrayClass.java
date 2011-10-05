@@ -53,4 +53,16 @@ public class ArrayClass extends DPJTestCase {
 	compile("ArrayCreation");
     }
     
+    @Test public void testArrayAccess() throws Throwable{
+	compile("ArrayAccess");
+    }
+    
+    @Test public void testArrayAccessGeneric() throws Throwable {
+	compile("ArrayAccessGeneric");
+    }
+    
+    @Test public void testArrayCreationGeneric() throws Throwable {
+	compile("ArrayCreationGeneric");
+    }
+    
 }
