@@ -1032,7 +1032,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                                                                    List.of(c.type),
                                                                    List.<RegionParameterSymbol>nil(),
                                                                    List.<Effects>nil(),
-                                                                   syms.comparableType.tsym)));
+                                                                   syms.comparableType.tsym, null)));
                 // add interface Serializable
                 interfaceTrees =
                     interfaceTrees.prepend(make.Type(syms.serializableType));

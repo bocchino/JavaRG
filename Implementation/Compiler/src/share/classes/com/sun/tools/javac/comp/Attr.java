@@ -1730,7 +1730,7 @@ public class Attr extends JCTree.Visitor {
                                                                syms.boundClass)),
                               List.<RegionParameterSymbol>nil(),
                               List.<Effects>nil(),
-                              restype.tsym);
+                              restype.tsym, null);
             }
 
             // Substitutions required by DPJ type system
@@ -2529,7 +2529,7 @@ public class Attr extends JCTree.Visitor {
                         : List.<Type>nil();
                     t = new ClassType(t.getEnclosingType(), typeargs, 
                 	    List.<RegionParameterSymbol>nil(), 
-                	    List.<Effects>nil(), t.tsym);
+                	    List.<Effects>nil(), t.tsym, null);
                     return new VarSymbol(
                         STATIC | PUBLIC | FINAL, names._class, t, site.tsym);
                 } else {
@@ -2570,7 +2570,7 @@ public class Attr extends JCTree.Visitor {
                     Type arg = types.boxedClass(site).type;
                     t = new ClassType(t.getEnclosingType(), List.of(arg), 
                 	    List.<RegionParameterSymbol>nil(), 
-                	    List.<Effects>nil(), t.tsym);
+                	    List.<Effects>nil(), t.tsym, null);
                     return new VarSymbol(
                         STATIC | PUBLIC | FINAL, names._class, t, site.tsym);
                 } else {
@@ -2663,7 +2663,7 @@ public class Attr extends JCTree.Visitor {
                             owntype = new ClassType(
                                 normOuter, List.<Type>nil(), 
                                 List.<RegionParameterSymbol>nil(), 
-                                List.<Effects>nil(), owntype.tsym);
+                                List.<Effects>nil(), owntype.tsym, null);
                     }
                 }
                 break;
@@ -3224,7 +3224,7 @@ public class Attr extends JCTree.Visitor {
             // Construct the instantiated type with the type, RPL, and effect args
             owntype = new ClassType(clazzOuter, actuals, 
         	    rplFormals, rplActuals, effectActuals,
-        	    functortype.tsym);
+        	    functortype.tsym, null);
         }
         result = check(tree, owntype, TYP, pkind, pt);
         computeCellType(env, tree.functor.getSymbol(), result);

@@ -118,7 +118,7 @@ public abstract class Attribute implements AnnotationValue {
                                       List.of(arg),
                                       List.<RegionParameterSymbol>nil(), 
                                       List.<Effects>nil(),
-                                      types.syms.classType.tsym);
+                                      types.syms.classType.tsym, null);
         }
 	public String toString() {
 	    return type + ".class";

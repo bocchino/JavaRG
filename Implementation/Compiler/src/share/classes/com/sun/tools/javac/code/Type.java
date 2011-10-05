@@ -670,15 +670,15 @@ public class Type implements PrimitiveType {
         public ClassType(Type outer, List<Type> typarams, 
         		List<RegionParameterSymbol> rgnparams,
         		List<RPL> rgnactuals, List<Effects> effectparams,
-        		TypeSymbol tsym) {
-            this(outer, typarams, rgnparams, effectparams, tsym);
+        		TypeSymbol tsym, Type cellType) {
+            this(outer, typarams, rgnparams, effectparams, tsym, cellType);
             this.rgnactuals_field = rgnactuals;
         }
         
         public ClassType(Type outer, List<Type> typarams, 
         	List<RegionParameterSymbol> rgnparams, 
         	List<Effects> effectparams,
-        	TypeSymbol tsym) {
+        	TypeSymbol tsym, Type cellType) {
             super(CLASS, tsym);
             this.outer_field = outer;
             this.typarams_field = typarams;
@@ -688,6 +688,7 @@ public class Type implements PrimitiveType {
             this.alltyparams_field = null;
             this.supertype_field = null;
             this.interfaces_field = null;
+            this.cellType = cellType;
             /*
             // this can happen during error recovery
             assert
@@ -707,7 +708,7 @@ public class Type implements PrimitiveType {
         public Type constType(Object constValue) {
             final Object value = constValue;
             return new ClassType(getEnclosingType(), typarams_field, 
-        	    rgnparams_field, effectparams_field, tsym) {
+        	    rgnparams_field, effectparams_field, tsym, cellType) {
                     @Override
                     public Object constValue() {
                         return value;
@@ -933,7 +934,7 @@ public class Type implements PrimitiveType {
             List<Type> typarams1 = map(typarams, f);
             if (outer1 == outer && typarams1 == typarams) return this;
             else return new ClassType(outer1, typarams1, rgnparams_field, 
-        	    effectparams_field, tsym);
+        	    effectparams_field, tsym, cellType);
         }
 
         public boolean contains(Type elem) {
@@ -1526,7 +1527,7 @@ public class Type implements PrimitiveType {
 
         public ErrorType() {
             super(noType, List.<Type>nil(), List.<RegionParameterSymbol>nil(), 
-        	    List.<Effects>nil(), null);
+        	    List.<Effects>nil(), null, null);
             tag = ERROR;
         }
 

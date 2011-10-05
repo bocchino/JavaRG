@@ -65,4 +65,8 @@ public class ArrayClass extends DPJTestCase {
 	compile("ArrayCreationGeneric");
     }
     
+    @Test public void testArrayOfArrayOfInt() throws Throwable {
+	compile("ArrayOfArrayOfInt");
+    }
+    
 }

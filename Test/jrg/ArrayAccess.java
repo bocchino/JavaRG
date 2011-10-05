@@ -2,10 +2,6 @@
 * Test array class access with class cell type
 */
 
-arrayclass DataArray<region R> { 
-    Data in R; 
-}
-
 class ArrayAccess<region R> extends Harness {
     DataArray<R> array;
 

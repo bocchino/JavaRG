@@ -26,12 +26,12 @@
 package com.sun.tools.javac.tree;
 
 import static com.sun.tools.javac.code.Flags.ANNOTATION;
+import static com.sun.tools.javac.code.Flags.ARRAYCONSTR;
 import static com.sun.tools.javac.code.Flags.DPJStandardFlags;
 import static com.sun.tools.javac.code.Flags.ENUM;
 import static com.sun.tools.javac.code.Flags.INTERFACE;
 import static com.sun.tools.javac.code.Flags.SYNTHETIC;
 import static com.sun.tools.javac.code.Flags.VARARGS;
-import static com.sun.tools.javac.code.Flags.ARRAYCONSTR;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -46,6 +46,7 @@ import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.TypeTags;
 import com.sun.tools.javac.code.Types;
@@ -1396,6 +1397,21 @@ public class Pretty extends JCTree.Visitor {
         }
     }
 
+    private void printArrayConstructor(Type cellType, List<JCExpression> args) 
+	    throws IOException {
+	if (cellType instanceof ClassType) {
+	    ClassType ct = (ClassType) cellType;
+	    if (ct.cellType != null) {
+		printArrayConstructor(ct.cellType, args);
+		print("[]");
+		return;
+	    }
+	} 
+	print("new "+ cellType + "[");
+	printExprs(args);
+	print("]");
+    }
+    
     public void visitNewClass(JCNewClass tree) {
         try {
             if (tree.encl != null) {
@@ -1405,9 +1421,7 @@ public class Pretty extends JCTree.Visitor {
             if ((tree.constructor.flags() & ARRAYCONSTR) != 0) {
         	// Convert array constructor call to regular Java array
         	ClassType ct = (ClassType) tree.clazz.type;
-        	print("new " + ct.cellType + "[");
-        	printExprs(tree.args);
-        	print("]");
+        	printArrayConstructor(ct.cellType, tree.args);
         	return;
             }
             if (!inEnumVarDecl) {
@@ -1860,6 +1874,19 @@ public class Pretty extends JCTree.Visitor {
     }
 
     public boolean printOwner = false;
+
+    private void printCellType(Type cellType) throws IOException {
+	if (cellType instanceof ClassType) {
+	    ClassType ct = (ClassType) cellType;
+	    if (ct.cellType != null) {
+		printCellType(ct.cellType);
+		print("[]");
+		return;
+	    }
+	}
+	print(cellType);
+    }
+    
     public void visitIdent(JCIdent tree) {
         try {
             if (needDPJThis && tree.toString().equals("this"))
@@ -1874,7 +1901,8 @@ public class Pretty extends JCTree.Visitor {
         	ClassType ct = (ClassType) tree.sym.type;
         	if (ct.cellType != null) {
         	    // Convert array class to normal Java array
-        	    print(ct.cellType + "[]");
+        	    printCellType(ct.cellType);
+        	    print("[]");
         	} else {
         	    print(tree.name);
         	}
@@ -2012,18 +2040,6 @@ public class Pretty extends JCTree.Visitor {
         	    return;
         	}
             }
-            /*
-            if (sym instanceof ClassSymbol && sym.type instanceof ClassType) {
-        	ClassType ct = (ClassType) sym.type;
-        	System.out.println("ct="+ct);
-        	System.out.println("ct.cellType="+ct.cellType);
-        	if (ct.cellType != null) {
-        	    // Convert array class to normal Java array
-        	    print(ct.cellType + "[]");
-        	    return;
-        	}
-            } 
-            */           
             boolean rplsToPrint = (codeGenMode == NONE) && tree.rplArgs != null &&
             	tree.rplArgs.nonEmpty();
             boolean effectsToPrint = (codeGenMode == NONE) && tree.groupArgs != null &&

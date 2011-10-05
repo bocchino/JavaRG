@@ -2,12 +2,12 @@
 * Test use of array of array of int
 */
 
-class ArrayOfArrayOfInt extends Harness {
-    IntIntArray array;
+class ArrayOfArrayOfInt<region R> extends Harness {
+    IntIntArray<R> array;
 
     @Override
     public void initialize() {
-	array = new IntIntArray(size);
+	array = new IntIntArray<R>(size);
     }
 
     @Override
@@ -20,7 +20,7 @@ class ArrayOfArrayOfInt extends Harness {
     @Override
     public void runWork() {
         for (int i = 0; i < array.length; ++i) {
-            array[i] = new IntArray(size);
+            array[i] = new IntArray<R>(size);
 	    for (int j = 0; j < array[i].length; ++j) {
 		array[i][j] = i*j;
 	    }
@@ -32,7 +32,9 @@ class ArrayOfArrayOfInt extends Harness {
     }
 
     public static void main(String[] args) {
-	ArrayOfArrayOfInt test = new ArrayOfArrayOfInt(args);
+	region r;
+	ArrayOfArrayOfInt<r> test = 
+	    new ArrayOfArrayOfInt<r>(args);
 	test.run();
     }
 }

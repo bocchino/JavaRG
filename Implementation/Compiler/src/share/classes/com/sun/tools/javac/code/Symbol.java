@@ -750,7 +750,7 @@ public abstract class Symbol implements Element {
                 flags,
                 name,
                 new ClassType(Type.noType, null, List.<RegionParameterSymbol>nil(), 
-                	List.<Effects>nil(), null),
+                	List.<Effects>nil(), null, null),
                 owner);
             this.type.tsym = this;
         }
@@ -783,7 +783,7 @@ public abstract class Symbol implements Element {
                                               List.<Type>nil(),
                                               List.<RegionParameterSymbol>nil(),
                                               List.<Effects>nil(),
-                                              this);
+                                              this, null);
             return erasure_field;
         }
 
@@ -1090,7 +1090,7 @@ public abstract class Symbol implements Element {
         	    new ClassType(ownerType.outer_field, List.<Type>nil(), 
         		    List.<RegionParameterSymbol>nil(), 
         		    List.<RPL>nil(), List.<Effects>nil(), 
-        		    owner.type.tsym);
+        		    owner.type.tsym, null);
         	erasedType.DPJerased = true;
         	String result = erasedType.toString() + "." + name.toString();
         	return result;

@@ -1,9 +1,6 @@
 /**
 * Test array class access with generic cell type
 */
-arrayclass Array<type T, region R> { 
-    T in R; 
-}
 
 class ArrayAccessGeneric<region R> extends Harness {
 

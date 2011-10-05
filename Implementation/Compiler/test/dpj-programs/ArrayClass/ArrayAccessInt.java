@@ -4,7 +4,7 @@
 
 arrayclass IntArray { int; }
 
-class ArrayCreationInt {
+class ArrayAccessInt {
     IntArray m() {
         IntArray a = new IntArray(10);
         for (int i = 0; i < a.length; ++i)

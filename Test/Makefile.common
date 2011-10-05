@@ -19,18 +19,18 @@ SRCS= ${wildcard dpj/*.java}
 all :: ${ALL}
 
 sequential-classes : ${SRCS} sequential/java sequential/classes
-	${DPJC-SEQ} -d sequential/java dpj/*.java #${RUNTIME}/dpj/*.java
+	${DPJC-SEQ} -d sequential/java jrg/*.java #${RUNTIME}/jrg/*.java
 	${JAVAC} -d sequential/classes sequential/java/*.java
 instrument-classes : ${SRCS} instrument/java instrument/classes
-	${DPJC-INST} -d instrument/java dpj/*.java ${RUNTIME}/dpj/*.java
+	${DPJC-INST} -d instrument/java jrg/*.java ${RUNTIME}/jrg/*.java
 	${JAVAC} -d instrument/classes instrument/java/*.java
 parallel-classes : ${SRCS} parallel/java parallel/classes
-	${DPJC-PAR} -d parallel/java dpj/*.java ${RUNTIME}/dpj/*.java
+	${DPJC-PAR} -d parallel/java jrg/*.java ${RUNTIME}/jrg/*.java
 	${JAVAC} -d parallel/classes parallel/java/*.java
 
 
 countAll :: sequential/java
-	${DPJC-SEQ} -count -nowarn -d sequential/java dpj/*.java ${RUNTIME}/dpj/*.java
+	${DPJC-SEQ} -count -nowarn -d sequential/java jrg/*.java ${RUNTIME}/jrg/*.java
 
 count ::
 	perl ${SCRIPTS}/count.pl ${RUNTIME} .

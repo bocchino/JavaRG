@@ -2,14 +2,12 @@
 * Test array class access with 'int' cell type
 */
 
-arrayclass IntArray { int; }
-
-class ArrayAccessInt extends Harness {
-    IntArray array;
+class ArrayAccessInt<region R> extends Harness {
+    IntArray<R> array;
 
     @Override
     public void initialize() {
-	array = new IntArray(size);
+	array = new IntArray<R>(size);
     }
 
     @Override
@@ -31,7 +29,8 @@ class ArrayAccessInt extends Harness {
     }
 
     public static void main(String[] args) {
-	ArrayAccessInt test = new ArrayAccessInt(args);
+	region r;
+	ArrayAccessInt<r> test = new ArrayAccessInt<r>(args);
 	test.run();
     }
 }
