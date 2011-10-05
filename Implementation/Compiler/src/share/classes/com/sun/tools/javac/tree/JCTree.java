@@ -79,9 +79,10 @@ import com.sun.source.tree.ParenthesizedTree;
 import com.sun.source.tree.PrimitiveTypeTree;
 import com.sun.source.tree.RPLEltTree;
 import com.sun.source.tree.RPLTree;
+import com.sun.source.tree.RefGroupDeclTree;
 import com.sun.source.tree.RefPermTree;
+import com.sun.source.tree.RegionDeclTree;
 import com.sun.source.tree.RegionParameterTree;
-import com.sun.source.tree.RegionTree;
 import com.sun.source.tree.ReturnTree;
 import com.sun.source.tree.StatementTree;
 import com.sun.source.tree.SwitchTree;
@@ -107,6 +108,7 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
+import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
 import com.sun.tools.javac.code.Symbol.RegionNameSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
@@ -406,9 +408,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      */
     public static final int REGIONDEF = RPL + 1;
     
+    /** Reference group declarations
+     */
+    public static final int REF_GROUP_DECL = REGIONDEF + 1;
+    
     /** Reference permissions, of type RefPerm.
      */
-    public static final int REFPERM = REGIONDEF + 1;
+    public static final int REFPERM = REF_GROUP_DECL + 1;
     
     /** Method permissions
      */
@@ -900,7 +906,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      * @param name variable name
      * @param sym symbol
      */
-    public static class DPJRegionDecl extends JCStatement implements RegionTree {
+    public static class DPJRegionDecl extends JCStatement implements RegionDeclTree {
         public JCModifiers mods;
         public Name name;
         public RegionNameSymbol sym;
@@ -927,8 +933,35 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             return REGIONDEF;
         }
     }
+    /**
+     * A reference group declaration.
+     * @param name variable name
+     * @param sym symbol
+     */
+    public static class JRGRefGroupDecl extends JCStatement implements RefGroupDeclTree {
+        public Name name;
+        public RefGroupNameSymbol sym;
+        protected JRGRefGroupDecl(Name name, RefGroupNameSymbol sym) {
+            this.name = name;
+            this.sym = sym;
+        }
+        @Override
+        public void accept(Visitor v) { v.visitRefGroupDecl(this); }
 
-      /**
+        public Kind getKind() { return Kind.REF_GROUP_DECL; }
+        public Name getName() { return name; }
+        @Override
+        public <R,D> R accept(TreeVisitor<R,D> v, D d) {
+            return v.visitRefGroupDecl(this, d);
+        }
+
+        @Override
+        public int getTag() {
+            return REF_GROUP_DECL;
+        }
+    }
+
+    /**
      * A no-op statement ";".
      */
     public static class JCSkip extends JCStatement implements EmptyStatementTree {
@@ -2915,6 +2948,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitMethodDef(JCMethodDecl that)        { visitTree(that); }
         public void visitVarDef(JCVariableDecl that)         { visitTree(that); }
         public void visitRegionDecl(DPJRegionDecl that)      { visitTree(that); }
+        public void visitRefGroupDecl(JRGRefGroupDecl that)  { visitTree(that); }
         public void visitRPLElt(DPJRegionPathListElt that)   { visitTree(that); }
         public void visitRPL(DPJRegionPathList that)         { visitTree(that); }
         public void visitRefPerm(JRGRefPerm that)            { visitTree(that); }

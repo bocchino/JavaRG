@@ -39,7 +39,7 @@ import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
  *
  * @author Jeff Overbey (based on {@link VariableTree})
  */
-public interface RegionTree extends StatementTree {
+public interface RegionDeclTree extends StatementTree {
     ModifiersTree getModifiers();
     Name getName();
 }

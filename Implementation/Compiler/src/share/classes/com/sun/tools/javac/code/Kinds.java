@@ -67,9 +67,9 @@ public class Kinds {
      */
     public final static int RPL_ELT = 1 << 5;
 
-    /** The kind of effects.
+    /** The kind of reference groups.
      */
-    public final static int EFFECT = 1 << 6;
+    public final static int REF_GROUP = 1 << 6;
     
     // DPJ -- IF YOU ADD ANOTHER SYMBOL HERE, CHANGE *BOTH* ERR AND ERRONEOUS BELOW
     

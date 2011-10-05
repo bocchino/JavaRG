@@ -139,6 +139,7 @@ import com.sun.tools.javac.tree.JCTree.JRGCopyPerm;
 import com.sun.tools.javac.tree.JCTree.JRGDerefSet;
 import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
 import com.sun.tools.javac.tree.JCTree.JRGMethodPerms;
+import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
 import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
 import com.sun.tools.javac.tree.JCTree.TypeBoundKind;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -1852,12 +1853,20 @@ public class Parser {
                 break;
             }
             case REGION: {
+        	String dc = S.docComment();
         	pos = S.pos();
                 JCModifiers mods = F.at(Position.NOPOS).Modifiers(0);
-        	stats.appendList(regionDeclarations(pos, mods, null,
+        	stats.appendList(regionDeclarations(pos, mods, dc,
         					    new ListBuffer<JCStatement>()));	
         	storeEnd(stats.elems.last(), S.endPos());
         	break;
+            }
+            case REFGROUP: {
+        	String dc = S.docComment();
+        	pos = S.pos();
+        	stats.appendList(refGroupDecls(pos, dc));
+        	storeEnd(stats.elems.last(), S.endPos());
+        	break;        	
             }
             case ABSTRACT: case STRICTFP: {
                 String dc = S.docComment();
@@ -3161,6 +3170,21 @@ public class Parser {
         return rdefs;
     }
 
+    /** RefGroupDeclarations = REFGROUP Ident { "," Ident } ";"
+     */
+    List<JCStatement> refGroupDecls(int pos, String dc) {
+	accept(REFGROUP);
+	ListBuffer<JCStatement> lb = ListBuffer.lb();
+	lb.append(F.at(S.pos()).RefGroupDecl(ident()));
+	while (S.token() == COMMA) {
+	    storeEnd((JCTree)lb.elems.last(), S.endPos());
+	    S.nextToken();
+	    lb.append(F.at(S.pos()).RefGroupDecl(ident()));
+	}
+	accept(SEMI);
+	return lb.toList();
+    }
+    
     /**
      * EffectPerms := PURE | [ ReadEffects ] [ WriteEffects ]
      * ReadEffects := READS RPLList

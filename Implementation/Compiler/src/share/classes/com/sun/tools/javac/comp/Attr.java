@@ -43,12 +43,12 @@ import static com.sun.tools.javac.code.Flags.STATIC;
 import static com.sun.tools.javac.code.Flags.UNATTRIBUTED;
 import static com.sun.tools.javac.code.Flags.VARARGS;
 import static com.sun.tools.javac.code.Kinds.AMBIGUOUS;
-import static com.sun.tools.javac.code.Kinds.EFFECT;
 import static com.sun.tools.javac.code.Kinds.ERR;
 import static com.sun.tools.javac.code.Kinds.ERRONEOUS;
 import static com.sun.tools.javac.code.Kinds.MTH;
 import static com.sun.tools.javac.code.Kinds.NIL;
 import static com.sun.tools.javac.code.Kinds.PCK;
+import static com.sun.tools.javac.code.Kinds.REF_GROUP;
 import static com.sun.tools.javac.code.Kinds.RPL_ELT;
 import static com.sun.tools.javac.code.Kinds.TYP;
 import static com.sun.tools.javac.code.Kinds.VAL;
@@ -77,34 +77,31 @@ import com.sun.source.tree.TreeVisitor;
 import com.sun.source.util.SimpleTreeVisitor;
 import com.sun.tools.javac.code.BoundKind;
 import com.sun.tools.javac.code.Constraints;
-import com.sun.tools.javac.code.Effect;
 import com.sun.tools.javac.code.Effects;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLElement;
+import com.sun.tools.javac.code.RPLElement.NameRPLElement;
+import com.sun.tools.javac.code.RPLElement.RPLParameterElement;
+import com.sun.tools.javac.code.RPLElement.VarRPLElement;
 import com.sun.tools.javac.code.RPLs;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.code.Symtab;
-import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.TypeTags;
-import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.code.RPLElement.NameRPLElement;
-import com.sun.tools.javac.code.RPLElement.RPLParameterElement;
-import com.sun.tools.javac.code.RPLElement.VarRPLElement;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
-import com.sun.tools.javac.code.Symbol.EffectParameterSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.OperatorSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
+import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
 import com.sun.tools.javac.code.Symbol.RegionNameSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Symtab;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.Type.ErrorType;
@@ -112,13 +109,11 @@ import com.sun.tools.javac.code.Type.ForAll;
 import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.code.Type.WildcardType;
+import com.sun.tools.javac.code.TypeTags;
+import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.jvm.ByteCodes;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.TreeInfo;
-import com.sun.tools.javac.tree.TreeMaker;
-import com.sun.tools.javac.tree.JCTree.JRGPardo;
-import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
 import com.sun.tools.javac.tree.JCTree.DPJForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
@@ -173,8 +168,14 @@ import com.sun.tools.javac.tree.JCTree.JCUnary;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JCWhileLoop;
 import com.sun.tools.javac.tree.JCTree.JCWildcard;
+import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
+import com.sun.tools.javac.tree.JCTree.JRGPardo;
+import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
+import com.sun.tools.javac.tree.TreeInfo;
+import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
@@ -183,7 +184,6 @@ import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Pair;
 import com.sun.tools.javac.util.Position;
 import com.sun.tools.javac.util.Warner;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 /** This is the main context-dependent analysis phase in GJC. It
  *  encompasses name resolution, type checking and constant folding as
@@ -725,7 +725,7 @@ public class Attr extends JCTree.Visitor {
 	//if (trees == null) return List.nil();
 	ListBuffer<Effects> buf = ListBuffer.lb();
 	for (JRGEffectPerm tree : trees) {
-	    attribTree(tree, env, Kinds.EFFECT, Type.noType);
+	    attribTree(tree, env, Kinds.REF_GROUP, Type.noType);
 	    //buf.append(tree.effects);
 	}
 	return buf.toList();
@@ -912,7 +912,7 @@ public class Attr extends JCTree.Visitor {
 	
 	// Enter all effect params into the local method scope
 	for (JCIdent param : tree.groupParams) {
-	    EffectParameterSymbol sym = (EffectParameterSymbol) param.sym;
+	    RefGroupParameterSymbol sym = (RefGroupParameterSymbol) param.sym;
 	    if (chk.checkUnique(param.pos(), sym, localEnv.info.scope)) {
 		localEnv.info.scope.enter(sym);
 	    }
@@ -2731,7 +2731,7 @@ public class Attr extends JCTree.Visitor {
                 break;
             }
             case PCK: case ERR:
-            case RPL_ELT: case EFFECT:
+            case RPL_ELT: case REF_GROUP:
                 owntype = sym.type;
                 break;
             default:
@@ -3575,6 +3575,10 @@ public class Attr extends JCTree.Visitor {
                 annotate.flush();
             }
         }
+    }
+    
+    public void visitRefGroupDecl(JRGRefGroupDecl tree) {
+	// TODO
     }
 
     public void visitCobegin(JRGPardo tree) {

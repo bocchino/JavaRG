@@ -107,6 +107,7 @@ import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JCWhileLoop;
 import com.sun.tools.javac.tree.JCTree.JCWildcard;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
+import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.JCTree.TypeBoundKind;
 import com.sun.tools.javac.util.Convert;
@@ -749,6 +750,20 @@ public class Pretty extends JCTree.Visitor {
         }
     }
 
+    public void visitRefGroupDecl(JRGRefGroupDecl tree) {
+        try {
+            if (docComments != null && docComments.get(tree) != null) {
+                println(); align();
+            }
+            printDocComment(tree);
+            print("refgroup ");
+            print(tree.name);
+            print(";");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }	
+    }
+    
     public void visitRPLElt(DPJRegionPathListElt tree) { 
 	try {
 	    switch (tree.type) {

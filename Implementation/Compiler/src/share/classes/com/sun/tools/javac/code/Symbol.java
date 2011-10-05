@@ -44,6 +44,7 @@ import static com.sun.tools.javac.code.Kinds.ERR;
 import static com.sun.tools.javac.code.Kinds.MTH;
 import static com.sun.tools.javac.code.Kinds.PCK;
 import static com.sun.tools.javac.code.Kinds.RPL_ELT;
+import static com.sun.tools.javac.code.Kinds.REF_GROUP;
 import static com.sun.tools.javac.code.Kinds.TYP;
 import static com.sun.tools.javac.code.Kinds.VAR;
 import static com.sun.tools.javac.code.TypeTags.CLASS;
@@ -1159,13 +1160,54 @@ public abstract class Symbol implements Element {
         }
         
     }
-        
-    /** A class for effect parameter symbols
+            
+    /** A class for reference group name symbols, i.e., the symbol corresponding to the
+     *  name g in the declaration 'refgroup g'
      */
-    public static class EffectParameterSymbol extends Symbol {
+    public static class RefGroupNameSymbol extends Symbol {
+
+        /** The region's declaration position.
+         */
+        public int pos = Position.NOPOS;
+        
+        /** Construct a reference group name symbol
+         *  given its name and owner.
+         */
+        public RefGroupNameSymbol(Name name, Symbol owner) {
+            super(REF_GROUP, 0, name, Type.noType, owner);
+        }
+
+	public <R,P> R accept(ElementVisitor<R,P> v, P p) {
+	    return v.visitUnknown(this, p);
+	}
+
+	/** Clone this symbol with new owner.
+         */
+        public RefGroupNameSymbol clone(Symbol newOwner) {
+            RefGroupNameSymbol sym = new RefGroupNameSymbol(name, newOwner);
+            sym.pos = pos;
+            return sym;
+        }
+
+        public String toString() {
+            return name.toString();
+        }
+
+        public Symbol asMemberOf(Type site, Types types) {
+            return new RefGroupNameSymbol(name, owner);
+        }
+
+        public ElementKind getKind() {
+            return ElementKind.REFGROUP_PARAM;
+        }
+    }
+    
+    /** A class for reference group parameter symbols
+     */
+    public static class RefGroupParameterSymbol extends Symbol {
 	
-	public EffectParameterSymbol(Name name, Symbol owner) {
-	    super(Kinds.EFFECT, STATIC, name, Type.noType, owner);
+	public RefGroupParameterSymbol(Name name, Symbol owner) {
+	    super(Kinds.REF_GROUP, STATIC, name, Type.noType, owner);
 	}
 	
 	public <R,P> R accept(ElementVisitor<R,P> v, P p) {

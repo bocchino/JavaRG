@@ -252,10 +252,14 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
 	return defaultAction(node, p);
     }
 
-    public R visitRegion(RegionTree node, P p) { // DPJ
+    public R visitRegion(RegionDeclTree node, P p) { // DPJ
 	return defaultAction(node, p);
     }
 
+    public R visitRefGroupDecl(RefGroupDeclTree node, P p) {
+	return defaultAction(node, p);
+    }
+    
     public R visitRPLElt(RPLEltTree node, P p) { // DPJ
 	return defaultAction(node, p);
     }

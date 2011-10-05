@@ -6,7 +6,7 @@ import javax.lang.model.element.RPLElementElement;
 import javax.lang.model.util.ElementScanner6;
 import javax.lang.model.util.SimpleElementVisitor6;
 
-import com.sun.source.tree.RegionTree;
+import com.sun.source.tree.RegionDeclTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.TreeVisitor;
 import com.sun.source.util.SimpleTreeVisitor;
@@ -51,16 +51,16 @@ import com.sun.tools.javac.util.Name;
  * {@link Parser#classOrInterfaceBodyDeclaration},
  * descends to {@link Parser#regionDeclaration} and {@link Parser#singleRegionPhrase}
  * <li> New AST node:
- * {@link RegionTree},
+ * {@link RegionDeclTree},
  * {@link Tree.Kind#REGION},
- * {@link TreeVisitor#visitRegion(RegionTree, Object)},
- * {@link SimpleTreeVisitor#visitRegion(RegionTree, Object)},
- * {@link com.sun.source.util.TreeScanner#visitRegion(RegionTree, Object)},
+ * {@link TreeVisitor#visitRegion(RegionDeclTree, Object)},
+ * {@link SimpleTreeVisitor#visitRegion(RegionDeclTree, Object)},
+ * {@link com.sun.source.util.TreeScanner#visitRegion(RegionDeclTree, Object)},
  * {@link JCTree#REGIONDEF},
  * {@link DPJRegionDecl},
  * {@link JCTree.Visitor#visitRegionDecl},
  * {@link Pretty#visitRegionDecl(DPJRegionDecl)},
- * {@link TreeCopier#visitRegion(RegionTree, Object)},
+ * {@link TreeCopier#visitRegion(RegionDeclTree, Object)},
  * {@link TreeMaker#RegionDecl(com.sun.tools.javac.tree.JCTree.JCModifiers, com.sun.tools.javac.util.Name, com.sun.tools.javac.tree.JCTree.JCIdent)},
  * {@link TreeTranslator#visitRegionDecl(DPJRegionDecl)}
  * {@link Attr#visitRegionDecl(DPJRegionDecl)}

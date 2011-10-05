@@ -160,6 +160,10 @@ public class TreeTranslator extends JCTree.Visitor {
 	result = tree;
     }
 
+    public void visitRefGroupDecl(JRGRefGroupDecl tree) {
+	result = tree;
+    }
+    
     public void visitBlock(JCBlock tree) {
 	tree.stats = translate(tree.stats);
 	result = tree;

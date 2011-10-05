@@ -73,9 +73,10 @@ import com.sun.source.tree.ParenthesizedTree;
 import com.sun.source.tree.PrimitiveTypeTree;
 import com.sun.source.tree.RPLEltTree;
 import com.sun.source.tree.RPLTree;
+import com.sun.source.tree.RefGroupDeclTree;
 import com.sun.source.tree.RefPermTree;
+import com.sun.source.tree.RegionDeclTree;
 import com.sun.source.tree.RegionParameterTree;
-import com.sun.source.tree.RegionTree;
 import com.sun.source.tree.ReturnTree;
 import com.sun.source.tree.SwitchTree;
 import com.sun.source.tree.SynchronizedTree;
@@ -149,6 +150,7 @@ import com.sun.tools.javac.tree.JCTree.JRGDerefSet;
 import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
 import com.sun.tools.javac.tree.JCTree.JRGMethodPerms;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
+import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
 import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.JCTree.TypeBoundKind;
@@ -572,12 +574,19 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         }
     }
 
-    public JCTree visitRegion(RegionTree node, P p) {
+    public JCTree visitRegion(RegionDeclTree node, P p) {
         DPJRegionDecl t = (DPJRegionDecl) node;
         JCModifiers mods = copy(t.mods, p);
         DPJRegionDecl result = M.at(t.pos).RegionDecl(mods, t.name);
         result.sym = t.sym;
         return result;
+    }
+    
+    public JCTree visitRefGroupDecl(RefGroupDeclTree node, P p) {
+	JRGRefGroupDecl t = (JRGRefGroupDecl) node;
+	JRGRefGroupDecl result = M.at(t.pos).RefGroupDecl(t.name);
+	result.sym = t.sym;
+	return result;
     }
     
     public JCTree visitRPLElt(RPLEltTree node, P p) {

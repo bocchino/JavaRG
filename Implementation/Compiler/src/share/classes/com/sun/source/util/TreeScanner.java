@@ -73,10 +73,11 @@ import com.sun.source.tree.ParenthesizedTree;
 import com.sun.source.tree.PrimitiveTypeTree;
 import com.sun.source.tree.RPLEltTree;
 import com.sun.source.tree.RPLTree;
+import com.sun.source.tree.RefGroupDeclTree;
 import com.sun.source.tree.RefPermTree;
+import com.sun.source.tree.RegionDeclTree;
 import com.sun.source.tree.RegionParamTypeTree;
 import com.sun.source.tree.RegionParameterTree;
-import com.sun.source.tree.RegionTree;
 import com.sun.source.tree.ReturnTree;
 import com.sun.source.tree.SpawnTree;
 import com.sun.source.tree.SwitchTree;
@@ -444,8 +445,12 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
         return null;
     }
 
-    public R visitRegion(RegionTree node, P p) { // DPJ
+    public R visitRegion(RegionDeclTree node, P p) { // DPJ
 	return scan(node.getModifiers(), p);
+    }
+    
+    public R visitRefGroupDecl(RefGroupDeclTree node, P p) {
+	return null;
     }
     
     public R visitRPLElt(RPLEltTree node, P p) { // DPJ

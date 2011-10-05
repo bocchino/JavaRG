@@ -104,7 +104,8 @@ public interface TreeVisitor<R,P> {
     R visitInstanceOf(InstanceOfTree node, P p);
     R visitUnary(UnaryTree node, P p);
     R visitVariable(VariableTree node, P p);
-    R visitRegion(RegionTree node, P p); // DPJ
+    R visitRegion(RegionDeclTree node, P p); // DPJ
+    R visitRefGroupDecl(RefGroupDeclTree node, P p);
     R visitRPLElt(RPLEltTree node, P p); // DPJ
     R visitRPL(RPLTree node, P p); // DPJ
     R visitRefPerm(RefPermTree node, P p);

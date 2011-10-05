@@ -122,6 +122,7 @@ import com.sun.tools.javac.tree.JCTree.JRGDerefSet;
 import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
 import com.sun.tools.javac.tree.JCTree.JRGMethodPerms;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
+import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
 import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.JCTree.TypeBoundKind;
@@ -288,7 +289,8 @@ public class TreeMaker implements JCTree.Factory {
     public JCVariableDecl VarDef(JCModifiers mods, Name name, 
 	    DPJRegionPathList rpl, JCExpression vartype, 
 	    JCExpression init) {
-        JCVariableDecl tree = new JCVariableDecl(mods, name, rpl, vartype, init, null); // DPJ
+        JCVariableDecl tree = new JCVariableDecl(mods, name, 
+        	rpl, vartype, init, null);
         tree.pos = pos;
         return tree;
     }
@@ -604,6 +606,12 @@ public class TreeMaker implements JCTree.Factory {
         DPJRegionDecl tree = new DPJRegionDecl(mods, name, null);
         tree.pos = pos;
         return tree;
+    }
+    
+    public JRGRefGroupDecl RefGroupDecl(Name name) {
+	JRGRefGroupDecl tree = new JRGRefGroupDecl(name, null);
+	tree.pos = pos;
+	return tree;
     }
     
     public DPJRegionPathListElt RegionPathListElt(JCExpression exp, int t) {

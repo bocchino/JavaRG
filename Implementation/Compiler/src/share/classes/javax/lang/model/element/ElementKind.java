@@ -81,6 +81,12 @@ public enum ElementKind {
     /** An RPL element corresponding to a local variable // DPJ */
     VAR_RPL_ELEMENT,
     
+    // Reference groups
+    /** A reference group name */
+    REFGROUP_NAME,
+    /** A reference group parameter */
+    REFGROUP_PARAM,
+    
     // Executables
     /** A method. */
     METHOD,

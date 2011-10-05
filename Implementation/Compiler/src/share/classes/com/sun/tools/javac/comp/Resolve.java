@@ -46,7 +46,7 @@ import static com.sun.tools.javac.code.Kinds.ABSENT_REGION;
 import static com.sun.tools.javac.code.Kinds.ABSENT_TYP;
 import static com.sun.tools.javac.code.Kinds.ABSENT_VAR;
 import static com.sun.tools.javac.code.Kinds.AMBIGUOUS;
-import static com.sun.tools.javac.code.Kinds.EFFECT;
+import static com.sun.tools.javac.code.Kinds.REF_GROUP;
 import static com.sun.tools.javac.code.Kinds.ERR;
 import static com.sun.tools.javac.code.Kinds.ERRONEOUS;
 import static com.sun.tools.javac.code.Kinds.HIDDEN;
@@ -1266,7 +1266,7 @@ public class Resolve {
             for (Scope.Entry e = env1.info.scope.lookup(name);
                  e.scope != null;
                  e = e.next()) {
-                if (e.sym.kind == EFFECT) {
+                if (e.sym.kind == REF_GROUP) {
                     return e.sym;
                 }
             }
@@ -1307,7 +1307,7 @@ public class Resolve {
             else if (sym.kind < bestSoFar.kind) bestSoFar = sym;
         }
 
-        if ((kind & EFFECT) != 0) {
+        if ((kind & REF_GROUP) != 0) {
             sym = findEffect(env, name);
             if (sym.exists()) return sym;
             else if (sym.kind < bestSoFar.kind) bestSoFar = sym;

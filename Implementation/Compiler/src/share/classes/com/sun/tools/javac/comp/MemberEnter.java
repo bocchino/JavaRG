@@ -67,7 +67,7 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.Completer;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
-import com.sun.tools.javac.code.Symbol.EffectParameterSymbol;
+import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.RegionNameSymbol;
@@ -443,7 +443,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 	    for (JCIdent param : paramInfo.groupParams) {
 		enter.classEnter(param, env);
 		effectsBuf.append(new Effects(new 
-			VariableEffect((EffectParameterSymbol) param.sym)));
+			VariableEffect((RefGroupParameterSymbol) param.sym)));
 	    }
         }
         List<RPL> rgnvars = rplBuf.toList();
@@ -714,9 +714,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             // Set m.effectparams
             ListBuffer<Effects> effectparams = ListBuffer.lb();
             for (JCIdent param : tree.paramInfo.groupParams) {
-        	assert(param. sym instanceof EffectParameterSymbol);
+        	assert(param. sym instanceof RefGroupParameterSymbol);
         	effectparams.append(new Effects(new 
-        		VariableEffect((EffectParameterSymbol)param.sym)));
+        		VariableEffect((RefGroupParameterSymbol)param.sym)));
             }
             m.effectparams = effectparams.toList();
         } else {

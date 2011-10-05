@@ -50,7 +50,7 @@ import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Effect.VariableEffect;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
-import com.sun.tools.javac.code.Symbol.EffectParameterSymbol;
+import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.RegionNameSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
@@ -454,7 +454,7 @@ public class Enter extends JCTree.Visitor {
 	    for (JCIdent param : tree.paramInfo.groupParams) {
 		classEnter(param, localEnv);
 		effectparams.append(new Effects(new 
-			VariableEffect((EffectParameterSymbol) param.sym)));
+			VariableEffect((RefGroupParameterSymbol) param.sym)));
 	    }
 	    ct.effectparams_field = effectparams.toList();
 	} else {
@@ -529,7 +529,7 @@ public class Enter extends JCTree.Visitor {
     /** Class enter visitor method for effect parameters.
      */
     public void visitIdent(JCIdent tree) {
-	EffectParameterSymbol sym = new EffectParameterSymbol(tree.name,
+	RefGroupParameterSymbol sym = new RefGroupParameterSymbol(tree.name,
 		env.info.scope.owner);
 	if (chk.checkUnique(tree.pos(), sym, env.info.scope)) {
 	    env.info.scope.enter(sym);

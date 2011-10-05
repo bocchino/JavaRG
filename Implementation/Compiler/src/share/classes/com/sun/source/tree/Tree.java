@@ -222,9 +222,9 @@ public interface Tree {
         PRIMITIVE_TYPE(PrimitiveTypeTree.class),
 
         /**
-         * Used for instances of {@link RegionTree}. // DPJ
+         * Used for instances of {@link RegionDeclTree}. // DPJ
          */
-        REGION(RegionTree.class),
+        REGION(RegionDeclTree.class),
 
         /**
          * Used for instances of {@link RPLEltTree}. // DPJ
@@ -235,6 +235,11 @@ public interface Tree {
          * Used for instances of {@link RPLTree}. // DPJ
          */
         RPL(RPLTree.class),
+        
+        /**
+         * Used for instances of {@link RefGroupDeclTree}
+         */
+        REF_GROUP_DECL(RefGroupDeclTree.class),
         
         /**
          * Used for instances of {@link RefPermTree}.

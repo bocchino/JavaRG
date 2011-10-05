@@ -2,7 +2,7 @@
 
 package com.sun.tools.javac.code;
 
-import com.sun.tools.javac.code.Symbol.EffectParameterSymbol;
+import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
@@ -584,9 +584,9 @@ public abstract class Effect {
     /** A class for variable effects
      */
     public static class VariableEffect extends Effect {
-	public EffectParameterSymbol sym;
+	public RefGroupParameterSymbol sym;
 	
-	public VariableEffect(EffectParameterSymbol sym) {
+	public VariableEffect(RefGroupParameterSymbol sym) {
 	    super(null, false, false);
 	    this.sym = sym;
 	}
