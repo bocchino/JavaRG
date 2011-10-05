@@ -2354,6 +2354,7 @@ public class Attr extends JCTree.Visitor {
             Symbol cellSym = rs.findIdentInType(env, type, type.tsym.name, VAR);
             Type cellType = cellSym.type;
             ((ClassType) type).cellType = cellType;
+            ((ClassType) sym.type).cellType = cellType;
         }
     }
 
