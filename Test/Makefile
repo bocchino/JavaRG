@@ -16,7 +16,9 @@ test-all :
 #	make test-all-par
 
 test-all-seq :
-	${DPJ-SEQ-TEST} ArrayAccessInt TEST ${SIZE}
+	${DPJ-SEQ-TEST} ArrayAccessInt     TEST ${SIZE}
+	${DPJ-SEQ-TEST} ArrayAccess        TEST ${SIZE}
+	${DPJ-SEQ-TEST} ArrayAccessGeneric TEST ${SIZE}
 
 test-all-par :
 	echo "No parallel tests"

@@ -2005,6 +2005,25 @@ public class Pretty extends JCTree.Visitor {
     public void visitTypeApply(JCTypeApply tree) {
 	try {
             printExpr(tree.functor);
+            if (tree.functor.getSymbol() instanceof ClassSymbol &&
+        	    tree.functor.type instanceof ClassType) {
+        	ClassType ct = (ClassType) tree.functor.type;
+        	if (ct.cellType != null) {
+        	    return;
+        	}
+            }
+            /*
+            if (sym instanceof ClassSymbol && sym.type instanceof ClassType) {
+        	ClassType ct = (ClassType) sym.type;
+        	System.out.println("ct="+ct);
+        	System.out.println("ct.cellType="+ct.cellType);
+        	if (ct.cellType != null) {
+        	    // Convert array class to normal Java array
+        	    print(ct.cellType + "[]");
+        	    return;
+        	}
+            } 
+            */           
             boolean rplsToPrint = (codeGenMode == NONE) && tree.rplArgs != null &&
             	tree.rplArgs.nonEmpty();
             boolean effectsToPrint = (codeGenMode == NONE) && tree.groupArgs != null &&

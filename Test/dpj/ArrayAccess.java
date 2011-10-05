@@ -2,8 +2,6 @@
 * Test array class access with class cell type
 */
 
-class Data {}
-
 arrayclass DataArray<region R> { 
     Data in R; 
 }

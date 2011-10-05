@@ -2878,8 +2878,8 @@ public class Parser {
         JRGRefPerm refPerm = refPermOpt();
         JCExpression type = type();
         JCVariableDecl var = 
-        	variableDeclaratorRest(S.pos(), mods, refPerm, type, arrayName, 
-        		false, true, dc);
+        	variableDeclaratorRest(S.pos(), mods, refPerm, type, 
+        		names.fromString("cell"), false, true, dc);
         storeEnd(var, S.endPos());
         defs.append(var);
         accept(SEMI);

@@ -2241,8 +2241,9 @@ public class Attr extends JCTree.Visitor {
         else if (types.isArrayClass(atype)) {
             ClassType ct = (ClassType) atype;
             Type site = capture(ct);
-            Symbol sym = rs.findIdentInType(env, site, ct.tsym.name, VAR);
-            result = checkId(tree, site, sym, env, pkind, pt, false);
+            Symbol sym = rs.findIdentInType(env, site, names.fromString("cell"), VAR);
+            owntype = types.memberType(site, sym);
+            result = check(tree, owntype, VAR, pkind, pt); //checkId(tree, site, sym, env, pkind, pt, false);
             return;
         }
         else if (atype.tag != ERROR)
@@ -2338,7 +2339,8 @@ public class Attr extends JCTree.Visitor {
 	}
 	env.info.siteVar = null;
 	env.info.siteExp = null;
-        result = checkId(tree, env1.enclClass.sym.type, sym, env, pkind, pt, varArgs);
+        result = checkId(tree, env1.enclClass.sym.type, sym, 
+        	env, pkind, pt, varArgs);
         computeCellType(env1, tree.sym, result);
     }
 
@@ -2351,13 +2353,16 @@ public class Attr extends JCTree.Visitor {
     private void computeCellType(Env<AttrContext> env, Symbol sym, Type type) {
         if ((sym.kind == TYP || sym.kind == CLASS) && 
         	types.isArrayClass(type)) {
-            Symbol cellSym = rs.findIdentInType(env, type, type.tsym.name, VAR);
-            Type cellType = cellSym.type;
-            ((ClassType) type).cellType = cellType;
-            ((ClassType) sym.type).cellType = cellType;
+            Symbol cellSym = rs.findIdentInType(env, type, 
+        	    names.fromString("cell"), VAR);
+            if (cellSym != rs.varNotFound) {
+        	Type cellType = types.memberType(type, cellSym);
+        	((ClassType) type).cellType = cellType;
+        	((ClassType) sym.type).cellType = cellType;
+            }
         }
     }
-
+    
     public void visitSelect(JCFieldAccess tree) {
         // Determine the expected kind of the qualifier expression.
         int skind = 0;
@@ -3223,7 +3228,6 @@ public class Attr extends JCTree.Visitor {
         }
         result = check(tree, owntype, TYP, pkind, pt);
         computeCellType(env, tree.functor.getSymbol(), result);
-
     }
 
     /** Helper function:  Make a list of expressions, some of which may have

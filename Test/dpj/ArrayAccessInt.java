@@ -27,7 +27,7 @@ class ArrayAccessInt extends Harness {
     }
 
     public ArrayAccessInt(String[] args) {
-	super("ListRanking", args);
+	super("ArrayAccessInt", args);
     }
 
     public static void main(String[] args) {
