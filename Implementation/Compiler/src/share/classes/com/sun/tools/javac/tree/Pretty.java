@@ -344,7 +344,9 @@ public class Pretty extends JCTree.Visitor {
      */
     public void printStats(List<? extends JCTree> trees) throws IOException {
 	for (List<? extends JCTree> l = trees; l.nonEmpty(); l = l.tail) {
-            if ((codeGenMode == NONE) || !(l.head instanceof DPJRegionDecl)) {
+            if ((codeGenMode == NONE) || 
+        	    (!(l.head instanceof DPJRegionDecl) &&
+        		    !(l.head instanceof JRGRefGroupDecl))) {
         	align();
         	printStat(l.head);
         	println();
@@ -355,7 +357,9 @@ public class Pretty extends JCTree.Visitor {
     public void printCobeginStats(List<? extends JCTree> trees) throws IOException {
 	int count = 0;
 	for (List<? extends JCTree> l = trees; l.nonEmpty(); l = l.tail) {
-            if ((codeGenMode == NONE) || !(l.head instanceof DPJRegionDecl)) {
+            if ((codeGenMode == NONE) || 
+        	    (!(l.head instanceof DPJRegionDecl) &&
+        		    !(l.head instanceof JRGRefGroupDecl))) {
         	align();
         	printStat(l.head);
         	println();

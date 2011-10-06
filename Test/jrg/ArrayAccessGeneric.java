@@ -2,19 +2,19 @@
 * Test array class access with generic cell type
 */
 
-class ArrayAccessGeneric<region R> extends Harness {
+class ArrayAccessGeneric<region R, refgroup G> extends Harness {
 
-    Array<Data,R> array;
+    GenericArray<Data,R,G> array;
 
     @Override
     public void initialize() {
-	array = new Array<Data,R>(size);
+	array = new GenericArray<Data,R,G>(size);
     }
 
     @Override
     public void runTest() {
 	for (int i = 0; i < size; ++i) {
-	    assert (array[i] != null);
+	    assert (array[i] instanceof Data);
 	}
     }
 
@@ -31,7 +31,9 @@ class ArrayAccessGeneric<region R> extends Harness {
 
     public static void main(String[] args) {
 	region r;
-	ArrayAccessGeneric<r> test = new ArrayAccessGeneric<r>(args);
+	refgroup g;
+	ArrayAccessGeneric<r,g> test = 
+	    new ArrayAccessGeneric<r,g>(args);
 	test.run();
     }
 }
