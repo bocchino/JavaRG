@@ -17,4 +17,16 @@ public class GroupNames extends DPJTestCase {
 	compile("Decl");
     }
     
+    @Test public void testClassParamArg() throws Throwable {
+	compile("ClassParamArg");
+    }
+    
+    @Test public void testMethodParamArg() throws Throwable {
+	compile("MethodParamArg");
+    }
+    
+    @Test public void testArrayClassParamArg() throws Throwable {
+	compile("ArrayClassParamArg");
+    }
+
 }
