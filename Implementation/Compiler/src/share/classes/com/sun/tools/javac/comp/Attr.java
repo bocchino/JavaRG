@@ -2104,14 +2104,23 @@ public class Attr extends JCTree.Visitor {
             : chk.checkNonVoid(tree.arg.pos(), attribExpr(tree.arg, env));
 
         // Find operator.
-        Symbol operator = tree.operator =
-            rs.resolveUnaryOperator(tree.pos(), tree.getTag(), env, argtype);
+        Symbol operator = tree.operator = (tree.getTag() == JCTree.NOT) ?
+        	rs.resolveUnaryOperator(tree.pos(), tree.getTag(), env, syms.booleanType) :
+        	    rs.resolveUnaryOperator(tree.pos(), tree.getTag(), env, argtype);
 
         Type owntype = syms.errType;
         if (operator.kind == MTH) {
-            owntype = (JCTree.PREINC <= tree.getTag() && tree.getTag() <= JCTree.POSTDEC)
-                ? tree.arg.type
-                : operator.type.getReturnType();
+            if (tree.getTag() == JCTree.NOT && !types.isAssignable(tree.arg.type, syms.booleanType)) {
+        	// Destructive dereference
+        	owntype = tree.arg.type;
+     		if (!(tree.arg instanceof JCFieldAccess)) {
+     		    log.error(tree.arg.pos(), "expected.field.access");
+     		}
+            } else {
+                owntype = (JCTree.PREINC <= tree.getTag() && tree.getTag() <= JCTree.POSTDEC)
+            	    ? tree.arg.type : operator.type.getReturnType();
+            }
+         
             int opc = ((OperatorSymbol)operator).opcode;
 
             // If the argument is constant, fold it.

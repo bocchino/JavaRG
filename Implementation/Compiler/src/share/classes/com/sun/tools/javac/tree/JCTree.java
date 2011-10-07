@@ -2018,7 +2018,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     /**
      * Selects through packages and classes
-     * @param selected selected Tree hierarchie
+     * @param selected selected Tree hierarchy
      * @param selector name of field to select thru
      * @param sym symbol of the selected class
      */

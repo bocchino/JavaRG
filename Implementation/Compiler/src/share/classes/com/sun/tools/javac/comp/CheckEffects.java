@@ -562,6 +562,7 @@ public class CheckEffects extends EnvScanner { // DPJ
 
     @Override public void visitUnary(JCUnary tree) {
 	super.visitUnary(tree);
+	if (!(tree.operator instanceof OperatorSymbol)) return;
 	switch (((OperatorSymbol)tree.operator).opcode) {
 	case JCTree.PREINC: case JCTree.PREDEC:
 	case JCTree.POSTINC: case JCTree.POSTDEC:

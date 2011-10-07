@@ -1106,7 +1106,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
             if ((c.flags() & ARRAYCLASS) != 0) {
                 // Add array class constructor
-                List<Type> argtypes = List.of(syms.typeOfTag[TypeTags.INT]);
+                List<Type> argtypes = List.of(syms.intType);
                 List<JCVariableDecl> params = make.Params(argtypes, syms.noSymbol);
                 long ctorFlags = (c.flags() & AccessFlags) | PUBLIC | ARRAYCONSTR;
                 JCTree constrDef = make.MethodDef(
