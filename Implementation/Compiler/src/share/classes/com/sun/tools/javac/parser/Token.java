@@ -156,7 +156,6 @@ public enum Token {
     PRESERVES("preserves"),
     READS("reads"),
     REGION("region"),
-    TYPESWITCH("typeswitch"),
     UNIQUE("unique"),
     UPDATES("updates"),
     WRITES("writes");

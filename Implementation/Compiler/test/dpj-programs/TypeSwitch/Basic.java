@@ -5,7 +5,7 @@
 class Basic {
     String tag;
     void m(A x) {
-	typeswitch(x) {
+	switch(x) instanceof {
 	    case A:
 		tag = "A";
 	    case B:

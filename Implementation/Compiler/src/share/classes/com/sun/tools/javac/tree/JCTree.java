@@ -1282,13 +1282,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCSwitch extends JCStatement implements SwitchTree {
         public JCExpression selector;
         public List<JCCase> cases;
-        /** Flag indicating whether this is a type switch */
-        public boolean isTypeSwitch;
+        /** Flag indicating whether this is an instanceof switch */
+        public boolean isInstanceofSwitch;
         protected JCSwitch(JCExpression selector, List<JCCase> cases,
-        	boolean isTypeSwitch) {
+        	boolean isInstanceofSwitch) {
             this.selector = selector;
             this.cases = cases;
-            this.isTypeSwitch = isTypeSwitch;
+            this.isInstanceofSwitch = isInstanceofSwitch;
         }
         @Override
         public void accept(Visitor v) { v.visitSwitch(this); }
@@ -2870,7 +2870,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         JCEnhancedForLoop ForeachLoop(JCVariableDecl var, JCExpression expr, JCStatement body);
         JCLabeledStatement Labelled(Name label, JCStatement body);
         JCSwitch Switch(JCExpression selector, List<JCCase> cases);
-        JCSwitch TypeSwitch(JCExpression selector, List<JCCase> cases);
+        JCSwitch InstanceOfSwitch(JCExpression selector, List<JCCase> cases);
         JCCase Case(JCExpression pat, List<JCStatement> stats);
         JCSynchronized Synchronized(JCExpression lock, JCBlock body);
         JCTry Try(JCBlock body, List<JCCatch> catchers, JCBlock finalizer);

@@ -4,7 +4,7 @@
 
 class VariableDowncast {
     void m(A x) {
-	typeswitch(x) {
+	switch(x) instanceof {
 	    case B:
 		x.b = 1;
 	    case C:

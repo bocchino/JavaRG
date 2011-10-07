@@ -1237,7 +1237,7 @@ public class Attr extends JCTree.Visitor {
         boolean enumSwitch =
             allowEnums &&
             (seltype.tsym.flags() & Flags.ENUM) != 0;
-        if (tree.isTypeSwitch) {
+        if (tree.isInstanceofSwitch) {
             seltype = chk.checkType(tree.selector.pos(), seltype, syms.objectType);
         }
         else if (!enumSwitch)
@@ -1252,7 +1252,7 @@ public class Attr extends JCTree.Visitor {
             Env<AttrContext> caseEnv =
                 switchEnv.dup(c, env.info.dup(switchEnv.info.scope.dup()));
             Type oldType = null;
-            if (tree.isTypeSwitch) oldType = ((JCIdent) tree.selector).sym.type;
+            if (tree.isInstanceofSwitch) oldType = ((JCIdent) tree.selector).sym.type;
             if (c.pat != null) {
                 if (enumSwitch) {
                     Symbol sym = enumConstant(c.pat, seltype);
@@ -1262,7 +1262,7 @@ public class Attr extends JCTree.Visitor {
                         log.error(c.pos(), "duplicate.case.label");
                     }
                 }
-                else if (tree.isTypeSwitch) {
+                else if (tree.isInstanceofSwitch) {
                     Type pattype = attribType(c.pat, caseEnv);
                     Type owntype = chk.checkCastable(c.pat.pos(), seltype, pattype);
                     // Temporarily change the type of the selector variable 
@@ -1289,7 +1289,7 @@ public class Attr extends JCTree.Visitor {
                 hasDefault = true;
             }
             attribStats(c.stats, caseEnv);
-            if (tree.isTypeSwitch) {
+            if (tree.isInstanceofSwitch) {
         	// If we changed the selector variable type, change it back
         	((JCIdent) tree.selector).sym.type = oldType;
             }

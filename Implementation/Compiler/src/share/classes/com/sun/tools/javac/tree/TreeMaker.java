@@ -347,7 +347,7 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCSwitch TypeSwitch(JCExpression selector, List<JCCase> cases) {
+    public JCSwitch InstanceOfSwitch(JCExpression selector, List<JCCase> cases) {
         JCSwitch tree = new JCSwitch(selector, cases, true);
         tree.pos = pos;
         return tree;

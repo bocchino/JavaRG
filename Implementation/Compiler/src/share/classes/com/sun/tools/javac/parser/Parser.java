@@ -377,7 +377,6 @@ public class Parser {
                 case DO:
                 case TRY:
                 case SWITCH:
-                case TYPESWITCH:
                 case RETURN:
                 case THROW:
                 case BREAK:
@@ -1831,7 +1830,7 @@ public class Parser {
             case WHILE: case DO: case TRY:
             case SWITCH: case SYNCHRONIZED: case RETURN: case THROW: case BREAK:
             case CONTINUE: case SEMI: case ELSE: case FINALLY: case CATCH: 
-            case PARDO: case TYPESWITCH:
+            case PARDO:
                 stats.append(statement());
                 break;
             case MONKEYS_AT:
@@ -2035,23 +2034,23 @@ public class Parser {
         }
         case SWITCH: {
             S.nextToken();
+            JCSwitch t = null;
             JCExpression selector = parExpression();
-            accept(LBRACE);
-            List<JCCase> cases = switchBlockStatementGroups(false);
-            JCSwitch t = to(F.at(pos).Switch(selector, cases));
+            if (S.token() == INSTANCEOF) {
+        	if (!(selector instanceof JCIdent)) {
+                    syntaxError(S.pos(), "expected", keywords.token2string(IDENTIFIER));
+        	}
+        	S.nextToken();
+        	accept(LBRACE);
+        	List<JCCase> cases = switchBlockStatementGroups(true);
+        	t = to(F.at(pos).InstanceOfSwitch(selector, cases));        	
+            } else {
+        	accept(LBRACE);
+        	List<JCCase> cases = switchBlockStatementGroups(false);
+        	t = to(F.at(pos).Switch(selector, cases));
+            }
             accept(RBRACE);
             return t;
-        }
-        case TYPESWITCH: {
-            S.nextToken();
-            accept(LPAREN);
-            JCIdent selector = toP(F.at(S.pos()).Ident(ident()));
-            accept(RPAREN);
-            accept(LBRACE);
-            List<JCCase> cases = switchBlockStatementGroups(true);
-            JCSwitch t = to(F.at(pos).TypeSwitch(selector, cases));
-            accept(RBRACE);
-            return t;            
         }
         case SYNCHRONIZED: {
             S.nextToken();
