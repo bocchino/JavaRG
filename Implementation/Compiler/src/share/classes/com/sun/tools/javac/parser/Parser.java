@@ -377,6 +377,7 @@ public class Parser {
                 case DO:
                 case TRY:
                 case SWITCH:
+                case TYPESWITCH:
                 case RETURN:
                 case THROW:
                 case BREAK:
@@ -1792,7 +1793,7 @@ public class Parser {
         JCBlock t = F.at(pos).Block(flags, stats);
         while (S.token() == CASE || S.token() == DEFAULT) {
             syntaxError("orphaned", keywords.token2string(S.token()));
-            switchBlockStatementGroups();
+            switchBlockStatementGroups(false);
         }
         // the Block node has a field "endpos" for first char of last token, which is
         // usually but not necessarily the last char of the last token.
@@ -1830,7 +1831,7 @@ public class Parser {
             case WHILE: case DO: case TRY:
             case SWITCH: case SYNCHRONIZED: case RETURN: case THROW: case BREAK:
             case CONTINUE: case SEMI: case ELSE: case FINALLY: case CATCH: 
-            case PARDO:
+            case PARDO: case TYPESWITCH:
                 stats.append(statement());
                 break;
             case MONKEYS_AT:
@@ -2036,10 +2037,21 @@ public class Parser {
             S.nextToken();
             JCExpression selector = parExpression();
             accept(LBRACE);
-            List<JCCase> cases = switchBlockStatementGroups();
+            List<JCCase> cases = switchBlockStatementGroups(false);
             JCSwitch t = to(F.at(pos).Switch(selector, cases));
             accept(RBRACE);
             return t;
+        }
+        case TYPESWITCH: {
+            S.nextToken();
+            accept(LPAREN);
+            JCIdent selector = toP(F.at(S.pos()).Ident(ident()));
+            accept(RPAREN);
+            accept(LBRACE);
+            List<JCCase> cases = switchBlockStatementGroups(true);
+            JCSwitch t = to(F.at(pos).TypeSwitch(selector, cases));
+            accept(RBRACE);
+            return t;            
         }
         case SYNCHRONIZED: {
             S.nextToken();
@@ -2170,8 +2182,11 @@ public class Parser {
     /** SwitchBlockStatementGroups = { SwitchBlockStatementGroup }
      *  SwitchBlockStatementGroup = SwitchLabel BlockStatements
      *  SwitchLabel = CASE ConstantExpression ":" | DEFAULT ":"
+     *  TypeSwitchBlockStatementGroups = { TypeSwitchBlockStatementGroup }
+     *  TypeSwitchBlockStatementGroup = TypeSwitchLabel BlockStatements
+     *  TypeSwitchLabel = CASE Type ":" | DEFAULT ":"
      */
-    List<JCCase> switchBlockStatementGroups() {
+    List<JCCase> switchBlockStatementGroups(boolean isTypeSwitch) {
         ListBuffer<JCCase> cases = new ListBuffer<JCCase>();
         while (true) {
             int pos = S.pos();

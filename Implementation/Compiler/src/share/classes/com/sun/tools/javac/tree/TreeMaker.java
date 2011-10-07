@@ -342,11 +342,17 @@ public class TreeMaker implements JCTree.Factory {
     }
 
     public JCSwitch Switch(JCExpression selector, List<JCCase> cases) {
-        JCSwitch tree = new JCSwitch(selector, cases);
+        JCSwitch tree = new JCSwitch(selector, cases, false);
         tree.pos = pos;
         return tree;
     }
 
+    public JCSwitch TypeSwitch(JCExpression selector, List<JCCase> cases) {
+        JCSwitch tree = new JCSwitch(selector, cases, true);
+        tree.pos = pos;
+        return tree;
+    }
+    
     public JCCase Case(JCExpression pat, List<JCStatement> stats) {
         JCCase tree = new JCCase(pat, stats);
         tree.pos = pos;

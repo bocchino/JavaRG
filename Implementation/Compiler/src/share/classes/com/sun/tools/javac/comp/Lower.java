@@ -3029,7 +3029,8 @@ public class Lower extends TreeTranslator {
 	boolean enumSwitch = selsuper != null &&
             (tree.selector.type.tsym.flags() & ENUM) != 0;
 	Type target = enumSwitch ? tree.selector.type : syms.intType;
-	tree.selector = translate(tree.selector, target);
+	if (!tree.isTypeSwitch)
+	    tree.selector = translate(tree.selector, target);
 	tree.cases = translateCases(tree.cases);
         if (enumSwitch) {
             result = visitEnumSwitch(tree);

@@ -1237,7 +1237,10 @@ public class Attr extends JCTree.Visitor {
         boolean enumSwitch =
             allowEnums &&
             (seltype.tsym.flags() & Flags.ENUM) != 0;
-        if (!enumSwitch)
+        if (tree.isTypeSwitch) {
+            seltype = chk.checkType(tree.selector.pos(), seltype, syms.objectType);
+        }
+        else if (!enumSwitch)
             seltype = chk.checkType(tree.selector.pos(), seltype, syms.intType);
 
         // Attribute all cases and
@@ -1248,6 +1251,8 @@ public class Attr extends JCTree.Visitor {
             JCCase c = l.head;
             Env<AttrContext> caseEnv =
                 switchEnv.dup(c, env.info.dup(switchEnv.info.scope.dup()));
+            Type oldType = null;
+            if (tree.isTypeSwitch) oldType = ((JCIdent) tree.selector).sym.type;
             if (c.pat != null) {
                 if (enumSwitch) {
                     Symbol sym = enumConstant(c.pat, seltype);
@@ -1256,7 +1261,17 @@ public class Attr extends JCTree.Visitor {
                     } else if (!labels.add(sym)) {
                         log.error(c.pos(), "duplicate.case.label");
                     }
-                } else {
+                }
+                else if (tree.isTypeSwitch) {
+                    Type pattype = attribType(c.pat, caseEnv);
+                    Type owntype = chk.checkCastable(c.pat.pos(), seltype, pattype);
+                    // Temporarily change the type of the selector variable 
+                    // to the matched type                    
+                    JCIdent selId = (JCIdent) tree.selector;
+                    Scope enclScope = enter.enterScope(caseEnv);
+                    selId.sym.type = pattype;
+                }
+                else {
                     Type pattype = attribExpr(c.pat, switchEnv, seltype);
                     if (pattype.tag != ERROR) {
                         if (pattype.constValue() == null) {
@@ -1274,6 +1289,10 @@ public class Attr extends JCTree.Visitor {
                 hasDefault = true;
             }
             attribStats(c.stats, caseEnv);
+            if (tree.isTypeSwitch) {
+        	// If we changed the selector variable type, change it back
+        	((JCIdent) tree.selector).sym.type = oldType;
+            }
             caseEnv.info.scope.leave();
             addVars(c.stats, switchEnv.info.scope);
         }
