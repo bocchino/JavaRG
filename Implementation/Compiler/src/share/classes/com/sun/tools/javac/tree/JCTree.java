@@ -1864,6 +1864,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 	private int opcode;
         public JCExpression arg;
         public Symbol operator;
+        /** Flag indicating destructive access !e.f */
+        public boolean isDestructiveAccess;
         protected JCUnary(int opcode, JCExpression arg) {
             this.opcode = opcode;
             this.arg = arg;

@@ -1810,6 +1810,32 @@ public class Pretty extends JCTree.Visitor {
 
     public void visitUnary(JCUnary tree) {
         try {
+            if (tree.isDestructiveAccess) {
+        	Types.printDPJ = false;
+        	JCFieldAccess fa = (JCFieldAccess) tree.arg;
+        	print("(new Object() {");
+        	println();
+        	indent();
+        	align(); print(fa.type);
+        	print(" destructiveAccess(");
+        	print(fa.selected.type);
+        	print(" arg) {");
+        	println();
+        	indent();
+        	align(); print(fa.type + " result = arg." + fa.name + ";");
+        	println();
+        	align(); print("arg." + fa.name + " = null;");
+        	println();
+        	align(); print("return result;");
+        	println();
+        	undent();
+        	align(); print("}");
+        	println();
+        	undent(); 
+        	align(); print("}).destructiveAccess(" + fa.selected + ")");
+        	Types.printDPJ = true;
+        	return;
+            }
             int ownprec = TreeInfo.opPrec(tree.getTag());
             String opname = operatorName(tree.getTag());
             open(prec, ownprec);

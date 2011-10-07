@@ -2111,9 +2111,12 @@ public class Attr extends JCTree.Visitor {
         Type owntype = syms.errType;
         if (operator.kind == MTH) {
             if (tree.getTag() == JCTree.NOT && !types.isAssignable(tree.arg.type, syms.booleanType)) {
-        	// Destructive dereference
-        	owntype = tree.arg.type;
-     		if (!(tree.arg instanceof JCFieldAccess)) {
+        	// Destructive field access
+     		if (tree.arg instanceof JCFieldAccess) {
+     		    owntype = tree.arg.type;
+     		    tree.isDestructiveAccess = true;
+     		}
+     		else {
      		    log.error(tree.arg.pos(), "expected.field.access");
      		}
             } else {
