@@ -2038,7 +2038,7 @@ public class Parser {
             JCExpression selector = parExpression();
             if (S.token() == INSTANCEOF) {
         	if (!(selector instanceof JCIdent)) {
-                    syntaxError(S.pos(), "expected", keywords.token2string(IDENTIFIER));
+                    syntaxError(selector.pos, "expected", keywords.token2string(IDENTIFIER));
         	}
         	S.nextToken();
         	accept(LBRACE);
