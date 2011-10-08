@@ -115,7 +115,7 @@ public interface TreeVisitor<R,P> {
     R visitEffectPerms(EffectPermTree node, P p); // DPJ
     R visitWhileLoop(WhileLoopTree node, P p);
     R visitWildcard(WildcardTree node, P p);
-    R visitCobegin(PardoTree node, P p); // DPJ
-    R visitDPJForLoop(JRGForLoopTree node, P p);
+    R visitPardo(PardoTree node, P p); // DPJ
+    R visitJRGForLoop(JRGForLoopTree node, P p);
     R visitOther(Tree node, P p);
 }

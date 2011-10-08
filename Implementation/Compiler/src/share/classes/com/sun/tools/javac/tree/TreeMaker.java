@@ -675,8 +675,8 @@ public class TreeMaker implements JCTree.Factory {
 	return tree;
     }
     
-    public JRGPardo Pardo(JCStatement body, boolean isNonDet) {
-	JRGPardo tree = new JRGPardo(body, isNonDet);
+    public JRGPardo Pardo(JCBlock body) {
+	JRGPardo tree = new JRGPardo(body);
 	tree.pos = pos;
 	return tree;
     }

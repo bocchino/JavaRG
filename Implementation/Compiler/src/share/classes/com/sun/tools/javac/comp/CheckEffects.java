@@ -384,8 +384,8 @@ public class CheckEffects extends EnvScanner { // DPJ
     }
 
     @Override
-    public void visitDPJForLoop(JRGForLoop tree) {
-	super.visitDPJForLoop(tree);
+    public void visitJRGForLoop(JRGForLoop tree) {
+	super.visitJRGForLoop(tree);
 	if (tree.indexVar.init != null) addAllWithRead(tree.indexVar.init, tree);
 	if (tree.array != null) addAllWithRead(tree.array, tree);
 	addAll(tree.body, tree);
@@ -652,15 +652,15 @@ public class CheckEffects extends EnvScanner { // DPJ
 	}
     }
     
-    @Override public void visitCobegin(JRGPardo tree) {
-	super.visitCobegin(tree);
+    @Override public void visitPardo(JRGPardo tree) {
+	super.visitPardo(tree);
 	tree.effects = tree.body.effects;
 	if (inConstructor(parentEnv))
 	    tree.setConstructorEffects(tree.body.getConstructorEffects());
 	boolean interfere = false;
 	if (tree.body instanceof JCBlock) {
 	    interfere = statementsInterfere(((JCBlock) tree.body).stats,
-		    tree.isNondet);
+		    false);
 	}
 	if (interfere) {
 	    log.warning(tree.pos(), "interference.cobegin");

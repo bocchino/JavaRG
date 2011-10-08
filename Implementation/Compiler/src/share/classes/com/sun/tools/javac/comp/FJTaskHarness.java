@@ -83,8 +83,8 @@ public class FJTaskHarness extends TreeScanner {
     /* ------------ Visitor methods for various sorts of trees -------------*/
 
     //Hi, my name is Ugly Hack.  How may I be of service today?
-    public void visitCobegin(JRGPardo that) {}
-    public void visitDPJForLoop(JRGForLoop that) {}
+    public void visitPardo(JRGPardo that) {}
+    public void visitJRGForLoop(JRGForLoop that) {}
     
     public void visitClassDef(JCClassDecl tree) {
 	boolean oldClassCanBeRun = classCanBeRun;

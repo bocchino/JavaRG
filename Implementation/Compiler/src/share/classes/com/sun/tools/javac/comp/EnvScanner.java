@@ -130,7 +130,7 @@ public abstract class EnvScanner extends TreeScanner {
     }
     
     @Override
-    public void visitDPJForLoop(JRGForLoop tree) {
+    public void visitJRGForLoop(JRGForLoop tree) {
 	Env<AttrContext> savedEnv = parentEnv;
 	parentEnv = parentEnv.dup(parentEnv.tree, parentEnv.info.dup(parentEnv.info.scope.dup()));
 	super.scan(tree.indexVar);

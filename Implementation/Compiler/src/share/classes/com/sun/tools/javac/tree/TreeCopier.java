@@ -664,16 +664,16 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         	effectParams);
     }
     
-    public JCTree visitCobegin(PardoTree node, P p) {
+    public JCTree visitPardo(PardoTree node, P p) {
 	JRGPardo t = (JRGPardo) node;
-	JCStatement body = copy(t.body, p);
-	JRGPardo result = M.at(t.pos).Pardo(body, t.isNondet);
+	JCBlock body = copy(t.body, p);
+	JRGPardo result = M.at(t.pos).Pardo(body);
 	
-	result.bodySize = t.bodySize;
-	result.declaredVars = new Set[t.bodySize];
-	result.definedVars = new Set[t.bodySize];
-	result.usedVars = new Set[t.bodySize];
-	for (int i = 0; i < t.bodySize; i++) {
+	int bodySize = t.body.stats.size();
+	result.declaredVars = new Set[bodySize];
+	result.definedVars = new Set[bodySize];
+	result.usedVars = new Set[bodySize];
+	for (int i = 0; i < bodySize; i++) {
 	    result.declaredVars[i] = new HashSet<VarSymbol>(t.declaredVars[i]);
 	    result.definedVars[i] = new HashSet<VarSymbol>(t.definedVars[i]);
 	    result.usedVars[i] = new HashSet<VarSymbol>(t.usedVars[i]);
@@ -682,7 +682,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
 	return result;
     }
     
-    public JCTree visitDPJForLoop(JRGForLoopTree node, P p) {
+    public JCTree visitJRGForLoop(JRGForLoopTree node, P p) {
 	JRGForLoop t = (JRGForLoop) node;
 	JCExpression array = copy(t.array, p);
 	JCStatement body = copy(t.body, p);

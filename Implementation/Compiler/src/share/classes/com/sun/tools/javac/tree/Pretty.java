@@ -1134,7 +1134,7 @@ public class Pretty extends JCTree.Visitor {
 	    return maybeThis.toString();
     }
     
-    public void visitDPJForLoop(JRGForLoop tree) {
+    public void visitJRGForLoop(JRGForLoop tree) {
 	if (codeGenMode == NONE) {
 	    try {
 		print("foreach (");
@@ -1558,14 +1558,10 @@ public class Pretty extends JCTree.Visitor {
     }
     
     private int dpj_tname = 0;    
-    public void visitCobegin(JRGPardo tree) {
+    public void visitPardo(JRGPardo tree) {
 	if (codeGenMode == NONE) {
 	    try {
-		if (tree.isNondet) {
-		    print("cobegin_nd ");
-		} else {
-		    print("cobegin ");
-		}
+		print("pardo ");
 		printStat(tree.body);
 	    } catch (IOException e) {
 		throw new UncheckedIOException(e);

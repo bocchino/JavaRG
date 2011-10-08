@@ -3606,12 +3606,12 @@ public class Attr extends JCTree.Visitor {
 	// TODO
     }
 
-    public void visitCobegin(JRGPardo tree) {
+    public void visitPardo(JRGPardo tree) {
 	attribStat(tree.body, env);
 	result = null;
     }
     
-    public void visitDPJForLoop(JRGForLoop tree) {
+    public void visitJRGForLoop(JRGForLoop tree) {
 	Env<AttrContext> loopEnv =
 	    env.dup(env.tree, env.info.dup(env.info.scope.dup()));
 	tree.indexVar.mods.flags |= Flags.FINAL;

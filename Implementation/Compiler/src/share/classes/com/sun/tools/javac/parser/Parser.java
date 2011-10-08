@@ -2060,8 +2060,8 @@ public class Parser {
         }
         case PARDO: {
             S.nextToken();
-            JCStatement body = block();
-            return F.at(pos).Pardo(body, false);
+            JCBlock body = block();
+            return F.at(pos).Pardo(body);
         }
         case RETURN: {
             S.nextToken();

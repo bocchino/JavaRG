@@ -958,7 +958,7 @@ public class Flow extends TreeScanner {
 	nextadr = nextadrPrev;
     }
 
-    public void visitDPJForLoop(JRGForLoop tree) {
+    public void visitJRGForLoop(JRGForLoop tree) {
 	JCTree oldEnclosure = enclosingDPJ;
 	enclosingDPJ = tree;
 	
@@ -1350,7 +1350,7 @@ public class Flow extends TreeScanner {
 	}
     }
     
-    public void visitCobegin(JRGPardo tree) {
+    public void visitPardo(JRGPardo tree) {
 	JCTree oldEnclosure = enclosingDPJ;
 	enclosingDPJ = tree;
 	JCBlock realBody = (JCBlock)(tree.body);

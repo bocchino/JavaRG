@@ -1070,55 +1070,42 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
-     * A DPJ cobegin statement
+     * A JRG 'pardo' statement
      */
     public static class JRGPardo extends JCStatement implements PardoTree {
-	/**
-	 * Is this a cobegin_nd?
-	 */
-	public boolean isNondet;
 	
+	// The following three fields define information discovered in the
+	// 'flow' pass and used in code generation.
 	/**
-	 * Block statement holding body of cobegin
-	 */
-        public JCStatement body;
-        
-        /**
-         * Number of statements in body of cobegin
-         */
-        public int bodySize;
-        
-        /**
-         * Variables assigned in body of cobegin
+         * Variables assigned in body
          */
         public Set<VarSymbol> definedVars[];
         /**
-         * Variables used in body of cobegin
+         * Variables used in body
          */
         public Set<VarSymbol> usedVars[];
         /**
-         * Variables declared in body of cobegin
-         * (so, even if they're assigned, we don't have to copy them in)
+         * Variables declared in body
          */
         public Set<VarSymbol> declaredVars[];
-        
-        protected JRGPardo(JCStatement body, boolean isNonDet) {
+ 	
+        public JCBlock body;
+                
+        protected JRGPardo(JCBlock body) {
             this.body = body;
-            JCBlock realBody = (JCBlock)(body);
-            bodySize = realBody.stats.size();
+            int bodySize = body.stats.size();
             definedVars = new Set[bodySize];
             usedVars = new Set[bodySize];
             declaredVars = new Set[bodySize];
-            this.isNondet = isNonDet;
         }
         @Override
-        public void accept(Visitor v) { v.visitCobegin(this); }
+        public void accept(Visitor v) { v.visitPardo(this); }
 
         public Kind getKind() { return Kind.PARDO; }
         public JCStatement getStatement() { return body; }
         @Override
         public <R,D> R accept(TreeVisitor<R,D> v, D d) {
-            return v.visitCobegin(this, d);
+            return v.visitPardo(this, d);
         }
 
         @Override
@@ -1229,7 +1216,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
             this.isParallel = isParallel;
         }
         @Override
-        public void accept(Visitor v) { v.visitDPJForLoop(this); }
+        public void accept(Visitor v) { v.visitJRGForLoop(this); }
 
         public Kind getKind() { return Kind.JRG_FOR_LOOP; }
         public JCVariableDecl getIndexVar() { return indexVar; }
@@ -1237,7 +1224,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCStatement getBody() { return body; }
         @Override
         public <R,D> R accept(TreeVisitor<R,D> v, D d) {
-            return v.visitDPJForLoop(this, d);
+            return v.visitJRGForLoop(this, d);
         }
         @Override
         public int getTag() {
@@ -2923,7 +2910,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         DPJRegionPathList RegionPathList(List<DPJRegionPathListElt> elts);
         JRGEffectPerm EffectPerm(DPJRegionPathList rpl, JRGDerefSet derefSet);
         DPJRegionDecl RegionDecl(JCModifiers mods, Name name);
-        JRGPardo Pardo(JCStatement body, boolean isNonDet);
+        JRGPardo Pardo(JCBlock body);
         JCWildcard Wildcard(TypeBoundKind kind, JCTree type);
         JRGRefPerm RefPerm(JCIdent group);
         JRGMethodPerms MethodPerms(JRGRefPerm refPerm, List<JCIdent> freshGroups,
@@ -3003,8 +2990,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitModifiers(JCModifiers that)         { visitTree(that); }
         public void visitErroneous(JCErroneous that)         { visitTree(that); }
         public void visitLetExpr(LetExpr that)               { visitTree(that); }
-        public void visitCobegin(JRGPardo that)            { visitTree(that); }
-        public void visitDPJForLoop(JRGForLoop that)         { visitTree(that); }
+        public void visitPardo(JRGPardo that)            { visitTree(that); }
+        public void visitJRGForLoop(JRGForLoop that)         { visitTree(that); }
         public void visitNegationExpression(DPJNegationExpression that) {visitTree(that); }
 
         public void visitTree(JCTree that)                   { assert false; }

@@ -320,11 +320,11 @@ public class TreeScanner extends Visitor {
 	scan(tree.expr);
     }
 
-    public void visitCobegin(JRGPardo tree) {
+    public void visitPardo(JRGPardo tree) {
 	scan(tree.body);
     }
     
-    public void visitDPJForLoop(JRGForLoop tree) {
+    public void visitJRGForLoop(JRGForLoop tree) {
 	scan(tree.indexVar);
 	scan(tree.array);
 	scan(tree.body);

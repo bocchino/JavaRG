@@ -501,11 +501,11 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
 	return null; // DPJ FIXME
     }
     
-    public R visitCobegin(PardoTree node, P p) {
+    public R visitPardo(PardoTree node, P p) {
 	return null; // DPJ FIXME
     }
 
-    public R visitDPJForLoop(JRGForLoopTree node, P p) {
+    public R visitJRGForLoop(JRGForLoopTree node, P p) {
 	return null; // DPJ FIXME
     }
     

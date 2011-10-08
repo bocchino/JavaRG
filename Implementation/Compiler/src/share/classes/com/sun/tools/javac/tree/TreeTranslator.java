@@ -189,7 +189,7 @@ public class TreeTranslator extends JCTree.Visitor {
 	result = tree;
     }
     
-    public void visitDPJForLoop(JRGForLoop tree) {
+    public void visitJRGForLoop(JRGForLoop tree) {
 	tree.indexVar = translate(tree.indexVar);
 	tree.array = translate(tree.array);
 	tree.body = translate(tree.body);
@@ -379,7 +379,7 @@ public class TreeTranslator extends JCTree.Visitor {
 	result = tree;
     }
     
-    public void visitCobegin(JRGPardo tree) {
+    public void visitPardo(JRGPardo tree) {
 	tree.body = translate(tree.body);
 	result = tree;
     }
