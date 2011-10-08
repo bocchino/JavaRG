@@ -22,6 +22,7 @@ test-all-seq :
 	${DPJ-SEQ-TEST} ArrayOfArrayOfInt      TEST ${SIZE}
 	${DPJ-SEQ-TEST} DestructiveFieldAccess TEST ${SIZE}
 	${DPJ-SEQ-TEST} InstanceofSwitch       TEST ${SIZE}
+	${DPJ-SEQ-TEST} PardoBasic             TEST ${SIZE}
 
 test-all-par :
 	echo "No parallel tests"

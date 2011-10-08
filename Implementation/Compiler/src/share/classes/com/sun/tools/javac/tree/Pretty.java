@@ -370,18 +370,17 @@ public class Pretty extends JCTree.Visitor {
         }
     }
 
-    public void printCobeginStats(List<? extends JCTree> trees) throws IOException {
+    public void printInstrumentedPardoStats(List<? extends JCTree> trees) throws IOException {
 	int count = 0;
 	for (List<? extends JCTree> l = trees; l.nonEmpty(); l = l.tail) {
-            if ((codeGenMode == NONE) || 
-        	    (!(l.head instanceof DPJRegionDecl) &&
+            if ((!(l.head instanceof DPJRegionDecl) &&
         		    !(l.head instanceof JRGRefGroupDecl))) {
         	align();
         	printStat(l.head);
         	println();
         	if (++count < l.size()) {
         	    align();
-        	    if (codeGenMode == SEQ_INST) print("DPJRuntime.Instrument.cobeginSeparator();");
+        	    print("JRGRuntime.Instrument.pardoSeparator();");
         	    println();
         	}
             }
@@ -487,16 +486,6 @@ public class Pretty extends JCTree.Visitor {
         println();
         indent();
         printStats(stats);
-        undent();
-        align();
-        print("}");
-    }
-
-    public void printCobeginBlock(List<? extends JCTree> stats) throws IOException {
-        print("{");
-        println();
-        indent();
-        printCobeginStats(stats);
         undent();
         align();
         print("}");
@@ -1566,37 +1555,39 @@ public class Pretty extends JCTree.Visitor {
 	    } catch (IOException e) {
 		throw new UncheckedIOException(e);
 	    }
-	} else if(sequential || !(tree.body instanceof JCBlock)) {
-	    seqCobegin(tree);
-	} else {
-	    parCobegin(tree);
+	} 
+	else if (codeGenMode == SEQ_INST) {
+	    printInstrumentedPardoSeq(tree);
+	}
+	else if (sequential){
+	    visitBlock(tree.body);
+	} 
+	else {
+	    printPardoPar(tree);
 	}	
     }
     
-    public void seqCobegin(JRGPardo tree) {
+    public void printInstrumentedPardoSeq(JRGPardo tree) {
 	try {
-	    if(codeGenMode == SEQ_INST) print("DPJRuntime.Instrument.enterCobegin();\n");
-	    align();
-	    if (tree.body instanceof JCBlock) {
-		JCBlock block = (JCBlock) tree.body;
-		try {
-	            printFlags(block.flags);
-	            printCobeginBlock(block.stats);
-	        } catch (IOException e) {
-	            throw new UncheckedIOException(e);
-	        }
-	    } else {
-		printStat(tree.body);
-	    }
+	    print("JRGRuntime.Instrument.enterPardo();\n");
 	    println();
+	    printFlags(tree.body.flags);
+	    printBlock(tree.body.stats);
+	    print("{");
+	    println();
+	    indent();
+	    printInstrumentedPardoStats(tree.body.stats);
+	    undent();
 	    align();
-	    if(codeGenMode == SEQ_INST) print("DPJRuntime.Instrument.exitCobegin();");
+	    print("}");
+	    println();
+	    print("JRGRuntime.Instrument.exitPardo();");
 	} catch (IOException e) {
 	    throw new UncheckedIOException(e);
 	}
     }
 
-    public void parCobegin(JRGPardo tree) {
+    public void printPardoPar(JRGPardo tree) {
 	Types.printDPJ = false;
 	try {
 	    JCBlock body = (JCBlock)(tree.body);
