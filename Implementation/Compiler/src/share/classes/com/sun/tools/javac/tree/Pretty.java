@@ -172,6 +172,13 @@ public class Pretty extends JCTree.Visitor {
 	}
     }
     
+    /** We need to rewrite variable symbols during code generation
+     *  for instanceof switch.
+     */
+    Symbol variableToMangle;
+    String prefix = "__jrg";
+    int suffix;    
+    
     // Note:  The following two methods are a HACK to work around
     // the fact that the javac implementation of enums is broken! Without
     // these flags, we get strange output that is not legal
@@ -271,12 +278,21 @@ public class Pretty extends JCTree.Visitor {
     }
 
     String lineSep = System.getProperty("line.separator");
+    
+    /** Mangle a variable name
+     */
+    private String mangle(Name name) {
+	return mangle(name, this.suffix);
+    }
+    private String mangle(Name name, int suffix) {
+	return prefix + "_" + name + "_" + suffix;
+    }
 
     /**************************************************************************
      * Traversal methods
      *************************************************************************/
 
-    /** Exception to propogate IOException through visitXXX methods */
+    /** Exception to propagate IOException through visitXXX methods */
     protected static class UncheckedIOException extends Error {
 	static final long serialVersionUID = -4032692679158424751L;
         UncheckedIOException(IOException e) {
@@ -1177,6 +1193,10 @@ public class Pretty extends JCTree.Visitor {
 
     public void visitSwitch(JCSwitch tree) {
         try {
+            if (codeGenMode != NONE && tree.isInstanceofSwitch) {
+        	printInstanceofSwitch(tree);
+        	return;
+            }
             print("switch ");
             if (tree.selector.getTag() == JCTree.PARENS) {
                 printExpr(tree.selector);
@@ -1184,6 +1204,9 @@ public class Pretty extends JCTree.Visitor {
                 print("(");
                 printExpr(tree.selector);
                 print(")");
+            }
+            if (tree.isInstanceofSwitch) {
+        	print(" instanceof ");
             }
             print(" {");
             println();
@@ -1193,6 +1216,37 @@ public class Pretty extends JCTree.Visitor {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+    
+    public void printInstanceofSwitch(JCSwitch tree) throws IOException {
+	JCIdent selector = (JCIdent) tree.selector;
+	int caseNum = 1;
+	for (JCCase c : tree.cases) {
+	    if (caseNum > 1) {
+		println(); align();
+		print("else ");
+	    }
+	    print("if (" + selector.name + " instanceof ");
+	    if (c.pat == null) {
+		print("Object");
+	    }
+	    else print(c.pat.type);
+	    print(") {");
+	    println();
+	    indent(); align();
+	    variableToMangle = selector.sym;
+	    if (c.pat != null) {
+		print(c.pat.type + " " + mangle(selector.name) + 
+			" = (" + c.pat.type + ") " + selector.name + ";");
+		println();
+	    }
+	    printStats(c.stats);
+	    variableToMangle = null;
+	    undent(); align();
+	    print("}");
+	    ++caseNum;
+	    ++suffix;
+	}
     }
 
     public void visitCase(JCCase tree) {
@@ -1939,7 +1993,6 @@ public class Pretty extends JCTree.Visitor {
             else if (printOwner && tree.toString().equals("this")) {
         	Types.printDPJ = false;
         	print (tree.sym.owner.type + "." + "this");
-        	Types.printDPJ = false;
             } 
             else if (tree.sym instanceof ClassSymbol &&
         	    tree.sym.type instanceof ClassType) {
@@ -1953,7 +2006,12 @@ public class Pretty extends JCTree.Visitor {
         	}
             }
             else {
-        	print(tree.name);
+        	if (tree.sym == variableToMangle) {
+        	    print(mangle(tree.name));
+        	}
+        	else {
+        	    print(tree.name);
+        	}
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
