@@ -51,7 +51,7 @@ import com.sun.source.tree.CompoundAssignmentTree;
 import com.sun.source.tree.ConditionalExpressionTree;
 import com.sun.source.tree.ContinueTree;
 import com.sun.source.tree.CopyPermTree;
-import com.sun.source.tree.DPJForLoopTree;
+import com.sun.source.tree.JRGForLoopTree;
 import com.sun.source.tree.DerefSetTree;
 import com.sun.source.tree.DoWhileLoopTree;
 import com.sun.source.tree.EffectPermTree;
@@ -440,13 +440,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      */
     public static final int REGIONPARAMINFO = REGIONPARAMETER + 1;
     
-    /** Pardo statements, of type Pardo
+    /** Pardo statements
      */
     public static final int PARDO = REGIONPARAMINFO + 1;    
     
-    /** DPJ for loop, of type DPJForLoop
+    /** JRG for loop
      */
-    public static final int DPJFORLOOP = PARDO + 1;
+    public static final int JRGFORLOOP = PARDO + 1;
     
     /** The offset between assignment operators and normal operators.
      */
@@ -1198,56 +1198,50 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
-     * DPJ for loop.
+     * JRG for loop.
      */
-    public static class DPJForLoop extends JCStatement implements DPJForLoopTree {
+    public static class JRGForLoop extends JCStatement implements JRGForLoopTree {
 	
-        /**
-         * Variables assigned in body of foreach
+	// The following three fields define information that is discovered
+	// in the 'flow' pass and used in code generation.
+	/**
+         * Variables assigned in body
          */
         public Set<VarSymbol> definedVars = new HashSet<VarSymbol>();
         /**
-         * Variables used in body of foreach
+         * Variables used in body
          */
         public Set<VarSymbol> usedVars = new HashSet<VarSymbol>();
         /**
-         * Variables declared in body of foreach
-         * (so, even if they're assigned, we don't have to copy them in)
+         * Variables declared in body
          */
         public Set<VarSymbol> declaredVars = new HashSet<VarSymbol>();
-        
 	
-        public boolean isNondet;
-        public JCVariableDecl var;
-        public JCExpression start;
-        public JCExpression length;
-        public JCExpression stride;
+        public JCVariableDecl indexVar;
+        public JCExpression array;
         public JCStatement body;
-        protected DPJForLoop(JCVariableDecl var, JCExpression start, JCExpression length,
-        	             JCExpression stride, JCStatement body, boolean isNondet) {
-            this.var = var;
-            this.start = start;
-            this.length = length;
-            this.stride = stride;
+        public boolean isParallel;
+        protected JRGForLoop(JCVariableDecl indexVar, JCExpression array, 
+        	JCStatement body, boolean isParallel) {
+            this.indexVar = indexVar;
+            this.array = array;
             this.body = body;
-            this.isNondet = isNondet;
+            this.isParallel = isParallel;
         }
         @Override
         public void accept(Visitor v) { v.visitDPJForLoop(this); }
 
-        public Kind getKind() { return Kind.DPJ_FOR_LOOP; }
-        public JCVariableDecl getVariable() { return var; }
-        public JCExpression getStart() { return start; }
-        public JCExpression getLength() { return length; }
-        public JCExpression getStride() { return stride; }
-        public JCStatement getStatement() { return body; }
+        public Kind getKind() { return Kind.JRG_FOR_LOOP; }
+        public JCVariableDecl getIndexVar() { return indexVar; }
+        public JCExpression getArray() { return array; }
+        public JCStatement getBody() { return body; }
         @Override
         public <R,D> R accept(TreeVisitor<R,D> v, D d) {
             return v.visitDPJForLoop(this, d);
         }
         @Override
         public int getTag() {
-            return DPJFORLOOP;
+            return JRGFORLOOP;
         }
     }
 
@@ -2918,8 +2912,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         	List<DPJRegionPathList> rplArgs, List<JCIdent> groupArgs);
         JCTypeParameter TypeParameter(Name name, List<DPJRegionParameter> rplparams,
         	List<JCExpression> bounds);
-        DPJForLoop DPJForLoop(JCVariableDecl var, JCExpression start, JCExpression length,
-        	              JCExpression stride, JCStatement body, boolean isNonDet);
+        JRGForLoop JRGForLoop(JCVariableDecl var, JCExpression array, 
+        	JCStatement body, boolean isParallel);
         DPJRegionParameter RegionParameter(Name name, DPJRegionPathList bound,
         	boolean isAtomic);
         DPJParamInfo ParamInfo(List<DPJRegionParameter> rplParams,
@@ -3010,7 +3004,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitErroneous(JCErroneous that)         { visitTree(that); }
         public void visitLetExpr(LetExpr that)               { visitTree(that); }
         public void visitCobegin(JRGPardo that)            { visitTree(that); }
-        public void visitDPJForLoop(DPJForLoop that)         { visitTree(that); }
+        public void visitDPJForLoop(JRGForLoop that)         { visitTree(that); }
         public void visitNegationExpression(DPJNegationExpression that) {visitTree(that); }
 
         public void visitTree(JCTree that)                   { assert false; }

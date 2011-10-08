@@ -62,7 +62,7 @@ import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.code.Type.WildcardType;
 import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.tree.JCTree.DPJForLoop;
+import com.sun.tools.javac.tree.JCTree.JRGForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
@@ -681,9 +681,9 @@ public class TreeMaker implements JCTree.Factory {
 	return tree;
     }
 
-    public DPJForLoop DPJForLoop(JCVariableDecl var, JCExpression start, JCExpression length,
-                                 JCExpression stride, JCStatement body, boolean isNonDet) {
-	DPJForLoop tree = new DPJForLoop(var, start, length, stride, body, isNonDet);
+    public JRGForLoop JRGForLoop(JCVariableDecl var, JCExpression array, 
+	    JCStatement body, boolean isParallel) {
+	JRGForLoop tree = new JRGForLoop(var, array, body, isParallel);
 	tree.pos = pos;
 	return tree;
     }

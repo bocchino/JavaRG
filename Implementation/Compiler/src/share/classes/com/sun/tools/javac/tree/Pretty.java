@@ -50,7 +50,7 @@ import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.TypeTags;
 import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.tree.JCTree.DPJForLoop;
+import com.sun.tools.javac.tree.JCTree.JRGForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJNegationExpression;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
@@ -908,15 +908,13 @@ public class Pretty extends JCTree.Visitor {
         }
     }
 
-    public void seqDPJForLoop(DPJForLoop tree) {
-        try {
+    public void seqDPJForLoop(JRGForLoop tree) {
+        /*
+	try {
             Types.printDPJ = false;
             if (codeGenMode == SEQ_INST) {
         	print("DPJRuntime.Instrument.enterForeach(");
-        	if (tree.length != null)
-        	    print(tree.length);
-        	else
-        	    print(tree.start + ".size()");
+        	print(tree.array + ".length");
         	print(");");
         	println();
         	align();
@@ -998,9 +996,11 @@ public class Pretty extends JCTree.Visitor {
 	} finally {
 	    Types.printDPJ = true;
 	}
+	*/
     }
 
-    private void parDPJForLoop(DPJForLoop tree) {
+    private void parDPJForLoop(JRGForLoop tree) {
+	/*
 	try {
 	    Types.printDPJ = false;
 	    List<String> toCoInvoke = List.<String>nil();
@@ -1017,23 +1017,9 @@ public class Pretty extends JCTree.Visitor {
 	    copyIn.removeAll(tree.declaredVars);
 	    Set<VarSymbol> copyOut = new HashSet(tree.definedVars);
 	    copyOut.removeAll(tree.declaredVars);
-	    if(copyOut.size()>0 && !tree.isNondet)
-		//In real life this should have been caught by the type checker.
+	    if(copyOut.size() > 0)
+		// Ideally this error should be caught by the type checker.
 		print("Error: Assignment inside foreach to local variable declared prior to foreach\n");
-	    
-	    // Don't copy field values in/out, which would interfere with the STM system.
-	    // TODO Is this the best way to handle this issue?
-	    if (tree.isNondet) {
-		Set<VarSymbol> dontInclude = new HashSet<VarSymbol>();
-		for (VarSymbol var : copyIn)
-		    if (var.owner.kind != Kinds.MTH && !var.toString().equals("this"))
-			dontInclude.add(var);
-		for (VarSymbol var : copyOut)
-		    if (var.owner.kind != Kinds.MTH && !var.toString().equals("this"))
-			dontInclude.add(var);
-		copyIn.removeAll(dontInclude);
-		copyOut.removeAll(dontInclude);
-	    }
 	    
 	    Set<VarSymbol> copyAll = new HashSet(copyIn);
 	    copyAll.addAll(copyOut);
@@ -1138,6 +1124,7 @@ public class Pretty extends JCTree.Visitor {
 	finally {
 	    Types.printDPJ = true;
 	}
+	*/
     }
 
     private String varString(VarSymbol maybeThis) {
@@ -1147,35 +1134,24 @@ public class Pretty extends JCTree.Visitor {
 	    return maybeThis.toString();
     }
     
-    public void visitDPJForLoop(DPJForLoop tree) {
+    public void visitDPJForLoop(JRGForLoop tree) {
 	if (codeGenMode == NONE) {
 	    try {
-		if (tree.isNondet) {
-		    print("foreach_nd (");
-		} else {
-		    print("foreach (");
-		}
-		long flags = tree.var.mods.flags;
-		tree.var.mods.flags &= ~Flags.FINAL;
-		printExpr(tree.var);
-		tree.var.mods.flags = flags;
+		print("foreach (");
+		long flags = tree.indexVar.mods.flags;
+		tree.indexVar.mods.flags &= ~Flags.FINAL;
+		printExpr(tree.indexVar);
+		tree.indexVar.mods.flags = flags;
 		print(" in ");
-		printExpr(tree.start);
-		if (tree.length != null) {
-		    print(", ");
-		    printExpr(tree.length);
-		}
-		if (tree.stride != null) {
-		    print(", ");
-		    printExpr(tree.stride);
-		}
+		printExpr(tree.array);
 		print(") ");
+		if (tree.isParallel) print(" pardo ");
 		printStat(tree.body);
 	    }
 	    catch(IOException e) {
 		throw new UncheckedIOException(e);
 	    }
-	} else if(sequential || tree.length==null) {
+	} else if(sequential || !tree.isParallel) {
 	    seqDPJForLoop(tree);
 	} else {
 	    parDPJForLoop(tree);

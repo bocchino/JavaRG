@@ -42,7 +42,7 @@ import com.sun.source.tree.CompoundAssignmentTree;
 import com.sun.source.tree.ConditionalExpressionTree;
 import com.sun.source.tree.ContinueTree;
 import com.sun.source.tree.CopyPermTree;
-import com.sun.source.tree.DPJForLoopTree;
+import com.sun.source.tree.JRGForLoopTree;
 import com.sun.source.tree.DerefSetTree;
 import com.sun.source.tree.DoWhileLoopTree;
 import com.sun.source.tree.EffectPermTree;
@@ -505,7 +505,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
 	return null; // DPJ FIXME
     }
 
-    public R visitDPJForLoop(DPJForLoopTree node, P p) {
+    public R visitDPJForLoop(JRGForLoopTree node, P p) {
 	return null; // DPJ FIXME
     }
     

@@ -189,11 +189,9 @@ public class TreeTranslator extends JCTree.Visitor {
 	result = tree;
     }
     
-    public void visitDPJForLoop(DPJForLoop tree) {
-	tree.var = translate(tree.var);
-	tree.start = translate(tree.start);
-	tree.length = translate(tree.length);
-	tree.stride = translate(tree.stride);
+    public void visitDPJForLoop(JRGForLoop tree) {
+	tree.indexVar = translate(tree.indexVar);
+	tree.array = translate(tree.array);
 	tree.body = translate(tree.body);
 	result = tree;
     }

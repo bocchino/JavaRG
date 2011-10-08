@@ -626,7 +626,7 @@ public interface Tree {
          * Used for instances of {@link DPJForLoopTree} representing a
          * DPJ for loop.
          */
-        DPJ_FOR_LOOP(DPJForLoopTree.class),
+        JRG_FOR_LOOP(JRGForLoopTree.class),
         
         /**
          * Used for instances of {@link ErroneousTree}.

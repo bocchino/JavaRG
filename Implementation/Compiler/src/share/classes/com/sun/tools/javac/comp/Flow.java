@@ -367,9 +367,9 @@ public class Flow extends TreeScanner {
 	    JRGPardo enclosing = (JRGPardo)(enclosingDPJ);
 	    enclosing.declaredVars[cobegin_index].add(sym);
 	}
-	else if(enclosingDPJ!=null && enclosingDPJ instanceof DPJForLoop)
+	else if(enclosingDPJ!=null && enclosingDPJ instanceof JRGForLoop)
 	{
-	    DPJForLoop enclosing = (DPJForLoop)(enclosingDPJ);
+	    JRGForLoop enclosing = (JRGForLoop)(enclosingDPJ);
 	    enclosing.declaredVars.add(sym);
 	}
 	
@@ -388,9 +388,9 @@ public class Flow extends TreeScanner {
 	    JRGPardo enclosing = (JRGPardo)(enclosingDPJ);
 	    enclosing.definedVars[cobegin_index].add(sym);
 	}
-	if(enclosingDPJ!=null && enclosingDPJ instanceof DPJForLoop)
+	if(enclosingDPJ!=null && enclosingDPJ instanceof JRGForLoop)
 	{
-	    DPJForLoop enclosing = (DPJForLoop)(enclosingDPJ);
+	    JRGForLoop enclosing = (JRGForLoop)(enclosingDPJ);
 	    enclosing.definedVars.add(sym);
 	}
 	
@@ -452,9 +452,9 @@ public class Flow extends TreeScanner {
 	    JRGPardo enclosing = (JRGPardo)(enclosingDPJ);
 	    enclosing.usedVars[cobegin_index].add(sym);
 	}
-	else if(enclosingDPJ!=null && enclosingDPJ instanceof DPJForLoop)
+	else if(enclosingDPJ!=null && enclosingDPJ instanceof JRGForLoop)
 	{
-	    DPJForLoop enclosing = (DPJForLoop)(enclosingDPJ);
+	    JRGForLoop enclosing = (JRGForLoop)(enclosingDPJ);
 	    enclosing.usedVars.add(sym);
 	}
 	
@@ -958,12 +958,12 @@ public class Flow extends TreeScanner {
 	nextadr = nextadrPrev;
     }
 
-    public void visitDPJForLoop(DPJForLoop tree) {
+    public void visitDPJForLoop(JRGForLoop tree) {
 	JCTree oldEnclosure = enclosingDPJ;
 	enclosingDPJ = tree;
 	
-	visitVarDef(tree.var);
-	letInit(tree.pos(), tree.var.sym);
+	visitVarDef(tree.indexVar);
+	letInit(tree.pos(), tree.indexVar.sym);
 
 	ListBuffer<PendingExit> prevPendingExits = pendingExits;
 	boolean prevLoopPassTwo = loopPassTwo;
@@ -999,8 +999,8 @@ public class Flow extends TreeScanner {
 	externalDefines.removeAll(tree.declaredVars);
 	if(oldEnclosure instanceof JRGPardo)
 	    ((JRGPardo)oldEnclosure).usedVars[cobegin_index].addAll(externalUses);
-	else if(oldEnclosure instanceof DPJForLoop)
-	    ((DPJForLoop)oldEnclosure).usedVars.addAll(externalUses);
+	else if(oldEnclosure instanceof JRGForLoop)
+	    ((JRGForLoop)oldEnclosure).usedVars.addAll(externalUses);
 	
 	enclosingDPJ = oldEnclosure;
     }
@@ -1380,9 +1380,9 @@ public class Flow extends TreeScanner {
 	    parentCobegin.definedVars[oldIndex].addAll(externalDefines);
 	    parentCobegin.usedVars[oldIndex].addAll(externalUses);
 	}
-	else if(oldEnclosure instanceof DPJForLoop)
+	else if(oldEnclosure instanceof JRGForLoop)
 	{
-	    ((DPJForLoop)oldEnclosure).usedVars.addAll(externalUses);
+	    ((JRGForLoop)oldEnclosure).usedVars.addAll(externalUses);
 	    assert(externalDefines.size()==0);
 	}
 	

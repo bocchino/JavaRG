@@ -22,7 +22,7 @@ import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
-import com.sun.tools.javac.tree.JCTree.DPJForLoop;
+import com.sun.tools.javac.tree.JCTree.JRGForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJNegationExpression;
 import com.sun.tools.javac.tree.JCTree.JCArrayAccess;
 import com.sun.tools.javac.tree.JCTree.JCAssert;
@@ -384,22 +384,20 @@ public class CheckEffects extends EnvScanner { // DPJ
     }
 
     @Override
-    public void visitDPJForLoop(DPJForLoop tree) {
+    public void visitDPJForLoop(JRGForLoop tree) {
 	super.visitDPJForLoop(tree);
-	if (tree.var.init != null) addAllWithRead(tree.var.init, tree);
-	if (tree.start != null) addAllWithRead(tree.start, tree);
-	if (tree.length != null) addAllWithRead(tree.length, tree);
-	if (tree.stride != null) addAllWithRead(tree.stride, tree);
+	if (tree.indexVar.init != null) addAllWithRead(tree.indexVar.init, tree);
+	if (tree.array != null) addAllWithRead(tree.array, tree);
 	addAll(tree.body, tree);
 	Env<AttrContext> env = parentEnv.dup(tree, parentEnv.info.dup());
-	env.info.scope.enter(tree.var.sym);
+	env.info.scope.enter(tree.indexVar.sym);
 	Effects effects = tree.body.effects.inEnvironment(rs, env, false);
 	env.info.scope.leave();
 	Effects negatedEffects = 
-	    effects.substIndices(List.of(tree.var.sym), 
-		    List.<JCExpression>of(new DPJNegationExpression(tree.var.sym)));
+	    effects.substIndices(List.of(tree.indexVar.sym), 
+		    List.<JCExpression>of(new DPJNegationExpression(tree.indexVar.sym)));
 	if (!Effects.noninterferingEffects(effects, negatedEffects,
-		env.info.constraints, tree.isNondet)) {
+		env.info.constraints, false)) {
 	    log.warning(tree.pos(), "interference.foreach");
 	}
     }

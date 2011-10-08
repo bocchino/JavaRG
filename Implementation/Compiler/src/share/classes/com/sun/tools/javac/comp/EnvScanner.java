@@ -13,7 +13,7 @@ import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeScanner;
-import com.sun.tools.javac.tree.JCTree.DPJForLoop;
+import com.sun.tools.javac.tree.JCTree.JRGForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
@@ -130,13 +130,11 @@ public abstract class EnvScanner extends TreeScanner {
     }
     
     @Override
-    public void visitDPJForLoop(DPJForLoop tree) {
+    public void visitDPJForLoop(JRGForLoop tree) {
 	Env<AttrContext> savedEnv = parentEnv;
 	parentEnv = parentEnv.dup(parentEnv.tree, parentEnv.info.dup(parentEnv.info.scope.dup()));
-	super.scan(tree.var);
-	super.scan(tree.start);
-	if (tree.length != null) super.scan(tree.length);
-	if (tree.stride != null) super.scan(tree.stride);
+	super.scan(tree.indexVar);
+	super.scan(tree.array);
 	parentEnv.tree = tree; // before, we were not in loop!
 	super.scan(tree.body);
 	parentEnv.info.scope.leave();

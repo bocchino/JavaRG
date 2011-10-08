@@ -44,7 +44,7 @@ import com.sun.source.tree.CompoundAssignmentTree;
 import com.sun.source.tree.ConditionalExpressionTree;
 import com.sun.source.tree.ContinueTree;
 import com.sun.source.tree.CopyPermTree;
-import com.sun.source.tree.DPJForLoopTree;
+import com.sun.source.tree.JRGForLoopTree;
 import com.sun.source.tree.DerefSetTree;
 import com.sun.source.tree.DoWhileLoopTree;
 import com.sun.source.tree.EffectPermTree;
@@ -90,7 +90,7 @@ import com.sun.source.tree.VariableTree;
 import com.sun.source.tree.WhileLoopTree;
 import com.sun.source.tree.WildcardTree;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
-import com.sun.tools.javac.tree.JCTree.DPJForLoop;
+import com.sun.tools.javac.tree.JCTree.JRGForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
@@ -682,13 +682,11 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
 	return result;
     }
     
-    public JCTree visitDPJForLoop(DPJForLoopTree node, P p) {
-	DPJForLoop t = (DPJForLoop) node;
-	JCExpression start = copy(t.start, p);
-	JCExpression length = copy(t.length, p);
-	JCExpression stride = copy(t.stride, p);
+    public JCTree visitDPJForLoop(JRGForLoopTree node, P p) {
+	JRGForLoop t = (JRGForLoop) node;
+	JCExpression array = copy(t.array, p);
 	JCStatement body = copy(t.body, p);
-	DPJForLoop result = M.at(t.pos).DPJForLoop(t.var, start, length, stride, body, t.isNondet);
+	JRGForLoop result = M.at(t.pos).JRGForLoop(t.indexVar, array, body, t.isParallel);
 	
 	result.declaredVars = new HashSet<VarSymbol>(t.declaredVars);
 	result.definedVars = new HashSet<VarSymbol>(t.definedVars);

@@ -114,7 +114,7 @@ import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.jvm.ByteCodes;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.DPJForLoop;
+import com.sun.tools.javac.tree.JCTree.JRGForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
@@ -3611,16 +3611,12 @@ public class Attr extends JCTree.Visitor {
 	result = null;
     }
     
-    public void visitDPJForLoop(DPJForLoop tree) {
+    public void visitDPJForLoop(JRGForLoop tree) {
 	Env<AttrContext> loopEnv =
 	    env.dup(env.tree, env.info.dup(env.info.scope.dup()));
-	tree.var.mods.flags |= Flags.FINAL;
-	attribStat(tree.var, loopEnv);
-	attribExpr(tree.start, loopEnv);
-	if (tree.length != null)
-	    attribExpr(tree.length, loopEnv);
-	if (tree.stride != null)
-	    attribExpr(tree.stride, loopEnv);
+	tree.indexVar.mods.flags |= Flags.FINAL;
+	attribStat(tree.indexVar, loopEnv);
+	attribExpr(tree.array, loopEnv);
 	loopEnv.tree = tree; // before, we were not in loop!
 	attribStat(tree.body, loopEnv);
 	loopEnv.info.scope.leave();

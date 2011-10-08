@@ -116,6 +116,6 @@ public interface TreeVisitor<R,P> {
     R visitWhileLoop(WhileLoopTree node, P p);
     R visitWildcard(WildcardTree node, P p);
     R visitCobegin(PardoTree node, P p); // DPJ
-    R visitDPJForLoop(DPJForLoopTree node, P p);
+    R visitDPJForLoop(JRGForLoopTree node, P p);
     R visitOther(Tree node, P p);
 }

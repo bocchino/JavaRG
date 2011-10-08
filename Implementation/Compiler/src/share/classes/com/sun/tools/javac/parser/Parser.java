@@ -2159,8 +2159,7 @@ public class Parser {
         }
         accept(RPAREN);
         JCStatement body = statement();
-        JCStatement result = F.at(pos).DPJForLoop(var, start, length, 
-        	stride, body, isNonDet);
+        JCStatement result = F.at(pos).JRGForLoop(var, start, body, false);
         return result;
     }
     

@@ -84,7 +84,7 @@ public class FJTaskHarness extends TreeScanner {
 
     //Hi, my name is Ugly Hack.  How may I be of service today?
     public void visitCobegin(JRGPardo that) {}
-    public void visitDPJForLoop(DPJForLoop that) {}
+    public void visitDPJForLoop(JRGForLoop that) {}
     
     public void visitClassDef(JCClassDecl tree) {
 	boolean oldClassCanBeRun = classCanBeRun;

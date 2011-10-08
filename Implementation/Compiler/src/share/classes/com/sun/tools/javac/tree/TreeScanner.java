@@ -324,11 +324,9 @@ public class TreeScanner extends Visitor {
 	scan(tree.body);
     }
     
-    public void visitDPJForLoop(DPJForLoop tree) {
-	scan(tree.var);
-	scan(tree.start);
-	if (tree.length != null) scan(tree.length);
-	if (tree.stride != null) scan(tree.stride);
+    public void visitDPJForLoop(JRGForLoop tree) {
+	scan(tree.indexVar);
+	scan(tree.array);
 	scan(tree.body);
     }
     
