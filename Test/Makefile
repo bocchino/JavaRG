@@ -5,10 +5,10 @@ include Makefile.common
 SIZE ?= 1024
 
 # Foreach cutoff (min. data size)
-DPJ_FC ?= 1
+DPJ_FC ?= 100
 
 # Number of threads
-DPJ_NT ?= 1
+DPJ_NT ?= 10
 
 # "Pushbutton" targets
 test-all :
@@ -24,9 +24,11 @@ test-all-seq :
 	${DPJ-SEQ-TEST} InstanceofSwitch       TEST ${SIZE}
 	${DPJ-SEQ-TEST} PardoBasic             TEST ${SIZE}
 	${DPJ-SEQ-TEST} ForeachBasicSeq        TEST ${SIZE}
+	${DPJ-SEQ-TEST} ForeachBasicPar        TEST ${SIZE}
 
 test-all-par :
 	${DPJ-PAR-TEST} PardoBasic             TEST ${SIZE}
+	${DPJ-PAR-TEST} ForeachBasicPar        TEST ${SIZE}
 
 # Targets requiring command-line arguments
 # E.g.:

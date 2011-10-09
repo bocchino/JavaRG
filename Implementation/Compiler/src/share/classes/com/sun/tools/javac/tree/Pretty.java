@@ -163,6 +163,7 @@ public class Pretty extends JCTree.Visitor {
         this.out = out;
         this.sourceOutput = sourceOutput;
 	this.codeGenMode = codeGenMode;
+	JCTree.codeGenMode = codeGenMode;
 	switch (codeGenMode) {
 	case SEQ_INST:
 	case SEQ:
@@ -170,6 +171,8 @@ public class Pretty extends JCTree.Visitor {
 	default:
 	    break;	
 	}
+	// Don't print out DPJ type annotations if we are generating code
+	Types.printDPJ = (codeGenMode == NONE);
     }
     
     /** We need to rewrite variable symbols during code generation
@@ -193,7 +196,7 @@ public class Pretty extends JCTree.Visitor {
     public boolean inEnumVarDecl = false;
     
     /**
-     * Set if we need to write out 'this' as '__dpj_this'
+     * Set if we need to write out 'this' as '__jrg_this'
      */
     private boolean needDPJThis = false;
     
@@ -282,9 +285,9 @@ public class Pretty extends JCTree.Visitor {
     /** Mangle a variable name
      */
     private String mangle(Name name) {
-	return mangle(name, this.suffix);
+	return mangle(name.toString(), this.suffix);
     }
-    private String mangle(Name name, int suffix) {
+    private String mangle(String name, int suffix) {
 	return prefix + "_" + name + "_" + suffix;
     }
 
@@ -897,9 +900,8 @@ public class Pretty extends JCTree.Visitor {
         }
     }
 
-    public void seqDPJForLoop(JRGForLoop tree) {
+    public void seqJRGForLoop(JRGForLoop tree) {
 	try {
-            Types.printDPJ = false;
             if (codeGenMode == SEQ_INST) {
         	print("JRGRuntime.Instrument.enterForeach(");
         	print(tree.array + ".length");
@@ -946,50 +948,57 @@ public class Pretty extends JCTree.Visitor {
 	}
     }
 
-    private void parDPJForLoop(JRGForLoop tree) {
-	/*
+    private void parJRGForLoop(JRGForLoop tree) {
 	try {
-	    Types.printDPJ = false;
-	    List<String> toCoInvoke = List.<String>nil();
-	    List<String> copyOutAssign = List.<String>nil();
 	    println();
-	    String stName = "__dpj_S"+dpj_tname++;
+	    String stName = mangle("Task", jrg_tname++);
 	    printAligned("class " + stName + " extends RecursiveAction {\n");
 	    indent();
-	    printAligned("int __dpj_begin;\n");
-	    printAligned("int __dpj_length;\n");
-	    printAligned("int __dpj_stride;\n");
-	    align();
+	    printAligned("int __jrg_start;\n");
+	    printAligned("int __jrg_length;\n");
 	    Set<VarSymbol> copyIn = new HashSet(tree.usedVars);
 	    copyIn.removeAll(tree.declaredVars);
 	    Set<VarSymbol> copyOut = new HashSet(tree.definedVars);
 	    copyOut.removeAll(tree.declaredVars);
-	    if(copyOut.size() > 0)
-		// Ideally this error should be caught by the type checker.
+	    if(copyOut.size() > 0) {
+		// Ideally this error should be caught by the JRG type checker, prior to
+		// Java code generation.  However, since the type checker doesn't do this yet, 
+		// we just print out some text here that identifies the error and causes 
+		// the Java compiler to choke.
 		print("Error: Assignment inside foreach to local variable declared prior to foreach\n");
+	    }
 	    
 	    Set<VarSymbol> copyAll = new HashSet(copyIn);
 	    copyAll.addAll(copyOut);
 	    
-	    //Declare local vars necessary for copyin/copyout
+	    // Declare local vars necessary for copyin/copyout
 	    for(VarSymbol var : copyAll) {
-		print(var.type.toString()+" "+varString(var)+";\n");
 		align();
+		printCellType(var.type);
+		print(" " + varString(var) + ";");
+		println();
 	    }
 	    
-	    //Generate constructor for class
-	    print(stName+"(int __dpj_begin, int __dpj_length, int __dpj_stride");
-	    for(VarSymbol var : copyIn)
-		print(", "+var.type.toString()+" "+varString(var));
-	    
-	    print(") {\n");
-	    indent(); align();
-	    print("this.__dpj_begin = __dpj_begin;\n"); align();
-	    print("this.__dpj_length = __dpj_length;\n"); align();
-	    print("this.__dpj_stride = __dpj_stride;\n");
+	    // Generate constructor for class
+	    printAligned(stName);
+	    print("(int __jrg_start, int __jrg_length");
 	    for(VarSymbol var : copyIn) {
-		align();
-		print("this."+varString(var)+"="+varString(var)+";\n");
+		print (", ");
+		printCellType(var.type);
+		print(" " + varString(var));
+	    }
+	    print(") {\n");
+	    indent();
+	    printAligned("this.__jrg_start = __jrg_start;");
+	    println();
+	    printAligned("this.__jrg_length = __jrg_length;");
+	    println();
+	    for(VarSymbol var : copyIn) {
+		printAligned("this."+varString(var));
+		print(" = ");
+		print(varString(var));
+		print(";");
+		println();
 	    }
 	    undent();
 	    align();
@@ -998,31 +1007,40 @@ public class Pretty extends JCTree.Visitor {
 	    //Generate run method
 	    printAligned("protected void compute() {\n");
 	    indent();
-	    printAligned("if((__dpj_length / __dpj_stride) > DPJRuntime.RuntimeState.dpjForeachCutoff) {\n");
+	    printAligned("int __jrg_cutoff = DPJRuntime.RuntimeState.dpjForeachCutoff;\n");
+	    printAligned("int __jrg_split = DPJRuntime.RuntimeState.dpjForeachSplit;\n");
+	    printAligned("if (this.__jrg_length > __jrg_cutoff) {\n");
 	    indent();
-	    printAligned("RecursiveAction[] __dpj_splits = new RecursiveAction[DPJRuntime.RuntimeState.dpjForeachSplit];\n");
-	    printAligned("for(int i=0; i<DPJRuntime.RuntimeState.dpjForeachSplit; i++)\n");
+	    printAligned("RecursiveAction[] __jrg_tasks = ");
+	    print("new RecursiveAction[__jrg_split];\n");
+	    printAligned("for(int i = 0; i < __jrg_split; i++) {\n");
 	    indent();
-	    printAligned("__dpj_splits[i] = new "+stName+"(__dpj_begin + (__dpj_length/DPJRuntime.RuntimeState.dpjForeachSplit)*i, (i+1==DPJRuntime.RuntimeState.dpjForeachSplit) ? (__dpj_length -  __dpj_length/DPJRuntime.RuntimeState.dpjForeachSplit*i) : (__dpj_length/DPJRuntime.RuntimeState.dpjForeachSplit), __dpj_stride");
-	    for(VarSymbol var : copyIn)
-		print(", "+varString(var));
+	    printAligned("int __jrg_ratio = __jrg_length/__jrg_split;\n");
+	    printAligned("int __jrg_task_start = __jrg_start + __jrg_ratio * i;\n");
+	    printAligned("int __jrg_task_length = (__jrg_split == i+1) ?\n");
+	    printAligned("    __jrg_length - __jrg_ratio * i : __jrg_ratio;\n");
+	    printAligned("__jrg_tasks[i] = new " + stName + "(");
+	    print("__jrg_task_start, __jrg_task_length");
+	    for(VarSymbol var : copyIn) print(", "+varString(var));
 	    print(");\n");
 	    undent();
-	    printAligned("RecursiveAction.forkJoin(__dpj_splits);\n");
+	    printAligned("}\n");
+	    printAligned("RecursiveAction.forkJoin(__jrg_tasks);\n");
 	    undent();
 	    printAligned("}\n");
 	    printAligned("else {\n");
 	    indent();
-	    long flags = tree.var.mods.flags;
-	    tree.var.mods.flags &= ~Flags.FINAL;
-	    printAligned("for("+tree.var.toString()+" = __dpj_begin; "+tree.var.sym.toString()+" < __dpj_begin + __dpj_length * __dpj_stride; "+tree.var.sym.toString()+"+=__dpj_stride)\n");
-	    tree.var.mods.flags = flags;
-	    indent();
-	    align();
+	    long flags = tree.indexVar.mods.flags;
+	    tree.indexVar.mods.flags &= ~Flags.FINAL;
+	    printAligned("for("+tree.indexVar.toString()+" = __jrg_start; "+
+		    tree.indexVar.sym.toString()+" < __jrg_start + __jrg_length; " +
+		    tree.indexVar.sym.toString()+"++) ");
+	    tree.indexVar.mods.flags = flags;
 	    boolean savedNeedDPJThis = needDPJThis;
 	    needDPJThis=true;
 	    printStat(tree.body);
 	    needDPJThis=savedNeedDPJThis;
+	    println();
 	    undent();
 	    printAligned("}\n"); //end else
 	    undent();
@@ -1030,20 +1048,20 @@ public class Pretty extends JCTree.Visitor {
 	    undent();
 	    printAligned("};\n"); //close class block
 	    
-	    //Okay, now generate the actual invocation
+	    // Now generate the actual invocation
 	    align();
 	    print("if(!DPJRuntime.RuntimeState.insideParallelTask) {\n");
 	    indent();
 	    printAligned("DPJRuntime.RuntimeState.insideParallelTask = true;\n");
-	    printAligned("DPJRuntime.RuntimeState.pool.invoke(new "+stName+"("+tree.start.toString()+", "+(tree.length==null ? tree.start.toString()+".size()" : tree.length.toString())+", "+(tree.stride==null ? "1" : tree.stride.toString()));
-	    for(VarSymbol var : copyIn)
-		{
-		    align();
-		    if(var.toString().equals("this") && !needDPJThis)
-			print(", this");
-		    else
-			print(", "+varString(var));
-		}
+	    printAligned("DPJRuntime.RuntimeState.pool.invoke(new " + stName + "(0,");
+	    printExpr(tree.array);
+	    print(".length");
+	    for(VarSymbol var : copyIn) {
+		if(var.toString().equals("this") && !needDPJThis)
+		    print(", this");
+		else
+		    print(", "+varString(var));
+	    }
 	    print("));\n");
 	    align();
 	    print("DPJRuntime.RuntimeState.insideParallelTask = false;\n");
@@ -1051,32 +1069,29 @@ public class Pretty extends JCTree.Visitor {
 	    align();
 	    print("}\n");
 	    align();
-	    print("else\n");
+	    print("else {\n");
 	    indent();
-	    printAligned("(new "+stName+"("+tree.start.toString()+", "+(tree.length==null ? tree.start.toString()+".size()" : tree.length.toString())+", "+(tree.stride==null ? "1" : tree.stride.toString()));
-	    for(VarSymbol var : copyIn)
-		{
-		    align();
-		    if(var.toString().equals("this") && !needDPJThis)
-			print(", this");
-		    else
-			print(", "+varString(var));
-		}
+	    printAligned("(new " + stName + "(0, ");
+	    printExpr(tree.array);
+	    print(".length");
+	    for(VarSymbol var : copyIn) {
+		if(var.toString().equals("this") && !needDPJThis)
+		    print(", this");
+		else
+		    print(", "+varString(var));
+	    	}
 	    print(")).forkJoin();\n");
 	    undent();
+	    printAligned("}\n");
 	}
 	catch(IOException e) {
 	    throw new UncheckedIOException(e);
 	}
-	finally {
-	    Types.printDPJ = true;
-	}
-	*/
     }
 
     private String varString(VarSymbol maybeThis) {
 	if(maybeThis.toString().equals("this"))
-	    return "__dpj_this";
+	    return "__jrg_this";
 	else
 	    return maybeThis.toString();
     }
@@ -1096,9 +1111,9 @@ public class Pretty extends JCTree.Visitor {
 		throw new UncheckedIOException(e);
 	    }
 	} else if(sequential || !tree.isParallel) {
-	    seqDPJForLoop(tree);
+	    seqJRGForLoop(tree);
 	} else {
-	    parDPJForLoop(tree);
+	    parJRGForLoop(tree);
 	}
     }
     
@@ -1488,7 +1503,7 @@ public class Pretty extends JCTree.Visitor {
         }
     }
     
-    private int dpj_tname = 0;    
+    private int jrg_tname = 0;    
     public void visitPardo(JRGPardo tree) {
 	if (codeGenMode == NONE) {
 	    try {
@@ -1530,18 +1545,17 @@ public class Pretty extends JCTree.Visitor {
     }
 
     public void printPardoPar(JRGPardo tree) {
-	Types.printDPJ = false;
 	try {
 	    List<String> toCoInvoke = List.<String>nil();
 	    List<String> copyOutAssign = List.<String>nil();
-	    String arr = "__dpj_s"+dpj_tname++;
-	    int orig_dpj_tname = dpj_tname;
+	    String arr = "__jrg_s"+jrg_tname++;
+	    int orig_jrg_tname = jrg_tname;
 	    println();
 	    int i=0;
 	    for(JCStatement statement : tree.body.stats)
 	    {
 		align();
-		String stName = "__dpj_S"+dpj_tname++;
+		String stName = "__jrg_S"+jrg_tname++;
 		print("class " + stName + " extends RecursiveAction {\n");
 		indent();
 		Set<VarSymbol> copyIn = new HashSet(tree.usedVars[i]);
@@ -1564,7 +1578,6 @@ public class Pretty extends JCTree.Visitor {
 		for(VarSymbol var : copyAll)
 		{
 		    align();
-		    Types.printDPJ = false;
 		    print(var.type.toString()+" "+var.toString()+";\n");
 		}
 		
@@ -1577,7 +1590,6 @@ public class Pretty extends JCTree.Visitor {
 			print(",");
 		    else
 			needsComma=true;
-		    Types.printDPJ = false;
 		    print(var.type.toString()+" "+var.toString());
 		}
 		print(") {\n");
@@ -1626,7 +1638,7 @@ public class Pretty extends JCTree.Visitor {
 		for(VarSymbol var : copyOut)
 		{
 		    String stmt=var.toString()+" = (("+stName+")("+arr+
-		    	"["+(dpj_tname - 1 - orig_dpj_tname)+"]))."+
+		    	"["+(jrg_tname - 1 - orig_jrg_tname)+"]))."+
 		    	var.toString()+";\n";
 		    copyOutAssign = copyOutAssign.append(stmt);
 		}
@@ -1648,16 +1660,16 @@ public class Pretty extends JCTree.Visitor {
 	    }
 	    print("};\n");
 	    align();
-	    int cobegin_wrapper = dpj_tname++;
-	    print("class __dpj_S"+cobegin_wrapper+" extends RecursiveAction {\n");
+	    int pardo_wrapper = jrg_tname++;
+	    print("class __jrg_S"+pardo_wrapper+" extends RecursiveAction {\n");
 	    indent();
 	    align();
-	    print("RecursiveAction[] __dpj_toforkjoin;\n");
+	    print("RecursiveAction[] __jrg_toforkjoin;\n");
 	    align();
-	    print("__dpj_S"+cobegin_wrapper+"(RecursiveAction[] __dpj_toforkjoin_) {\n");
+	    print("__jrg_S"+pardo_wrapper+"(RecursiveAction[] __jrg_toforkjoin_) {\n");
 	    indent();
 	    align();
-	    print("__dpj_toforkjoin = __dpj_toforkjoin_;\n");
+	    print("__jrg_toforkjoin = __jrg_toforkjoin_;\n");
 	    undent();
 	    align();
 	    print("}\n");
@@ -1665,20 +1677,20 @@ public class Pretty extends JCTree.Visitor {
 	    print("protected void compute() {\n");
 	    indent();
 	    align();
-	    print("RecursiveAction.forkJoin(__dpj_toforkjoin);\n");
+	    print("RecursiveAction.forkJoin(__jrg_toforkjoin);\n");
 	    undent();
 	    align();
 	    print("}\n"); //end compute
 	    undent();
 	    align();
-	    print("};\n"); //end cobegin_wrapper class
+	    print("};\n"); //end pardo_wrapper class
 	    align();
 	    print("if(!DPJRuntime.RuntimeState.insideParallelTask) {\n");
 	    indent();
 	    align();
             print("DPJRuntime.RuntimeState.insideParallelTask = true;\n");
 	    align();
-	    print("DPJRuntime.RuntimeState.pool.invoke(new __dpj_S"+cobegin_wrapper+"("+arr+"));\n");
+	    print("DPJRuntime.RuntimeState.pool.invoke(new __jrg_S"+pardo_wrapper+"("+arr+"));\n");
 	    undent();
 	    align();
 	    print("DPJRuntime.RuntimeState.insideParallelTask = false;\n");
@@ -1700,9 +1712,6 @@ public class Pretty extends JCTree.Visitor {
 	}
 	catch(IOException e) {
 	    throw new UncheckedIOException(e);
-	}
-	finally {
-	    Types.printDPJ = true;
 	}
     }
 	
@@ -1767,18 +1776,20 @@ public class Pretty extends JCTree.Visitor {
     public void visitUnary(JCUnary tree) {
         try {
             if (tree.isDestructiveAccess) {
-        	Types.printDPJ = false;
         	JCFieldAccess fa = (JCFieldAccess) tree.arg;
         	print("(new Object() {");
         	println();
         	indent();
-        	align(); print(fa.type);
+        	align(); 
+        	printCellType(fa.type);
         	print(" destructiveAccess(");
         	print(fa.selected.type);
         	print(" arg) {");
         	println();
         	indent();
-        	align(); print(fa.type + " result = arg." + fa.name + ";");
+        	align();
+        	printCellType(fa.type);
+        	print(" result = arg." + fa.name + ";");
         	println();
         	align(); print("arg." + fa.name + " = null;");
         	println();
@@ -1789,7 +1800,6 @@ public class Pretty extends JCTree.Visitor {
         	println();
         	undent(); 
         	align(); print("}).destructiveAccess(" + fa.selected + ")");
-        	Types.printDPJ = true;
         	return;
             }
             int ownprec = TreeInfo.opPrec(tree.getTag());
@@ -1891,9 +1901,8 @@ public class Pretty extends JCTree.Visitor {
     public void visitIdent(JCIdent tree) {
         try {
             if (needDPJThis && tree.toString().equals("this"))
-        	print("__dpj_this");
+        	print("__jrg_this");
             else if (printOwner && tree.toString().equals("this")) {
-        	Types.printDPJ = false;
         	print (tree.sym.owner.type + "." + "this");
             } 
             else if (tree.sym instanceof ClassSymbol &&

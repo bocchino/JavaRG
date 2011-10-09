@@ -16,5 +16,9 @@ public class Foreach extends DPJTestCase {
     @Test public void testBasicSeq() throws Throwable {
 	compile("BasicSeq");
     }
-    
+
+    @Test public void testBasicPar() throws Throwable {
+	compile("BasicPar");
+    }
+
 }
