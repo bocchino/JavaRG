@@ -978,7 +978,7 @@ public class Pretty extends JCTree.Visitor {
 	    copyAll.addAll(copyOut);
 	    for(VarSymbol var : copyAll) {
 		align();
-		printCellType(var.type);
+		printType(var.type);
 		print(" " + varString(var) + ";");
 		println();
 	    }
@@ -988,7 +988,7 @@ public class Pretty extends JCTree.Visitor {
 	    print("(int __jrg_start, int __jrg_length");
 	    for(VarSymbol var : copyIn) {
 		print (", ");
-		printCellType(var.type);
+		printType(var.type);
 		print(" " + varString(var));
 	    }
 	    print(") {\n");
@@ -1161,7 +1161,7 @@ public class Pretty extends JCTree.Visitor {
 	    if (c.pat == null) {
 		print("Object");
 	    }
-	    else print(c.pat.type);
+	    else printType(c.pat.type);
 	    print(") {");
 	    println();
 	    indent(); align();
@@ -1777,14 +1777,14 @@ public class Pretty extends JCTree.Visitor {
         	println();
         	indent();
         	align(); 
-        	printCellType(fa.type);
+        	printType(fa.type);
         	print(" destructiveAccess(");
         	print(fa.selected.type);
         	print(" arg) {");
         	println();
         	indent();
         	align();
-        	printCellType(fa.type);
+        	printType(fa.type);
         	print(" result = arg." + fa.name + ";");
         	println();
         	align(); print("arg." + fa.name + " = null;");
@@ -1882,16 +1882,21 @@ public class Pretty extends JCTree.Visitor {
 
     public boolean printOwner = false;
 
-    private void printCellType(Type cellType) throws IOException {
-	if (cellType instanceof ClassType) {
-	    ClassType ct = (ClassType) cellType;
+    /**
+     * Recursively print a type.  If the type is an array class type,
+     * then print it out as a regular Java array.  Otherwise, print out 
+     * the regular Java type.
+     */
+    private void printType(Type type) throws IOException {
+	if (type instanceof ClassType) {
+	    ClassType ct = (ClassType) type;
 	    if (ct.cellType != null) {
-		printCellType(ct.cellType);
+		printType(ct.cellType);
 		print("[]");
 		return;
 	    }
 	}
-	print(cellType);
+	print(type);
     }
     
     public void visitIdent(JCIdent tree) {
@@ -1901,24 +1906,14 @@ public class Pretty extends JCTree.Visitor {
             else if (printOwner && tree.toString().equals("this")) {
         	print (tree.sym.owner.type + "." + "this");
             } 
-            else if (tree.sym instanceof ClassSymbol &&
-        	    tree.sym.type instanceof ClassType) {
-        	ClassType ct = (ClassType) tree.sym.type;
-        	if (ct.cellType != null) {
-        	    // Convert array class to normal Java array
-        	    printCellType(ct.cellType);
-        	    print("[]");
-        	} else {
-        	    print(tree.name);
-        	}
+            else if (tree.sym instanceof ClassSymbol) {
+        	printType(tree.sym.type);
+            }
+            else if (tree.sym == variableToMangle) {
+        	    print(mangle(tree.name));
             }
             else {
-        	if (tree.sym == variableToMangle) {
-        	    print(mangle(tree.name));
-        	}
-        	else {
-        	    print(tree.name);
-        	}
+        	print(tree.name);
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
