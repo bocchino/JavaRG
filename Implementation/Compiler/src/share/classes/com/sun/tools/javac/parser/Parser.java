@@ -56,6 +56,7 @@ import static com.sun.tools.javac.parser.Token.IDENTIFIER;
 import static com.sun.tools.javac.parser.Token.IMPLEMENTS;
 import static com.sun.tools.javac.parser.Token.IMPORT;
 import static com.sun.tools.javac.parser.Token.INSTANCEOF;
+import static com.sun.tools.javac.parser.Token.INT;
 import static com.sun.tools.javac.parser.Token.INTERFACE;
 import static com.sun.tools.javac.parser.Token.INTLITERAL;
 import static com.sun.tools.javac.parser.Token.LBRACE;
@@ -68,6 +69,7 @@ import static com.sun.tools.javac.parser.Token.MONKEYS_AT;
 import static com.sun.tools.javac.parser.Token.NEW;
 import static com.sun.tools.javac.parser.Token.NUMBER;
 import static com.sun.tools.javac.parser.Token.PACKAGE;
+import static com.sun.tools.javac.parser.Token.PARDO;
 import static com.sun.tools.javac.parser.Token.PLUSEQ;
 import static com.sun.tools.javac.parser.Token.PLUSPLUS;
 import static com.sun.tools.javac.parser.Token.PRESERVES;
@@ -138,8 +140,8 @@ import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JRGCopyPerm;
 import com.sun.tools.javac.tree.JCTree.JRGDerefSet;
 import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
+import com.sun.tools.javac.tree.JCTree.JRGForLoop;
 import com.sun.tools.javac.tree.JCTree.JRGMethodPerms;
-import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
 import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
 import com.sun.tools.javac.tree.JCTree.TypeBoundKind;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -555,7 +557,11 @@ public class Parser {
     /**
      * Ident = IDENTIFIER
      */
-    Name ident() {
+    JCIdent ident() {
+	return toP(F.at(S.pos()).Ident(name()));
+    }
+    
+    Name name() {
         if (S.token() == IDENTIFIER) {
             Name name = S.name();
             S.nextToken();
@@ -586,21 +592,21 @@ public class Parser {
             accept(IDENTIFIER);
             return names.error;
         }
-}
+    }
 
     /**
      * Qualident = Ident { DOT Ident }
      */
     public JCExpression qualident() {
-        JCExpression t = toP(F.at(S.pos()).Ident(ident()));
+        JCExpression t = ident();
         while (S.token() == DOT) {
             int pos = S.pos();
             S.nextToken();
-            t = toP(F.at(pos).Select(t, ident()));
+            t = toP(F.at(pos).Select(t, name()));
         }
         return t;
     }
-
+    
     /**
      * Literal =
      *     INTLITERAL
@@ -1149,7 +1155,7 @@ public class Parser {
         case IDENTIFIER: case ASSERT: case ENUM:
             if (rplArgs != null || typeArgs != null
         	    || groupArgs != null) return illegal();
-            t = toP(F.at(S.pos()).Ident(ident()));
+            t = ident();
             loop: while (true) {
                 pos = S.pos();
                 switch (S.token()) {
@@ -1233,7 +1239,7 @@ public class Parser {
                         }
                     }
                     // rplArgs and typeArgs saved for next loop iteration.
-                    t = toP(F.at(pos).Select(t, ident()));
+                    t = toP(F.at(pos).Select(t, name()));
                     break;
                 default:
                     break loop;
@@ -1325,7 +1331,7 @@ public class Parser {
                     typeArgs = null;
                     groupArgs = null;
                 } else {
-                    t = toP(F.at(pos1).Select(t, ident()));
+                    t = toP(F.at(pos1).Select(t, name()));
                     t = argumentsOpt(rplArgs, typeArgs, groupArgs,
                 	    typeRPLGroupArgsOpt(t));
                     rplArgs = null;
@@ -1365,7 +1371,7 @@ public class Parser {
         	rplArgs = typeRPLGroupArgs.rplArgs;
         	groupArgs = typeRPLGroupArgs.groupArgs;
             }
-            t = toP(F.at(pos).Select(t, ident()));
+            t = toP(F.at(pos).Select(t, name()));
             t = argumentsOpt(rplArgs, typeArgs, groupArgs, t);
         }
         return t;
@@ -1556,7 +1562,7 @@ public class Parser {
                     keywords.token2string(SUPER));
             TypeBoundKind t = F.at(Position.NOPOS).TypeBoundKind(BoundKind.UNBOUND);
             JCExpression wc = toP(F.at(pos).Wildcard(t, null));
-            JCIdent id = toP(F.at(S.pos()).Ident(ident()));
+            JCIdent id = ident();
             return F.at(pos).Erroneous(List.<JCTree>of(wc, id));
         } else {
             TypeBoundKind t = F.at(Position.NOPOS).TypeBoundKind(BoundKind.UNBOUND);
@@ -1648,7 +1654,7 @@ public class Parser {
         while (S.token() == DOT) {
             int pos = S.pos();
             S.nextToken();
-            t = toP(F.at(pos).Select(t, ident()));
+            t = toP(F.at(pos).Select(t, name()));
             if (S.token() == LT) {
                 checkGenerics();
                 t = typeRPLGroupArgs(t);
@@ -1688,7 +1694,7 @@ public class Parser {
     JCExpression innerCreator(int newpos, List<DPJRegionPathList> rplArgs,
 	                      List<JCExpression> typeArgs, 
 	                      List<JCIdent> groupArgs, JCExpression encl) {
-        JCExpression t = toP(F.at(S.pos()).Ident(ident()));
+        JCExpression t = ident();
         if (S.token() == LT) {
             checkGenerics();
             t = typeRPLGroupArgs(t);
@@ -1944,7 +1950,7 @@ public class Parser {
      *     | IF ParExpression Statement [ELSE Statement]
      *     | FOR "(" ForInitOpt ";" [Expression] ";" ForUpdateOpt ")" Statement
      *     | FOR "(" FormalParameter ":" Expression ")" Statement
-     *     | FOR EACH Ident "in" Expression PARDO Statement
+     *     | JRGForLoop
      *     | WHILE ParExpression Statement
      *     | DO Statement WHILE ParExpression ";"
      *     | TRY Block ( Catches | [Catches] FinallyPart )
@@ -1978,6 +1984,10 @@ public class Parser {
         }
         case FOR: {
             S.nextToken();
+            if (tokenIsIdent("each")) {
+        	S.nextToken();
+        	return JRGForLoop(pos);
+            }
             accept(LPAREN);
             List<JCStatement> inits = S.token() == SEMI ? List.<JCStatement>nil() : forInit();
             if (inits.length() == 1 &&
@@ -2079,14 +2089,14 @@ public class Parser {
         }
         case BREAK: {
             S.nextToken();
-            Name label = (S.token() == IDENTIFIER || S.token() == ASSERT || S.token() == ENUM) ? ident() : null;
+            Name label = (S.token() == IDENTIFIER || S.token() == ASSERT || S.token() == ENUM) ? name() : null;
             JCBreak t = to(F.at(pos).Break(label));
             accept(SEMI);
             return t;
         }
         case CONTINUE: {
             S.nextToken();
-            Name label = (S.token() == IDENTIFIER || S.token() == ASSERT || S.token() == ENUM) ? ident() : null;
+            Name label = (S.token() == IDENTIFIER || S.token() == ASSERT || S.token() == ENUM) ? name() : null;
             JCContinue t =  to(F.at(pos).Continue(label));
             accept(SEMI);
             return t;
@@ -2132,35 +2142,26 @@ public class Parser {
         }
     }
 
-    JCStatement Foreach(int pos, boolean isNonDet) {
-        S.nextToken();
-        accept(LPAREN);
-        List<JCStatement> inits = forInit();
-        if (inits.length() != 1 ||
-            inits.head.getTag() != JCTree.VARDEF ||
-            ((JCVariableDecl) inits.head).init != null) {
-            illegal();
-        }
-        JCVariableDecl var = (JCVariableDecl)inits.head;
-        Name name = ident();
-        if (name.compareTo(names.in) != 0) {
-            reportSyntaxError(S.prevEndPos(), "expected", "in");
-        }
-        JCExpression start = expression();
-        JCExpression length = null;
-        JCExpression stride = null;
-        if (S.token() == COMMA) {
-            S.nextToken();
-            length = expression();
-            if (S.token() == COMMA) {
-        	S.nextToken();
-        	stride = expression();
-            }
-        }
-        accept(RPAREN);
+    /**
+     * JRGForLoop = FOR "each" Ident "in" Expression [PARDO] Statement
+     */
+    
+    JRGForLoop JRGForLoop(int pos) {
+	Name indexVarName = name();
+        JCModifiers mods = F.at(Position.NOPOS).Modifiers(0);
+        JCExpression type =
+        	to(F.at(S.pos()).TypeIdent(typetag(INT)));
+	JCVariableDecl indexVar = 
+		toP(F.at(pos).VarDef(mods, indexVarName, null, type, null));
+	acceptIdent("in");
+	JCExpression array = expression();
+	boolean isParallel = false;
+	if (S.token() == PARDO) {
+	    S.nextToken();
+	    isParallel = true;
+	}
         JCStatement body = statement();
-        JCStatement result = F.at(pos).JRGForLoop(var, start, body, false);
-        return result;
+        return F.at(pos).JRGForLoop(indexVar, array, body, isParallel);
     }
     
     /** CatchClause     = CATCH "(" FormalParameter ")" Block
@@ -2442,7 +2443,7 @@ public class Parser {
                                                                          T vdefs)
     {
         return variableDeclaratorsRest(S.pos(), mods, refPerm, type, 
-        	ident(), false, regionOK, null, vdefs);
+        	name(), false, regionOK, null, vdefs);
     }
 
     /** VariableDeclaratorsRest = VariableDeclaratorRest { "," VariableDeclarator }
@@ -2476,7 +2477,7 @@ public class Parser {
      */
     JCVariableDecl variableDeclarator(JCModifiers mods, JRGRefPerm refPerm, JCExpression type, 
 	    boolean reqInit, boolean regionOK, String dc) {
-        return variableDeclaratorRest(S.pos(), mods, refPerm, type, ident(), reqInit, regionOK, dc);
+        return variableDeclaratorRest(S.pos(), mods, refPerm, type, name(), reqInit, regionOK, dc);
     }
 
     /** VariableDeclaratorRest = BracketsOpt RegionOpt ["=" VariableInitializer]
@@ -2508,7 +2509,7 @@ public class Parser {
      */
     JCVariableDecl variableDeclaratorId(JCModifiers mods, JCExpression type) {
         int pos = S.pos();
-        Name name = ident();
+        Name name = name();
         if ((mods.flags & Flags.VARARGS) == 0)
             type = bracketsOpt(type);
         JCTree.DPJRegionPathList rpl = regionOpt();
@@ -2519,7 +2520,7 @@ public class Parser {
      */
     private JCTree.DPJRegionPathList regionOpt() {
 	if (S.token() == IDENTIFIER) {
-	    Name name = ident();
+	    Name name = name();
 	    if (name.compareTo(names.in) != 0) {
 		reportSyntaxError(S.prevEndPos(), "expected", "in");
 	    }
@@ -2562,11 +2563,7 @@ public class Parser {
         if (elt == null) {
             if (S.token() == IDENTIFIER) {
         	int pos = S.pos();
-        	JCExpression regionName = toP(F.at(S.pos()).Ident(ident()));
-        	while (S.token() == DOT) {
-        	    S.nextToken();
-        	    regionName = toP(F.at(S.pos()).Select(regionName, ident()));
-        	}
+        	JCExpression regionName = qualident();
         	elt = toP(F.at(pos).RegionPathListElt(regionName, DPJRegionPathListElt.NAME));
             } else {
         	syntaxError("illegal.rpl");
@@ -2624,11 +2621,7 @@ public class Parser {
             int pos = S.pos();
             switch (S.token()) {
             case IDENTIFIER:
-        	JCExpression regionName = toP(F.at(S.pos()).Ident(ident()));
-        	while (S.token() == DOT) {
-        	    S.nextToken();
-        	    regionName = toP(F.at(S.pos()).Select(regionName, ident()));
-        	}
+        	JCExpression regionName = qualident();
         	elt = toP(F.at(pos).RegionPathListElt(regionName, DPJRegionPathListElt.NAME));
         	elts.append(elt);
         	break;
@@ -2715,7 +2708,7 @@ public class Parser {
             importStatic = true;
             S.nextToken();
         }
-        JCExpression pid = toP(F.at(S.pos()).Ident(ident()));
+        JCExpression pid = ident();
         do {
             int pos1 = S.pos();
             accept(DOT);
@@ -2724,7 +2717,7 @@ public class Parser {
                 S.nextToken();
                 break;
             } else {
-                pid = toP(F.at(pos1).Select(pid, ident()));
+                pid = toP(F.at(pos1).Select(pid, name()));
             }
         } while (S.token() == DOT);
         accept(SEMI);
@@ -2765,7 +2758,7 @@ public class Parser {
                 int pos = S.pos();
                 List<JCTree> errs;
                 if (S.token() == IDENTIFIER) {
-                    errs = List.<JCTree>of(mods, toP(F.at(pos).Ident(ident())));
+                    errs = List.<JCTree>of(mods, ident());
                     setErrorEndPos(S.pos());
                 } else {
                     errs = List.<JCTree>of(mods);
@@ -2784,7 +2777,7 @@ public class Parser {
             int pos = S.pos();
             List<JCTree> errs;
             if (S.token() == IDENTIFIER) {
-                errs = List.<JCTree>of(mods, toP(F.at(pos).Ident(ident())));
+                errs = List.<JCTree>of(mods, ident());
                 setErrorEndPos(S.pos());
             } else {
                 errs = List.<JCTree>of(mods);
@@ -2804,7 +2797,7 @@ public class Parser {
     JCClassDecl classDeclaration(JCModifiers mods, String dc) {
         int pos = S.pos();
         accept(CLASS);
-        Name name = ident();
+        Name name = name();
 
         Pair<List<JCTypeParameter>,DPJParamInfo> params = 
             parametersOpt();
@@ -2837,7 +2830,7 @@ public class Parser {
     JCClassDecl interfaceDeclaration(JCModifiers mods, String dc) {
         int pos = S.pos();
         accept(INTERFACE);
-        Name name = ident();
+        Name name = name();
 
         Pair<List<JCTypeParameter>,DPJParamInfo> params = parametersOpt();
         List<JCTypeParameter> typarams = params.fst;
@@ -2862,7 +2855,7 @@ public class Parser {
     JCClassDecl arrayDeclaration(JCModifiers mods, String dc) {
         int pos = S.pos();
         accept(ARRAYCLASS);
-        Name name = ident();
+        Name name = name();
 
         Pair<List<JCTypeParameter>,DPJParamInfo> params = parametersOpt();
         List<JCTypeParameter> typarams = params.fst;
@@ -2918,7 +2911,7 @@ public class Parser {
 	if (S.token() == UNIQUE) {
 	    S.nextToken();
 	    accept(LPAREN);
-	    group = toP(F.at(S.pos()).Ident(ident()));
+	    group = ident();
 	    accept(RPAREN);
 	}
 	return toP(F.at(pos).RefPerm(group));
@@ -2931,7 +2924,7 @@ public class Parser {
     JCClassDecl enumDeclaration(JCModifiers mods, String dc) {
         int pos = S.pos();
         accept(ENUM);
-        Name name = ident();
+        Name name = name();
 
         List<JCExpression> implementing = List.nil();
         if (S.token() == IMPLEMENTS) {
@@ -3006,7 +2999,7 @@ public class Parser {
         List<DPJRegionPathList> rplArgs = typeRPLGroupArgs.rplArgs;
         List<JCIdent> groupArgs = typeRPLGroupArgs.groupArgs;
         int identPos = S.pos();
-        Name name = ident();
+        Name name = name();
         int createPos = S.pos();
         List<JCExpression> args = (S.token() == LPAREN)
             ? arguments() : List.<JCExpression>nil();
@@ -3135,7 +3128,7 @@ public class Parser {
                         isInterface, true, dc));
                 } else {
                     pos = S.pos();
-                    name = ident();
+                    name = name();
                     if (S.token() == LPAREN) {
                         return List.of(methodDeclaratorRest(
                             pos, mods, refPerm, type, name, dpjParamInfo, typarams,
@@ -3172,12 +3165,12 @@ public class Parser {
     <T extends ListBuffer<? super DPJRegionDecl>>T regionDeclarations(int pos, JCModifiers mods, 
 	    String dc, T rdefs) {
 	accept(REGION);
-        rdefs.append(F.at(S.pos()).RegionDecl(mods, ident()));
+        rdefs.append(F.at(S.pos()).RegionDecl(mods, name()));
         while (S.token() == COMMA) {
             // All but last of multiple declarators subsume a comma
             storeEnd((JCTree)rdefs.elems.last(), S.endPos());
             S.nextToken();
-            rdefs.append(F.at(S.pos()).RegionDecl(mods, ident()));
+            rdefs.append(F.at(S.pos()).RegionDecl(mods, name()));
         }
         accept(SEMI);
         return rdefs;
@@ -3188,11 +3181,11 @@ public class Parser {
     List<JCStatement> refGroupDecls(int pos, String dc) {
 	accept(REFGROUP);
 	ListBuffer<JCStatement> lb = ListBuffer.lb();
-	lb.append(F.at(S.pos()).RefGroupDecl(ident()));
+	lb.append(F.at(S.pos()).RefGroupDecl(name()));
 	while (S.token() == COMMA) {
 	    storeEnd((JCTree)lb.elems.last(), S.endPos());
 	    S.nextToken();
-	    lb.append(F.at(S.pos()).RefGroupDecl(ident()));
+	    lb.append(F.at(S.pos()).RefGroupDecl(name()));
 	}
 	accept(SEMI);
 	return lb.toList();
@@ -3329,13 +3322,13 @@ public class Parser {
 	    int pos = S.pos();
 	    JRGDerefSet derefSet = derefSet();
 	    acceptIdent("to");
-	    JCIdent group = toP(F.at(S.pos()).Ident(ident()));
+	    JCIdent group = ident();
 	    buf.append(toP(F.at(pos).CopyPerm(derefSet, group)));
 	    while (S.token() == COMMA) {
 		accept(COMMA);
 		pos = S.pos();
 		derefSet = derefSet();
-		group = toP(F.at(S.pos()).Ident(ident()));
+		group = ident();
 		buf.append(toP(F.at(pos).CopyPerm(derefSet, group)));
 	    }
 	}
@@ -3376,7 +3369,7 @@ public class Parser {
 	JCIdent group = null;
 	if (S.token() == ELLIPSIS) {
 	    accept(ELLIPSIS);
-	    group = toP(F.at(S.pos()).Ident(ident()));
+	    group = ident();
 	}
 	return toP(F.at(pos).DerefSet(root, group));	
     }
@@ -3385,10 +3378,10 @@ public class Parser {
      */
     List<JCIdent> identList() {
 	ListBuffer<JCIdent> buf = ListBuffer.lb();
-	buf.append(toP(F.at(S.pos()).Ident(ident())));
+	buf.append(ident());
 	while (S.token() == COMMA) {
 	    S.nextToken();
-	    buf.append(toP(F.at(S.pos()).Ident(ident())));
+	    buf.append(ident());
 	}
 	return buf.toList();
     }
@@ -3544,7 +3537,7 @@ public class Parser {
 	    S.nextToken();
 	}
 	int pos = S.pos();
-	Name name = ident();
+	Name name = name();
 	return toP(F.at(pos).Ident(name));
     }
     
@@ -3553,7 +3546,7 @@ public class Parser {
     DPJRegionParameter regionParameter() {
 	if (S.token() == REGION) S.nextToken();
 	int pos = S.pos();
-        Name name = ident();
+        Name name = name();
         return toP(F.at(pos).RegionParameter(name, null, false));
     }
     
@@ -3573,7 +3566,7 @@ public class Parser {
     JCTypeParameter typeParameter() {
 	skipIdent("type");
 	int pos = S.pos();
-        Name name = ident();
+        Name name = name();
         List<DPJRegionParameter> rplparams = List.nil();
         if (S.token() == LT) {
             S.nextToken();

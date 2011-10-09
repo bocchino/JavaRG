@@ -681,9 +681,9 @@ public class TreeMaker implements JCTree.Factory {
 	return tree;
     }
 
-    public JRGForLoop JRGForLoop(JCVariableDecl var, JCExpression array, 
+    public JRGForLoop JRGForLoop(JCVariableDecl indexVar, JCExpression array, 
 	    JCStatement body, boolean isParallel) {
-	JRGForLoop tree = new JRGForLoop(var, array, body, isParallel);
+	JRGForLoop tree = new JRGForLoop(indexVar, array, body, isParallel);
 	tree.pos = pos;
 	return tree;
     }

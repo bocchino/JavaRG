@@ -898,94 +898,52 @@ public class Pretty extends JCTree.Visitor {
     }
 
     public void seqDPJForLoop(JRGForLoop tree) {
-        /*
 	try {
             Types.printDPJ = false;
             if (codeGenMode == SEQ_INST) {
-        	print("DPJRuntime.Instrument.enterForeach(");
+        	print("JRGRuntime.Instrument.enterForeach(");
         	print(tree.array + ".length");
         	print(");");
         	println();
         	align();
             }
             int depth = lmargin / width;
-            if (tree.length == null) {
-        	// Iterator form of foreach
-        	print("{\n");
-        	indent();
-        	align();
-        	print(tree.start.type);
-        	print(" ");
-                print("i_"); print(depth); print(" = ");
-        	printExpr(tree.start);
-        	print(";\n");
-        	align();
-        	print("DPJIterator.Status<"+tree.var.type+
-        		"> status_"+depth+"=null;\n");
-        	align();
-        	print ("while ((status_"+depth+"=i_"+depth+
-        		".next()).hasElement()) {\n");
-            } else {
-        	// Indexed form of foreach
-        	print("for (");
-        	long flags = tree.var.mods.flags;
-        	tree.var.mods.flags &= ~Flags.FINAL;
-        	printExpr(tree.var);
-        	tree.var.mods.flags = flags;
-        	print(" = ");
-        	printExpr(tree.start);
-        	print(", ");
-                print("i_"); print(depth); print(" = ");
-        	print("0");
-                print("; i_"); print(depth);
-		print(" < ");
-		printExpr(tree.length);
-		print("; ");
-		print(tree.var.name);
-		if (tree.stride != null) {
-		    print(" += ");
-		    printExpr(tree.stride);
-		} else {
-		    print("++");
-		}
-		print(", ++i_"); print(depth);
-		print(") {\n");
-            }
-            indent();
-            align();
+            print("for (");
+            long flags = tree.indexVar.mods.flags;
+            tree.indexVar.mods.flags &= ~Flags.FINAL;
+            printExpr(tree.indexVar);
+            tree.indexVar.mods.flags = flags;
+            print(" = 0; ");
+            print(tree.indexVar.name);
+            print(" < ");
+            printExpr(tree.array);
+            print(".length; ");
+            print(tree.indexVar.name);
+            print("++");
+            print(") ");
 	    if (codeGenMode == SEQ_INST) {
-		print("DPJRuntime.Instrument.enterForeachIter();\n");
+		print("{");
+		println();
+		indent();
 		align();
-	    }
-	    if (tree.length == null) {
-		printExpr(tree.var);
-		print(" = ");
-		print("status_"); print(depth);
-		print(".getElement();\n");
+		print("JRGRuntime.Instrument.enterForeachIter();\n");
 		align();
 	    }
 	    printStat(tree.body);
-	    println();
 	    if(codeGenMode == SEQ_INST) {
+		println();
 		align();
-		print("DPJRuntime.Instrument.exitForeachIter();\n");
-	    }
-	    undent();
-	    align();
-	    print("}\n");
-	    if (tree.length == null) {
+		print("JRGRuntime.Instrument.exitForeachIter();\n");
 		undent();
 		align();
-		print("}\n");
+		print("}"); 
+		println();
+		align();
+		print("JRGRuntime.Instrument.exitForeach();");
 	    }
-	    align();
-	    if(codeGenMode == SEQ_INST) print("DPJRuntime.Instrument.exitForeach();");
 	} catch (IOException e) {
 	    throw new UncheckedIOException(e);
-	} finally {
-	    Types.printDPJ = true;
 	}
-	*/
     }
 
     private void parDPJForLoop(JRGForLoop tree) {
@@ -1126,15 +1084,12 @@ public class Pretty extends JCTree.Visitor {
     public void visitJRGForLoop(JRGForLoop tree) {
 	if (codeGenMode == NONE) {
 	    try {
-		print("foreach (");
-		long flags = tree.indexVar.mods.flags;
-		tree.indexVar.mods.flags &= ~Flags.FINAL;
-		printExpr(tree.indexVar);
-		tree.indexVar.mods.flags = flags;
+		print("for each ");
+		print(tree.indexVar.name);
 		print(" in ");
 		printExpr(tree.array);
-		print(") ");
-		if (tree.isParallel) print(" pardo ");
+		print(" ");
+		if (tree.isParallel) print("pardo ");
 		printStat(tree.body);
 	    }
 	    catch(IOException e) {
@@ -1504,23 +1459,10 @@ public class Pretty extends JCTree.Visitor {
                     printBaseElementType((JCArrayTypeTree) elem);
                 else
                     printExpr(elem);
-                List<DPJRegionPathList> rl = tree.rpls;
-                List<JCIdent> indexVars = tree.indexVars;
                 for (List<JCExpression> l = tree.dims; l.nonEmpty(); l = l.tail) {
                     print("[");
                     printExpr(l.head);
                     print("]");
-                    if ((codeGenMode == NONE) && rl.head != null) {
-                	print("<");
-                	printExpr(rl.head);
-                	print(">");
-                    }
-                    if ((codeGenMode == NONE) && indexVars.head != null) {
-                	print("#");
-                    	printExpr(indexVars.head);
-                    }
-                    rl = rl.tail;
-                    indexVars = indexVars.tail;
                 }
                 if (elem instanceof JCArrayTypeTree)
                     printBrackets((JCArrayTypeTree) elem);
@@ -1590,14 +1532,13 @@ public class Pretty extends JCTree.Visitor {
     public void printPardoPar(JRGPardo tree) {
 	Types.printDPJ = false;
 	try {
-	    JCBlock body = (JCBlock)(tree.body);
 	    List<String> toCoInvoke = List.<String>nil();
 	    List<String> copyOutAssign = List.<String>nil();
 	    String arr = "__dpj_s"+dpj_tname++;
 	    int orig_dpj_tname = dpj_tname;
 	    println();
 	    int i=0;
-	    for(JCStatement statement : body.stats)
+	    for(JCStatement statement : tree.body.stats)
 	    {
 		align();
 		String stName = "__dpj_S"+dpj_tname++;
@@ -1625,7 +1566,6 @@ public class Pretty extends JCTree.Visitor {
 		    align();
 		    Types.printDPJ = false;
 		    print(var.type.toString()+" "+var.toString()+";\n");
-		    Types.printDPJ = true;
 		}
 		
 		//Generate constructor for class
@@ -1639,7 +1579,6 @@ public class Pretty extends JCTree.Visitor {
 			needsComma=true;
 		    Types.printDPJ = false;
 		    print(var.type.toString()+" "+var.toString());
-		    Types.printDPJ = true;
 		}
 		print(") {\n");
 		indent();

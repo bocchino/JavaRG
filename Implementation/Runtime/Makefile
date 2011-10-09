@@ -9,7 +9,7 @@ all : java classes
 	# Compile FJTask
 	javac -d classes java/forkjoin/*.java
 	make runtime-only
-	make dpjdoc-html
+#	make dpjdoc-html
 
 java :
 	mkdir $@
@@ -19,9 +19,9 @@ classes :
 
 runtime-only:
 	# Generate Java 'template' classes
-	perl expandAll.pl
-	# Compile the DPJ runtime
-	dpjc -seq ${INSTRUMENT} -d java -cp classes ${UNCHECKED} dpj/*.java
+#	perl expandAll.pl
+	# Compile the JRG runtime
+	dpjc -seq ${INSTRUMENT} -d java -cp classes ${UNCHECKED} jrg/*.java
 	javac -cp classes -d classes java/DPJRuntime/*.java
 
 # Count DPJ Annotations

@@ -1728,9 +1728,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression elemtype;
         public List<JCExpression> dims;
         // FIXME
-        public List<DPJRegionPathList> rpls = List.nil();
         public List<JCExpression> elems;
-        public List<JCIdent> indexVars;
         protected JCNewArray(JCExpression elemtype,
 			   List<JCExpression> dims,
 			   List<JCExpression> elems)

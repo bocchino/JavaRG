@@ -386,13 +386,13 @@ public class CheckEffects extends EnvScanner { // DPJ
     @Override
     public void visitJRGForLoop(JRGForLoop tree) {
 	super.visitJRGForLoop(tree);
-	if (tree.indexVar.init != null) addAllWithRead(tree.indexVar.init, tree);
 	if (tree.array != null) addAllWithRead(tree.array, tree);
 	addAll(tree.body, tree);
 	Env<AttrContext> env = parentEnv.dup(tree, parentEnv.info.dup());
 	env.info.scope.enter(tree.indexVar.sym);
 	Effects effects = tree.body.effects.inEnvironment(rs, env, false);
 	env.info.scope.leave();
+	/*
 	Effects negatedEffects = 
 	    effects.substIndices(List.of(tree.indexVar.sym), 
 		    List.<JCExpression>of(new DPJNegationExpression(tree.indexVar.sym)));
@@ -400,6 +400,7 @@ public class CheckEffects extends EnvScanner { // DPJ
 		env.info.constraints, false)) {
 	    log.warning(tree.pos(), "interference.foreach");
 	}
+	*/
     }
 
     @Override

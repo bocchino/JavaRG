@@ -2032,8 +2032,6 @@ public class Attr extends JCTree.Visitor {
 	Type owntype = syms.errType;
         Type elemtype;
         if (tree.elemtype != null) {
-            List<DPJRegionPathList> rpls = tree.rpls;
-            List<JCIdent> indexVars = tree.indexVars;
             ListBuffer<RPL> rplBuf = ListBuffer.lb();
             ListBuffer<VarSymbol> indexBuf = ListBuffer.lb();
 	    Env<AttrContext> localEnv = env.dup(tree, env.info.dup(env.info.scope.dup()));
@@ -3617,6 +3615,9 @@ public class Attr extends JCTree.Visitor {
 	tree.indexVar.mods.flags |= Flags.FINAL;
 	attribStat(tree.indexVar, loopEnv);
 	attribExpr(tree.array, loopEnv);
+	if (!types.isArray(tree.array.type) && !types.isArrayClass(tree.array.type)) {
+            log.error(tree.pos(), "array.req.but.found", tree.array.type);
+	}
 	loopEnv.tree = tree; // before, we were not in loop!
 	attribStat(tree.body, loopEnv);
 	loopEnv.info.scope.leave();

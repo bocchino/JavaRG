@@ -1,4 +1,4 @@
-ALL = sequential-classes #parallel-classes
+ALL = sequential-classes parallel-classes
 include Makefile.common
 
 # Problem size
@@ -13,7 +13,7 @@ DPJ_NT ?= 1
 # "Pushbutton" targets
 test-all :
 	make test-all-seq
-#	make test-all-par
+	make test-all-par
 
 test-all-seq :
 	${DPJ-SEQ-TEST} ArrayAccessInt         TEST ${SIZE}
@@ -23,9 +23,10 @@ test-all-seq :
 	${DPJ-SEQ-TEST} DestructiveFieldAccess TEST ${SIZE}
 	${DPJ-SEQ-TEST} InstanceofSwitch       TEST ${SIZE}
 	${DPJ-SEQ-TEST} PardoBasic             TEST ${SIZE}
+	${DPJ-SEQ-TEST} ForeachBasicSeq        TEST ${SIZE}
 
 test-all-par :
-	echo "No parallel tests"
+	${DPJ-PAR-TEST} PardoBasic             TEST ${SIZE}
 
 # Targets requiring command-line arguments
 # E.g.:
