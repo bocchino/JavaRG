@@ -951,15 +951,20 @@ public class Pretty extends JCTree.Visitor {
     private void parJRGForLoop(JRGForLoop tree) {
 	try {
 	    println();
-	    String stName = mangle("Task", jrg_tname++);
-	    printAligned("class " + stName + " extends RecursiveAction {\n");
+	    
+	    // Define a class to run the loop iteration tasks
+	    String taskName = mangle("Task", jrg_tname++);
+	    printAligned("class " + taskName + " extends RecursiveAction {\n");
 	    indent();
+	    
+	    // Define fields for start and length of iteration
 	    printAligned("int __jrg_start;\n");
 	    printAligned("int __jrg_length;\n");
 	    Set<VarSymbol> copyIn = new HashSet(tree.usedVars);
 	    copyIn.removeAll(tree.declaredVars);
 	    Set<VarSymbol> copyOut = new HashSet(tree.definedVars);
 	    copyOut.removeAll(tree.declaredVars);
+	    // Check there are no assignments to local variables visible across iterations
 	    if(copyOut.size() > 0) {
 		// Ideally this error should be caught by the JRG type checker, prior to
 		// Java code generation.  However, since the type checker doesn't do this yet, 
@@ -967,11 +972,10 @@ public class Pretty extends JCTree.Visitor {
 		// the Java compiler to choke.
 		print("Error: Assignment inside foreach to local variable declared prior to foreach\n");
 	    }
-	    
+	    	    
+	    // Define fields to hold local vars copied in/out
 	    Set<VarSymbol> copyAll = new HashSet(copyIn);
 	    copyAll.addAll(copyOut);
-	    
-	    // Declare local vars necessary for copyin/copyout
 	    for(VarSymbol var : copyAll) {
 		align();
 		printCellType(var.type);
@@ -980,7 +984,7 @@ public class Pretty extends JCTree.Visitor {
 	    }
 	    
 	    // Generate constructor for class
-	    printAligned(stName);
+	    printAligned(taskName);
 	    print("(int __jrg_start, int __jrg_length");
 	    for(VarSymbol var : copyIn) {
 		print (", ");
@@ -1004,7 +1008,7 @@ public class Pretty extends JCTree.Visitor {
 	    align();
 	    print("}\n");
 	    
-	    //Generate run method
+	    // Generate compute() method
 	    printAligned("protected void compute() {\n");
 	    indent();
 	    printAligned("int __jrg_cutoff = DPJRuntime.RuntimeState.dpjForeachCutoff;\n");
@@ -1013,13 +1017,13 @@ public class Pretty extends JCTree.Visitor {
 	    indent();
 	    printAligned("RecursiveAction[] __jrg_tasks = ");
 	    print("new RecursiveAction[__jrg_split];\n");
+	    printAligned("int __jrg_block_size = __jrg_length / __jrg_split;\n");
 	    printAligned("for(int i = 0; i < __jrg_split; i++) {\n");
 	    indent();
-	    printAligned("int __jrg_ratio = __jrg_length/__jrg_split;\n");
-	    printAligned("int __jrg_task_start = __jrg_start + __jrg_ratio * i;\n");
-	    printAligned("int __jrg_task_length = (__jrg_split == i+1) ?\n");
-	    printAligned("    __jrg_length - __jrg_ratio * i : __jrg_ratio;\n");
-	    printAligned("__jrg_tasks[i] = new " + stName + "(");
+	    printAligned("int __jrg_task_start = __jrg_start + __jrg_block_size * i;\n");
+	    printAligned("int __jrg_task_length = (i >= __jrg_split - 1) ?\n");
+	    printAligned("    __jrg_length - __jrg_block_size * i : __jrg_block_size;\n");
+	    printAligned("__jrg_tasks[i] = new " + taskName + "(");
 	    print("__jrg_task_start, __jrg_task_length");
 	    for(VarSymbol var : copyIn) print(", "+varString(var));
 	    print(");\n");
@@ -1048,38 +1052,30 @@ public class Pretty extends JCTree.Visitor {
 	    undent();
 	    printAligned("};\n"); //close class block
 	    
-	    // Now generate the actual invocation
-	    align();
-	    print("if(!DPJRuntime.RuntimeState.insideParallelTask) {\n");
+	    // Generate the invocation
+	    printAligned("if(!DPJRuntime.RuntimeState.insideParallelTask) {\n");
 	    indent();
 	    printAligned("DPJRuntime.RuntimeState.insideParallelTask = true;\n");
-	    printAligned("DPJRuntime.RuntimeState.pool.invoke(new " + stName + "(0,");
+	    printAligned("DPJRuntime.RuntimeState.pool.invoke(new " + taskName + "(0,");
 	    printExpr(tree.array);
 	    print(".length");
 	    for(VarSymbol var : copyIn) {
-		if(var.toString().equals("this") && !needDPJThis)
-		    print(", this");
-		else
-		    print(", "+varString(var));
+		if(var.toString().equals("this") && !needDPJThis) print(", this");
+		else print(", "+varString(var));
 	    }
 	    print("));\n");
-	    align();
-	    print("DPJRuntime.RuntimeState.insideParallelTask = false;\n");
+	    printAligned("DPJRuntime.RuntimeState.insideParallelTask = false;\n");
 	    undent();
-	    align();
-	    print("}\n");
-	    align();
-	    print("else {\n");
+	    printAligned("}\n");
+	    printAligned("else {\n");
 	    indent();
-	    printAligned("(new " + stName + "(0, ");
+	    printAligned("(new " + taskName + "(0, ");
 	    printExpr(tree.array);
 	    print(".length");
 	    for(VarSymbol var : copyIn) {
-		if(var.toString().equals("this") && !needDPJThis)
-		    print(", this");
-		else
-		    print(", "+varString(var));
-	    	}
+		if(var.toString().equals("this") && !needDPJThis) print(", this");
+		else print(", "+varString(var));
+	    }
 	    print(")).forkJoin();\n");
 	    undent();
 	    printAligned("}\n");
