@@ -627,9 +627,9 @@ public class Type implements PrimitiveType {
          */
         public List<RPL> rgnactuals_field;
         
-        /** The effect parameters of this type
+        /** The reference group parameters of this type
          */
-        public List<Effects> effectparams_field;
+        public List<Effects> groupparams_field;
 
         /** A cache variable for the type parameters of this type,
          *  appended to all parameters of its enclosing class.
@@ -683,7 +683,7 @@ public class Type implements PrimitiveType {
             this.outer_field = outer;
             this.typarams_field = typarams;
             this.rgnparams_field = rgnparams;
-            this.effectparams_field = effectparams;
+            this.groupparams_field = effectparams;
             this.rgnactuals_field = null;
             this.alltyparams_field = null;
             this.supertype_field = null;
@@ -708,7 +708,7 @@ public class Type implements PrimitiveType {
         public Type constType(Object constValue) {
             final Object value = constValue;
             return new ClassType(getEnclosingType(), typarams_field, 
-        	    rgnparams_field, effectparams_field, tsym, cellType) {
+        	    rgnparams_field, groupparams_field, tsym, cellType) {
                     @Override
                     public Object constValue() {
                         return value;
@@ -789,12 +789,12 @@ public class Type implements PrimitiveType {
         }
         
         public List<Effects> getEffectArguments() {
-            if (effectparams_field == null) {
+            if (groupparams_field == null) {
         	complete();
-        	if (effectparams_field == null)
-        	    effectparams_field = List.nil();
+        	if (groupparams_field == null)
+        	    groupparams_field = List.nil();
             }
-            return effectparams_field;
+            return groupparams_field;
         }
         
         public List<RegionParameterSymbol> getRegionParams() {
@@ -934,7 +934,7 @@ public class Type implements PrimitiveType {
             List<Type> typarams1 = map(typarams, f);
             if (outer1 == outer && typarams1 == typarams) return this;
             else return new ClassType(outer1, typarams1, rgnparams_field, 
-        	    effectparams_field, tsym, cellType);
+        	    groupparams_field, tsym, cellType);
         }
 
         public boolean contains(Type elem) {

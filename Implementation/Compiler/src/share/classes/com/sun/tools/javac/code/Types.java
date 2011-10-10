@@ -3713,7 +3713,7 @@ public class Types {
 
         if (captured)
             return new ClassType(cls.getEnclosingType(), S, cls.rgnparams_field, 
-        	    cls.effectparams_field, cls.tsym, cls.cellType);
+        	    cls.groupparams_field, cls.tsym, cls.cellType);
         else
             return t;
     }
@@ -3765,7 +3765,7 @@ public class Types {
 	
 	// Capture effects
 	boolean capturedEffects = false;
-	List<Effects> effects = ct.effectparams_field;
+	List<Effects> effects = ct.groupparams_field;
 	ListBuffer<Effects> effectsBuf = ListBuffer.lb();
 	for (Effects e : effects) {
 	    Effects newEffects = e.capture();

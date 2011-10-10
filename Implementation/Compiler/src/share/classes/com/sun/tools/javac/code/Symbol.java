@@ -917,6 +917,10 @@ public abstract class Symbol implements Element {
          */
         public int adr = -1;
         
+        /** The reference permission associated with the variable
+         */
+        public Permission refPerm;
+        
         /** The RPL in which this variable is declared
          */
         public RPL rpl = null;
@@ -1160,21 +1164,34 @@ public abstract class Symbol implements Element {
         }
         
     }
-            
+
+    /** An abstract superclass for reference groups
+     */
+    public static abstract class RefGroupSymbol extends Symbol {
+	
+        /** Construct a reference group symbol given its name and
+         *  owner.
+         */
+        public RefGroupSymbol(Name name, Symbol owner) {
+            super(REF_GROUP, 0, name, Type.noType, owner);
+        }
+
+        public <R,P> R accept(ElementVisitor<R,P> v, P p) {
+	    return v.visitUnknown(this, p);
+	}
+        
+    }
+    
     /** A class for reference group name symbols, i.e., the symbol corresponding to the
      *  name g in the declaration 'refgroup g'
      */
-    public static class RefGroupNameSymbol extends Symbol {
-
-        /** The region's declaration position.
-         */
-        public int pos = Position.NOPOS;
+    public static class RefGroupNameSymbol extends RefGroupSymbol {
         
         /** Construct a reference group name symbol
          *  given its name and owner.
          */
         public RefGroupNameSymbol(Name name, Symbol owner) {
-            super(REF_GROUP, 0, name, Type.noType, owner);
+            super(name, owner);
         }
 
 	public <R,P> R accept(ElementVisitor<R,P> v, P p) {
@@ -1185,7 +1202,6 @@ public abstract class Symbol implements Element {
          */
         public RefGroupNameSymbol clone(Symbol newOwner) {
             RefGroupNameSymbol sym = new RefGroupNameSymbol(name, newOwner);
-            sym.pos = pos;
             return sym;
         }
 
@@ -1204,10 +1220,10 @@ public abstract class Symbol implements Element {
     
     /** A class for reference group parameter symbols
      */
-    public static class RefGroupParameterSymbol extends Symbol {
+    public static class RefGroupParameterSymbol extends RefGroupSymbol {
 	
 	public RefGroupParameterSymbol(Name name, Symbol owner) {
-	    super(Kinds.REF_GROUP, STATIC, name, Type.noType, owner);
+	    super(name, owner);
 	}
 	
 	public <R,P> R accept(ElementVisitor<R,P> v, P p) {

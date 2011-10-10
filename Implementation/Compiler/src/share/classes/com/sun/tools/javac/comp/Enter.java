@@ -456,10 +456,10 @@ public class Enter extends JCTree.Visitor {
 		effectparams.append(new Effects(new 
 			VariableEffect((RefGroupParameterSymbol) param.sym)));
 	    }
-	    ct.effectparams_field = effectparams.toList();
+	    ct.groupparams_field = effectparams.toList();
 	} else {
 	    ct.rgnparams_field = List.nil();
-	    ct.effectparams_field = List.nil();
+	    ct.groupparams_field = List.nil();
 	}
 	
 	// Add non-local class to uncompleted, to make sure it will be
