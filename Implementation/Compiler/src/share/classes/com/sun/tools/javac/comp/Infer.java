@@ -369,7 +369,7 @@ public class Infer {
             // TODO: FIX
             mt = new MethodType(mt.argtypes,
                                 new ForAll(restvars.toList(), List.<RPL>nil(), 
-                                	List.<Effects>nil(), mt.restype),
+                                	List.<RefGroup>nil(), mt.restype),
                                 mt.thrown, syms.methodClass);
         }
 

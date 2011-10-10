@@ -255,7 +255,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
 	    
 	    return (DeclaredType) new Type.ClassType(outer, targs.toList(), 
 		    List.<RegionParameterSymbol>nil(), 
-		    List.<Effects>nil(), sym, null);
+		    List.<RefGroup>nil(), sym, null);
 	}
 
     /**

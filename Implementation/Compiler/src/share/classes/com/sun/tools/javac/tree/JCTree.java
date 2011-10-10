@@ -2213,13 +2213,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCExpression functor;
         public List<JCExpression> typeArgs;
         public List<DPJRegionPathList> rplArgs;
-        public List<JCIdent> groupArgs;
+        public List<JCIdent> refGroupArgs;
         protected JCTypeApply(JCExpression functor, List<JCExpression> typeArgs,
         	List<DPJRegionPathList> rplArgs, List<JCIdent> groupArgs) {
             this.functor = functor;
             this.typeArgs = typeArgs;
             this.rplArgs = rplArgs;
-            this.groupArgs = groupArgs;
+            this.refGroupArgs = groupArgs;
         }
         @Override
         public void accept(Visitor v) { v.visitTypeApply(this); }

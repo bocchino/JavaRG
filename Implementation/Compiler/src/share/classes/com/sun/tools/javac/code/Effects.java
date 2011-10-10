@@ -280,9 +280,9 @@ public class Effects implements Iterable<Effect> {
         		    result.substForRegionParams(ct.tsym.type.getRegionParams(),
         			ct.getRegionActuals());
         	    }
-        	    result = 
-        		result.substForEffectVars(ct.tsym.type.getEffectArguments(),
-        			ct.getEffectArguments());
+        	    //result = 
+        	    //result.substForEffectVars(ct.tsym.type.getEffectArguments(),
+        	    //ct.getEffectArguments());
         	}
         	// Substitute for actual arg expressions
         	result = result.substExpsForVars(sym.params, tree.args);
@@ -321,10 +321,12 @@ public class Effects implements Iterable<Effect> {
             }
 
             // Substitute for method effect params
+            /*
             if (sym.effectparams != null && tree.mtype != null) {
         	result = result.substForEffectVars(sym.effectparams,
         	    tree.mtype.effectactuals);
             }
+            */
 	}
 	return result;
     }

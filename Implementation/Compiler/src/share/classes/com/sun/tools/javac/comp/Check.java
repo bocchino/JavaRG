@@ -1276,6 +1276,7 @@ public class Check {
 	}
 	
 	// Error if overriding effects not a subeffect of overridden effects (DPJ)
+	/*
 	if (other.effects != Effects.UNKNOWN) {
 	    Effects me = m.effects.asMemberOf(types, origin.type, m.owner);
 	    Effects oe = other.effects.asMemberOf(types, origin.type, other.owner);
@@ -1291,7 +1292,7 @@ public class Check {
 		oe = oe.substForRegionParams(o_rpl_params, rpls);
 	    }
 	    me = me.substForVars(m.params, other.params);
-	    me = me.substForEffectVars(m.effectparams, other.effectparams);
+	    me = me.substForEffectVars(m.refGroupParams, other.refGroupParams);
 	    if (!me.areSubeffectsOf(oe)) {
 		System.err.println("Effects are not covered by overridden effects in class " + other.owner.type);
 		System.err.println("Missing " + me.missingFrom(oe));
@@ -1300,6 +1301,7 @@ public class Check {
 		log.error(TreeInfo.diagnosticPositionFor(m, tree), "bad.subclass.effects");
 	    }
 	}
+	*/
 	
 	// Error if overriding method throws an exception not reported
 	// by overridden method.

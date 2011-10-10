@@ -310,7 +310,7 @@ public class Type implements PrimitiveType {
     public List<Type>        getTypeArguments()  { return List.nil(); }
     public List<RegionParameterSymbol> getRegionParams() { return List.nil(); }
     public List<RPL>         getRegionActuals()  { return List.nil(); }
-    public List<Effects>      getEffectArguments() { return List.nil(); }
+    public List<RefGroup>    getRefGroupArguments() { return List.nil(); }
     public Type              getEnclosingType()  { return null; }
     public List<Type>        getParameterTypes() { return List.nil(); }
     public Type              getReturnType()     { return null; }
@@ -345,10 +345,10 @@ public class Type implements PrimitiveType {
      */
     public List<RPL> allrgnactuals() { return List.nil(); }
     
-    /** Return all effect parameters of this type and all its outer types in order
+    /** Return reference group parameters of this type and all its outer types in order
      *  outer (first) to inner (last).
      */
-     public List<Effects> alleffectparams() { return List.nil(); }
+     public List<RefGroup> allRefGroupParams() { return List.nil(); }
 
      /** Does this type contain "error" elements?
      */
@@ -384,12 +384,12 @@ public class Type implements PrimitiveType {
     }
     
     /**
-     * Does this type have effect parameters?
-     * A class type has region parameters if effect parameters appear in 
-     * its definition.
-     * All other types do not have effect parameters.
+     * Does this type have reference group parameters?
+     * A class type has reference group parameters if reference group parameters 
+     * appear in its definition.
+     * All other types do not have reference group parameters.
      */
-    public boolean hasEffectParams() {
+    public boolean hasRefGroupParams() {
 	return false;
     }
     
@@ -617,7 +617,7 @@ public class Type implements PrimitiveType {
          */
         public List<Type> typarams_field;
         
-        // TODO: Make this work the way typarams and effect params do, so we
+        // TODO: Make this work the way typarams and ref group params do, so we
         // don't need separate formals and actuals.
         /** The region parameters of this type // DPJ
 	 */
@@ -629,7 +629,7 @@ public class Type implements PrimitiveType {
         
         /** The reference group parameters of this type
          */
-        public List<Effects> groupparams_field;
+        public List<RefGroup> groupparams_field;
 
         /** A cache variable for the type parameters of this type,
          *  appended to all parameters of its enclosing class.
@@ -649,11 +649,11 @@ public class Type implements PrimitiveType {
          */
         public List<RPL> allrgnactuals_field;
 
-        /** A cache variable for the effect parameters of this type,
+        /** A cache variable for the reference group parameters of this type,
          *  appended to all parameters of its enclosing class.
          *  @see #allparams
          */
-        public List<Effects> alleffectparams_field;
+        public List<RefGroup> allRefGroupParams_field;
  
         /** The supertype of this class (to be set once class is loaded).
          */
@@ -669,21 +669,21 @@ public class Type implements PrimitiveType {
         
         public ClassType(Type outer, List<Type> typarams, 
         		List<RegionParameterSymbol> rgnparams,
-        		List<RPL> rgnactuals, List<Effects> effectparams,
+        		List<RPL> rgnactuals, List<RefGroup> refgroupparams,
         		TypeSymbol tsym, Type cellType) {
-            this(outer, typarams, rgnparams, effectparams, tsym, cellType);
+            this(outer, typarams, rgnparams, refgroupparams, tsym, cellType);
             this.rgnactuals_field = rgnactuals;
         }
         
         public ClassType(Type outer, List<Type> typarams, 
         	List<RegionParameterSymbol> rgnparams, 
-        	List<Effects> effectparams,
+        	List<RefGroup> refgroupparams,
         	TypeSymbol tsym, Type cellType) {
             super(CLASS, tsym);
             this.outer_field = outer;
             this.typarams_field = typarams;
             this.rgnparams_field = rgnparams;
-            this.groupparams_field = effectparams;
+            this.groupparams_field = refgroupparams;
             this.rgnactuals_field = null;
             this.alltyparams_field = null;
             this.supertype_field = null;
@@ -733,17 +733,17 @@ public class Type implements PrimitiveType {
             }
             boolean typarams = getTypeArguments().nonEmpty();
             boolean rplparams = Types.printDPJ && getRegionActuals().nonEmpty();
-            boolean effectparams = Types.printDPJ && getEffectArguments().nonEmpty();
-            boolean params = typarams | rplparams | effectparams;
+            boolean refGroupParams = Types.printDPJ && getRefGroupArguments().nonEmpty();
+            boolean params = typarams | rplparams | refGroupParams;
             if (params) buf.append('<');
             buf.append(getTypeArguments().toString());
             if (rplparams) {
         	if (typarams) buf.append(", ");
         	buf.append(getRegionActuals().toString());
             }
-            if (effectparams) {
+            if (refGroupParams) {
         	if (typarams | rplparams) buf.append(", ");
-        	buf.append(getEffectArguments().toString());
+        	buf.append(getRefGroupArguments().toString());
             }
             if (params) buf.append('>');
             return buf.toString();
@@ -788,7 +788,7 @@ public class Type implements PrimitiveType {
             return typarams_field;
         }
         
-        public List<Effects> getEffectArguments() {
+        public List<RefGroup> getRefGroupArguments() {
             if (groupparams_field == null) {
         	complete();
         	if (groupparams_field == null)
@@ -884,12 +884,12 @@ public class Type implements PrimitiveType {
         }
         
         @Override
-        public List<Effects> alleffectparams() {
-            if (alleffectparams_field == null) {
-                alleffectparams_field = 
-                    getEffectArguments().prependList(getEnclosingType().alleffectparams());
+        public List<RefGroup> allRefGroupParams() {
+            if (allRefGroupParams_field == null) {
+                allRefGroupParams_field = 
+                    getRefGroupArguments().prependList(getEnclosingType().allRefGroupParams());
             }
-            return alleffectparams_field;
+            return allRefGroupParams_field;
         }
 
         public boolean isErroneous() {
@@ -908,8 +908,8 @@ public class Type implements PrimitiveType {
             return allrgnparams().tail != null;
         }
         
-        public boolean hasEffectParams() {
-            return alleffectparams().tail != null;
+        public boolean hasRefGroupParams() {
+            return allRefGroupParams().tail != null;
         }
 
         /** A cache for the rank. */
@@ -1069,7 +1069,7 @@ public class Type implements PrimitiveType {
         // method call site
         public List<Type> typeactuals = List.nil();
         public List<RPL> regionActuals = List.nil();
-        public List<Effects> effectactuals = List.nil();
+        public List<RefGroup> refGroupActuals = List.nil();
 
         public MethodType(List<Type> argtypes,
                           Type restype,
@@ -1339,7 +1339,7 @@ public class Type implements PrimitiveType {
         }
         public String toString() { return qtype.toString(); }
         public List<Type> getTypeArguments() { return qtype.getTypeArguments(); }
-        public List<Effects> getEffectArguments() { return qtype.getEffectArguments(); }
+        public List<RefGroup> getRefGroupArguments() { return qtype.getRefGroupArguments(); }
         public Type getEnclosingType() { return qtype.getEnclosingType(); }
         public List<Type> getParameterTypes() { return qtype.getParameterTypes(); }
         public Type getReturnType() { return qtype.getReturnType(); }
@@ -1354,14 +1354,14 @@ public class Type implements PrimitiveType {
             implements Cloneable, ExecutableType {
         public List<Type> tvars;
         public List<RPL> rvars;
-        public List<Effects> evars;
+        public List<RefGroup> gvars;
 
         public ForAll(List<Type> tvars, List<RPL> rvars, 
-        	List<Effects> evars, Type qtype) {
+        	List<RefGroup> gvars, Type qtype) {
             super(FORALL, qtype);
             this.tvars = tvars;
             this.rvars = rvars;
-            this.evars = evars;
+            this.gvars = gvars;
         }
 
         @Override
@@ -1378,9 +1378,9 @@ public class Type implements PrimitiveType {
         	sb.append("region ");
         	sb.append(rvars);
             }
-            if (evars.nonEmpty()) {
+            if (gvars.nonEmpty()) {
         	if (tvars.nonEmpty() || rvars.nonEmpty()) sb.append(", ");
-        	sb.append(evars);
+        	sb.append(gvars);
             }
             sb.append('>');
             sb.append(qtype);
@@ -1389,7 +1389,7 @@ public class Type implements PrimitiveType {
 
         public List<Type> getTypeArguments()   { return tvars; }
         public List<RPL> getRegionActuals() { return rvars; }
-        public List<Effects> getEffectArguments() { return evars; }
+        public List<RefGroup> getRefGroupArguments() { return gvars; }
 
         public void setThrown(List<Type> t) {
             qtype.setThrown(t);
@@ -1429,7 +1429,7 @@ public class Type implements PrimitiveType {
         }
 
         public List<VariableEffect> getEffectVariables() {
-            return List.convert(VariableEffect.class, getEffectArguments());
+            return List.convert(VariableEffect.class, getRefGroupArguments());
         }
         
         public List<RegionParameterSymbol> getRegionParams() {
@@ -1527,7 +1527,7 @@ public class Type implements PrimitiveType {
 
         public ErrorType() {
             super(noType, List.<Type>nil(), List.<RegionParameterSymbol>nil(), 
-        	    List.<Effects>nil(), null, null);
+        	    List.<RefGroup>nil(), null, null);
             tag = ERROR;
         }
 
@@ -1562,7 +1562,7 @@ public class Type implements PrimitiveType {
         public List<Type> alltyparams()            { return List.nil(); }
         public List<RegionParameterSymbol> allrgnparams() { return List.nil(); }
         public List<Type> getTypeArguments()     { return List.nil(); }
-        public List<Effects> getEffectArguments() { return List.nil(); }
+        public List<RefGroup> getRefGroupArguments() { return List.nil(); }
         public List<RegionParameterSymbol> getRegionParams() { return List.nil(); }
         public List<RPL>         getRegionActuals()  { return List.nil(); }
 

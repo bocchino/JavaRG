@@ -28,12 +28,12 @@ package com.sun.tools.javac.comp;
 import static com.sun.tools.javac.code.Flags.ANNOTATION;
 import static com.sun.tools.javac.code.Flags.ANONCONSTR;
 import static com.sun.tools.javac.code.Flags.ARRAYCLASS;
+import static com.sun.tools.javac.code.Flags.ARRAYCONSTR;
 import static com.sun.tools.javac.code.Flags.AccessFlags;
 import static com.sun.tools.javac.code.Flags.DEPRECATED;
 import static com.sun.tools.javac.code.Flags.ENUM;
 import static com.sun.tools.javac.code.Flags.FINAL;
 import static com.sun.tools.javac.code.Flags.GENERATEDCONSTR;
-import static com.sun.tools.javac.code.Flags.ARRAYCONSTR;
 import static com.sun.tools.javac.code.Flags.HASINIT;
 import static com.sun.tools.javac.code.Flags.INTERFACE;
 import static com.sun.tools.javac.code.Flags.PRIVATE;
@@ -62,14 +62,16 @@ import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLElement;
 import com.sun.tools.javac.code.RPLElement.RPLParameterElement;
 import com.sun.tools.javac.code.RPLs;
+import com.sun.tools.javac.code.RefGroup;
+import com.sun.tools.javac.code.RefGroup.RefGroupParameter;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.Completer;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
-import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
+import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
 import com.sun.tools.javac.code.Symbol.RegionNameSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
@@ -99,7 +101,6 @@ import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCImport;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
-import com.sun.tools.javac.tree.JCTree.JCModifiers;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
@@ -447,7 +448,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 	    }
         }
         List<RPL> rgnvars = rplBuf.toList();
-        List<Effects> effectvars = effectsBuf.toList();
+        List<RefGroup> effectvars = List.<RefGroup>nil(); // FIXME
+        //effectsBuf.toList();
 
         // Enter and attribute type parameters.
         List<Type> tvars = enter.classEnter(typarams, env);
@@ -712,15 +714,14 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             }
             m.rgnParams = rgnParams.toList();
             // Set m.effectparams
-            ListBuffer<Effects> effectparams = ListBuffer.lb();
+            ListBuffer<RefGroup> refGroupParams = ListBuffer.lb();
             for (JCIdent param : tree.paramInfo.groupParams) {
-        	assert(param. sym instanceof RefGroupParameterSymbol);
-        	effectparams.append(new Effects(new 
-        		VariableEffect((RefGroupParameterSymbol)param.sym)));
+        	refGroupParams.append(new RefGroupParameter(
+        		(RefGroupParameterSymbol) param.sym));
             }
-            m.effectparams = effectparams.toList();
+            m.refGroupParams = refGroupParams.toList();
         } else {
-            m.effectparams = List.nil();
+            m.refGroupParams = List.nil();
         }
 
                 
@@ -1031,7 +1032,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     interfaceTrees.prepend(make.Type(new ClassType(syms.comparableType.getEnclosingType(),
                                                                    List.of(c.type),
                                                                    List.<RegionParameterSymbol>nil(),
-                                                                   List.<Effects>nil(),
+                                                                   List.<RefGroup>nil(),
                                                                    syms.comparableType.tsym, null)));
                 // add interface Serializable
                 interfaceTrees =

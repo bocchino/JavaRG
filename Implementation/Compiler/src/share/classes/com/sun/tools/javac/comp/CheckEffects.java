@@ -603,6 +603,7 @@ public class CheckEffects extends EnvScanner { // DPJ
 	// Accumulate the effect of invoking m
 	MethodSymbol sym = tree.getMethodSymbol();
 	
+	/*
 	if (sym != null) {
 	    Effects effects = 
 		sym.effects.translateMethodEffects(tree, types, attr, parentEnv);
@@ -618,6 +619,7 @@ public class CheckEffects extends EnvScanner { // DPJ
 	    if (inConstructor(parentEnv))
 		tree.getConstructorEffects().add(ie);
 	}
+	*/
     }
     
     @Override

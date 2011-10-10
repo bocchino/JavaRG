@@ -191,6 +191,7 @@ public abstract class ExecutableMemberDocImpl
      */
     private Effects effects = null;
     public Effects effects() {
+	/*
 	if (effects == null) {
 	    if (sym instanceof MethodSymbol) {
 		effects = ((MethodSymbol) sym).effects.trim();
@@ -199,6 +200,8 @@ public abstract class ExecutableMemberDocImpl
 	    }	    
 	}
 	return effects;
+	*/
+	return Effects.UNKNOWN;
     }
     
     /**

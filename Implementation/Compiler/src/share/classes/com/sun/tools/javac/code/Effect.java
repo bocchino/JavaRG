@@ -43,8 +43,11 @@ public abstract class Effect {
 		t.getRegionActuals());
 	e = e.substForTRParams(t.tsym.type.getTypeArguments(),
 		t.getTypeArguments());
+	/*
     	return e.substForEffectVars(t.tsym.type.getEffectArguments(), 
     		t.getEffectArguments());
+    		*/
+	return new Effects(e);
     }
 
     public Effect substForParams(List<RegionParameterSymbol> from, List<RPL> to) {
@@ -635,8 +638,9 @@ public abstract class Effect {
 	@Override
 	public Effects asMemberOf(Types types, Type t, Symbol owner) {
 	    Type base = types.asOuterSuper(t, owner);
-            return this.substForEffectVars(base.tsym.type.getEffectArguments(),
-        	    base.getEffectArguments());
+            //return this.substForEffectVars(base.tsym.type.getEffectArguments(),
+	    //base.getEffectArguments());
+	    return new Effects(this);
 	}
 	
 	@Override

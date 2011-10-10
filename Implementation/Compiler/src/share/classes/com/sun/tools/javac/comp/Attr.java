@@ -87,6 +87,7 @@ import com.sun.tools.javac.code.RPLElement.NameRPLElement;
 import com.sun.tools.javac.code.RPLElement.RPLParameterElement;
 import com.sun.tools.javac.code.RPLElement.VarRPLElement;
 import com.sun.tools.javac.code.RPLs;
+import com.sun.tools.javac.code.RefGroup;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Symbol;
@@ -114,7 +115,6 @@ import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.jvm.ByteCodes;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.JRGForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
@@ -169,6 +169,7 @@ import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JCWhileLoop;
 import com.sun.tools.javac.tree.JCTree.JCWildcard;
 import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
+import com.sun.tools.javac.tree.JCTree.JRGForLoop;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -863,7 +864,7 @@ public class Attr extends JCTree.Visitor {
      * Enter method region and type parameters into a local scope
      */
     public void enterMethodParams(JCMethodDecl tree, Env<AttrContext> localEnv) {
-	// Enter region and effect parameter info
+	// Enter region and ref group parameter info
 	if (tree.paramInfo != null) {
             tree.sym.constraints = 
         	enterRegionParamInfo(tree.paramInfo, localEnv);
@@ -910,7 +911,7 @@ public class Attr extends JCTree.Visitor {
 	    }
 	}
 	
-	// Enter all effect params into the local method scope
+	// Enter all ref group params into the local method scope
 	for (JCIdent param : tree.groupParams) {
 	    RefGroupParameterSymbol sym = (RefGroupParameterSymbol) param.sym;
 	    if (chk.checkUnique(param.pos(), sym, localEnv.info.scope)) {
@@ -1614,8 +1615,8 @@ public class Attr extends JCTree.Visitor {
         List<Type> typeargtypes = null;
         // The actual method region args
         List<RPL> regionargs = null;
-        // The actual method effect args
-        List<Effects> effectargs = null;
+        // The actual method ref group args
+        List<RefGroup> refGroupArgs = null;
 
         Name methName = TreeInfo.name(tree.meth);
 
@@ -1635,7 +1636,7 @@ public class Attr extends JCTree.Visitor {
                 argtypes = attribArgs(tree.args, localEnv);
                 typeargtypes = attribTypes(tree.typeargs, localEnv);
                 regionargs = attribRPLs(tree.regionArgs);
-                effectargs = null; // FIXME attribEffects(tree.groupArgs);
+                refGroupArgs = null; // FIXME attribEffects(tree.groupArgs);
                 
                 // Variable `site' points to the class in which the called
                 // constructor is defined.
@@ -1687,7 +1688,7 @@ public class Attr extends JCTree.Visitor {
                     localEnv.info.varArgs = false;
                     Symbol sym = rs.resolveConstructor(
                         tree.meth.pos(), localEnv, site, argtypes, 
-                        typeargtypes, regionargs, effectargs);
+                        typeargtypes, regionargs, refGroupArgs);
                     localEnv.info.selectSuper = selectSuperPrev;
 
                     // Set method symbol to resolved constructor...
@@ -1696,7 +1697,7 @@ public class Attr extends JCTree.Visitor {
                     // ...and check that it is legal in the current context.
                     // (this will also set the tree's type)
                     Type mpt = newMethTemplate(argtypes, typeargtypes, 
-                	    regionargs, effectargs);
+                	    regionargs, refGroupArgs);
                     checkId(tree.meth, site, sym, localEnv, MTH,
                             mpt, tree.varargsElement != null);
                 }
@@ -1710,13 +1711,13 @@ public class Attr extends JCTree.Visitor {
             argtypes = attribArgs(tree.args, localEnv);
             typeargtypes = attribTypes(tree.typeargs, localEnv);
             regionargs = attribRPLs(tree.regionArgs);
-            effectargs = null; // FIXME attribEffects(tree.groupArgs);
+            refGroupArgs = null; // FIXME attribEffects(tree.groupArgs);
             
             // ... and attribute the method using as a prototype a methodtype
             // whose formal argument types is exactly the list of actual
             // arguments (this will also set the method symbol).
             Type mpt = newMethTemplate(argtypes, typeargtypes, 
-        	    regionargs, effectargs);
+        	    regionargs, refGroupArgs);
             localEnv.info.varArgs = false;
             Type mtype = attribExpr(tree.meth, localEnv, mpt);
             if (mtype instanceof MethodType)
@@ -1751,7 +1752,7 @@ public class Attr extends JCTree.Visitor {
                                                                BoundKind.EXTENDS,
                                                                syms.boundClass)),
                               List.<RegionParameterSymbol>nil(),
-                              List.<Effects>nil(),
+                              List.<RefGroup>nil(),
                               restype.tsym, null);
             }
 
@@ -1808,11 +1809,11 @@ public class Attr extends JCTree.Visitor {
         /** Obtain a method type with given argument types.
          */
         Type newMethTemplate(List<Type> argtypes, List<Type> typeargtypes, 
-        	List<RPL> regionargs, List<Effects> effectargs) {
+        	List<RPL> regionargs, List<RefGroup> refGroupArgs) {
             MethodType mt = new MethodType(argtypes, null, null, syms.methodClass);
             return ((typeargtypes == null) && (regionargs == null) &&
-        	    (effectargs == null)) ? 
-        	    mt : (Type)new ForAll(typeargtypes, regionargs, effectargs, mt);
+        	    (refGroupArgs == null)) ? 
+        	    mt : (Type)new ForAll(typeargtypes, regionargs, refGroupArgs, mt);
         }
 
     public void visitNewClass(JCNewClass tree) {
@@ -1855,7 +1856,7 @@ public class Attr extends JCTree.Visitor {
                     TypeApply(clazzid1,
                               ((JCTypeApply) clazz).typeArgs, 
                               ((JCTypeApply) clazz).rplArgs,
-                              ((JCTypeApply) clazz).groupArgs);
+                              ((JCTypeApply) clazz).refGroupArgs);
             else
                 clazz = clazzid1;
 //          System.out.println(clazz + " generated.");//DEBUG
@@ -1889,7 +1890,7 @@ public class Attr extends JCTree.Visitor {
         List<Type> argtypes = attribArgs(tree.args, localEnv);
         List<Type> typeargtypes = attribTypes(tree.typeargs, localEnv);
         List<RPL> regionargs = attribRPLs(tree.regionArgs);
-        List<Effects> effectargs = null; // FIXME attribEffects(tree.effectargs);
+        List<RefGroup> refGroupArgs = null; // FIXME attribEffects(tree.refGroupArgs);
 
         // If we have made no mistakes in the class type...
         if (clazztype.tag == CLASS) {
@@ -1930,7 +1931,7 @@ public class Attr extends JCTree.Visitor {
                 //	",argtypes="+argtypes);
                 tree.constructor = rs.resolveConstructor(
                     tree.pos(), localEnv, clazztype, argtypes, typeargtypes, 
-                    regionargs, effectargs);
+                    regionargs, refGroupArgs);
                 Type ctorType = checkMethod(clazztype,
                                             tree.constructor,
                                             localEnv,
@@ -1938,7 +1939,7 @@ public class Attr extends JCTree.Visitor {
                                             argtypes,
                                             typeargtypes,
                                             regionargs,
-                                            effectargs,
+                                            refGroupArgs,
                                             localEnv.info.varArgs);
                 if (localEnv.info.varArgs)
                     assert ctorType.isErroneous() || tree.varargsElement != null;
@@ -2000,7 +2001,7 @@ public class Attr extends JCTree.Visitor {
                 clazztype = cdef.sym.type;
                 Symbol sym = rs.resolveConstructor(
                     tree.pos(), localEnv, clazztype, argtypes,
-                    typeargtypes, regionargs, effectargs,
+                    typeargtypes, regionargs, refGroupArgs,
                     true, tree.varargsElement != null);
                 assert sym.kind < AMBIGUOUS || tree.constructor.type.isErroneous();
                 tree.constructor = sym;
@@ -2287,7 +2288,7 @@ public class Attr extends JCTree.Visitor {
             env.info.varArgs = false;
             sym = rs.resolveMethod(tree.pos(), env, tree.name, pt.getParameterTypes(), 
         	    		   pt.getTypeArguments(), pt.getRegionActuals(),
-        	    		   pt.getEffectArguments());
+        	    		   pt.getRefGroupArguments());
             varArgs = env.info.varArgs;
         } else if (tree.sym != null && tree.sym.kind != VAR) {
             sym = tree.sym;
@@ -2540,7 +2541,7 @@ public class Attr extends JCTree.Visitor {
                 if (pt.tag == METHOD || pt.tag == FORALL) {
                     return rs.resolveQualifiedMethod(
                         pos, env, site, name, pt.getParameterTypes(), pt.getTypeArguments(),
-                        pt.getRegionActuals(), pt.getEffectArguments());
+                        pt.getRegionActuals(), pt.getRefGroupArguments());
                 } else if (name == names._this || name == names._super) {
                     return rs.resolveSelf(pos, env, site.tsym, name);
                 } else if (name == names._class) {
@@ -2552,7 +2553,7 @@ public class Attr extends JCTree.Visitor {
                         : List.<Type>nil();
                     t = new ClassType(t.getEnclosingType(), typeargs, 
                 	    List.<RegionParameterSymbol>nil(), 
-                	    List.<Effects>nil(), t.tsym, null);
+                	    List.<RefGroup>nil(), t.tsym, null);
                     return new VarSymbol(
                         STATIC | PUBLIC | FINAL, names._class, t, site.tsym);
                 } else {
@@ -2593,7 +2594,7 @@ public class Attr extends JCTree.Visitor {
                     Type arg = types.boxedClass(site).type;
                     t = new ClassType(t.getEnclosingType(), List.of(arg), 
                 	    List.<RegionParameterSymbol>nil(), 
-                	    List.<Effects>nil(), t.tsym, null);
+                	    List.<RefGroup>nil(), t.tsym, null);
                     return new VarSymbol(
                         STATIC | PUBLIC | FINAL, names._class, t, site.tsym);
                 } else {
@@ -2686,7 +2687,7 @@ public class Attr extends JCTree.Visitor {
                             owntype = new ClassType(
                                 normOuter, List.<Type>nil(), 
                                 List.<RegionParameterSymbol>nil(), 
-                                List.<Effects>nil(), owntype.tsym, null);
+                                List.<RefGroup>nil(), owntype.tsym, null);
                     }
                 }
                 break;
@@ -2718,7 +2719,7 @@ public class Attr extends JCTree.Visitor {
 
                 if (env.info.tvars.nonEmpty() || env.info.rvars.nonEmpty()) {
                     Type owntype1 = new ForAll(env.info.tvars, env.info.rvars, 
-                	    List.<Effects>nil(), owntype);
+                	    List.<RefGroup>nil(), owntype);
                     for (List<Type> l = env.info.tvars; l.nonEmpty(); l = l.tail)
                         if (!owntype.contains(l.head)) {
                             log.error(tree.pos(), "undetermined.type", owntype1);
@@ -2749,7 +2750,7 @@ public class Attr extends JCTree.Visitor {
                 JCMethodInvocation app = (JCMethodInvocation)env.tree;
                 owntype = checkMethod(site, sym, env, app.args,
                                       pt.getParameterTypes(), pt.getTypeArguments(),
-                                      pt.getRegionActuals(), pt.getEffectArguments(),
+                                      pt.getRegionActuals(), pt.getRefGroupArguments(),
                                       env.info.varArgs);
                 break;
             }
@@ -2891,7 +2892,7 @@ public class Attr extends JCTree.Visitor {
                             List<Type> argtypes,
                             List<Type> typeargtypes,
                             List<RPL> regionargs,
-                            List<Effects> effectargs,
+                            List<RefGroup> refGroupArgs,
                             boolean useVarargs) {
         // Test (5): if symbol is an instance method of a raw type, issue
         // an unchecked warning if its argument types change under erasure.
@@ -2919,7 +2920,7 @@ public class Attr extends JCTree.Visitor {
                                       argtypes,
                                       typeargtypes,
                                       regionargs,
-                                      effectargs,
+                                      refGroupArgs,
                                       true,
                                       useVarargs,
                                       noteWarner);
@@ -3093,11 +3094,13 @@ public class Attr extends JCTree.Visitor {
             List<RegionParameterSymbol> rplFormals =
         	functortype.tsym.type.getRegionParams();
 
-            // Get the formal effect params
-            List<Effects> effectFormals =
-        	functortype.tsym.type.getEffectArguments();
+            // Get the formal ref group params
+            List<RefGroup> refGroupFormals =
+        	functortype.tsym.type.getRefGroupArguments();
             
             // Handle error case of unexpected args
+            /*
+             // FIXME
             if (typeFormals.isEmpty() && 
         	    rplFormals.isEmpty() &&
         	    	effectFormals.isEmpty() &&
@@ -3106,6 +3109,7 @@ public class Attr extends JCTree.Visitor {
                 result = check(tree, owntype, TYP, pkind, pt);
                 return;
             }    
+            */
             
             // Use the # of type params to separate the type args from the RPL and group args
             int counter = 0;
@@ -3212,12 +3216,12 @@ public class Attr extends JCTree.Visitor {
                 }
             }
 
-            // Attribute effect args
+            // Attribute ref group args
             // TODO: Why does the null reference occur?
-            if (tree.groupArgs == null) tree.groupArgs = List.nil();
+            if (tree.refGroupArgs == null) tree.refGroupArgs = List.nil();
 
             // TODO: Attribute group args
-            List<Effects> effectActuals = List.nil(); 
+            List<RefGroup> refGroupActuals = List.nil(); 
             /*
             // FIXME
             if (effectActuals.length() != effectFormals.length()) {
@@ -3244,9 +3248,9 @@ public class Attr extends JCTree.Visitor {
         	}
             }
             
-            // Construct the instantiated type with the type, RPL, and effect args
+            // Construct the instantiated type with the type, RPL, and ref group args
             owntype = new ClassType(clazzOuter, actuals, 
-        	    rplFormals, rplActuals, effectActuals,
+        	    rplFormals, rplActuals, refGroupActuals,
         	    functortype.tsym, null);
         }
         result = check(tree, owntype, TYP, pkind, pt);

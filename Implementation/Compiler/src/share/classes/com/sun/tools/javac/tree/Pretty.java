@@ -2047,8 +2047,8 @@ public class Pretty extends JCTree.Visitor {
             }
             boolean rplsToPrint = (codeGenMode == NONE) && tree.rplArgs != null &&
             	tree.rplArgs.nonEmpty();
-            boolean effectsToPrint = (codeGenMode == NONE) && tree.groupArgs != null &&
-            	tree.groupArgs.nonEmpty();
+            boolean effectsToPrint = (codeGenMode == NONE) && tree.refGroupArgs != null &&
+            	tree.refGroupArgs.nonEmpty();
             if (tree.typeArgs.nonEmpty() || rplsToPrint || effectsToPrint) {
         	print("<");
         	printExprs(tree.typeArgs);

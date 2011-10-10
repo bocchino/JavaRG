@@ -751,7 +751,7 @@ public abstract class Symbol implements Element {
                 flags,
                 name,
                 new ClassType(Type.noType, null, List.<RegionParameterSymbol>nil(), 
-                	List.<Effects>nil(), null, null),
+                	List.<RefGroup>nil(), null, null),
                 owner);
             this.type.tsym = this;
         }
@@ -783,7 +783,7 @@ public abstract class Symbol implements Element {
                 erasure_field = new ClassType(types.erasure(type.getEnclosingType()),
                                               List.<Type>nil(),
                                               List.<RegionParameterSymbol>nil(),
-                                              List.<Effects>nil(),
+                                              List.<RefGroup>nil(),
                                               this, null);
             return erasure_field;
         }
@@ -1094,7 +1094,7 @@ public abstract class Symbol implements Element {
         	ClassType erasedType = 
         	    new ClassType(ownerType.outer_field, List.<Type>nil(), 
         		    List.<RegionParameterSymbol>nil(), 
-        		    List.<RPL>nil(), List.<Effects>nil(), 
+        		    List.<RPL>nil(), List.<RefGroup>nil(), 
         		    owner.type.tsym, null);
         	erasedType.DPJerased = true;
         	String result = erasedType.toString() + "." + name.toString();
@@ -1250,15 +1250,14 @@ public abstract class Symbol implements Element {
         /** The region parameters of the method. // DPJ */
         public List<RegionParameterSymbol> rgnParams = null;
         
-        /** The disjointness constraints on the region params
-         *  and noninterference constraints on effect vars */
+        /** The disjointness constraints on the region params */
         public Constraints constraints = null;
         
         /** The effect parameters of the method */
-        public List<Effects> effectparams = null;
+        public List<RefGroup> refGroupParams = null;
         
         /** The declared effects of the method. //DPJ */
-        public Effects effects = Effects.UNKNOWN;
+        //public Effects effects = Effects.UNKNOWN;
                 
         /** For an attribute field accessor, its default value if any.
          *  The value is null if none appeared in the method

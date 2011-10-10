@@ -483,6 +483,7 @@ public class Types {
             }
             
             private boolean containsEffectsRecursive(Type t, Type s) {
+        	/*
                 TypePair pair = new TypePair(t, s);
                 if (cache.add(pair)) {
                     try {
@@ -497,6 +498,8 @@ public class Types {
                                            rewriteSupers(s).getEffectArguments(),
                                            requireEqualRegions);
                 }
+                */
+        	return true; // FIXME
             }
 
             private Type rewriteSupers(Type t) {
@@ -551,7 +554,7 @@ public class Types {
                     // here instead of same-type checking (via containsType).
                     && (!s.isParameterized() || containsTypeRecursive(s, sup))
                     && (!s.tsym.type.hasRegionParams() || containsRegionsRecursive(s, sup))
-                    && (!s.tsym.type.hasEffectParams() || containsEffectsRecursive(s, sup))
+                    && (!s.tsym.type.hasRefGroupParams() || containsEffectsRecursive(s, sup))
                     && isSubtypeNoCapture(sup.getEnclosingType(),
                                           s.getEnclosingType());
             }
@@ -1056,10 +1059,10 @@ public class Types {
             ClassType ct = (ClassType) t;
             s = new ClassType(cs.outer_field, cs.typarams_field, 
         	    List.<RegionParameterSymbol>nil(),
-        	    List.<RPL>nil(), List.<Effects>nil(), cs.tsym, null);
+        	    List.<RPL>nil(), List.<RefGroup>nil(), cs.tsym, null);
             t = new ClassType(ct.outer_field, ct.typarams_field, 
         	    List.<RegionParameterSymbol>nil(),
-        	    List.<RPL>nil(), List.<Effects>nil(), ct.tsym, null);
+        	    List.<RPL>nil(), List.<RefGroup>nil(), ct.tsym, null);
         }
 
         if (t.isPrimitive() != s.isPrimitive())
@@ -1627,11 +1630,11 @@ public class Types {
                         result = substRPL(result, fromTypes, toTypes, from, to);
                     }
                 }
-                if (((flags & STATIC) == 0) && owner.type.hasEffectParams()) {
+                if (((flags & STATIC) == 0) && owner.type.hasRefGroupParams()) {
                     Type base = asOuterSuper(t, owner);
                     if (base != null) {
-                	List<Effects> ownerParams = owner.type.alleffectparams();
-                	List<Effects> baseParams = base.alleffectparams();
+                	List<RefGroup> ownerParams = owner.type.allRefGroupParams();
+                	List<RefGroup> baseParams = base.allRefGroupParams();
                 	if (ownerParams.nonEmpty()) {
                 	    result = substEffect(result, ownerParams, baseParams);
                 	}
@@ -1861,7 +1864,7 @@ public class Types {
                         List<RegionParameterSymbol> rgnformals = t.tsym.type.allrgnparams();
                         t.supertype_field = substRPL(t.supertype_field, rgnformals, rgnactuals);
                         t.supertype_field = substEffect(t.supertype_field, 
-                        	t.tsym.type.alleffectparams(), classBound(t).alleffectparams());
+                        	t.tsym.type.allRefGroupParams(), classBound(t).allRefGroupParams());
                     }
                 }
                 return t.supertype_field;
@@ -1953,8 +1956,8 @@ public class Types {
                     	    t.tsym.type.allrgnparams(),
                     	    t.allrgnactuals());
                         t.interfaces_field = substEffect(t.interfaces_field,
-                        	t.tsym.type.alleffectparams(),
-                        	t.alleffectparams());
+                        	t.tsym.type.allRefGroupParams(),
+                        	t.allRefGroupParams());
                     }
                 }
                 return t.interfaces_field;
@@ -2069,7 +2072,7 @@ public class Types {
                 Type outer1 = classBound(t.getEnclosingType());
                 if (outer1 != t.getEnclosingType())
                     return new ClassType(outer1, t.getTypeArguments(), 
-                	    t.getRegionParams(), t.getEffectArguments(), t.tsym, t.cellType);
+                	    t.getRegionParams(), t.getRefGroupArguments(), t.tsym, t.cellType);
                 else
                     return t;
             }
@@ -2261,7 +2264,7 @@ public class Types {
                 	 result = new ClassType(ct.getEnclosingType(), ct.getTypeArguments(),
                 		 ct.getRegionParams(), 
                 		 buf.toList(), 
-                		 ct.getEffectArguments(),
+                		 ct.getRefGroupArguments(),
                 		 ct.tsym, ct.cellType);
                      } else if (result.tag == TYPEVAR && 
                 	     !(result instanceof CapturedType)) {
@@ -2289,7 +2292,7 @@ public class Types {
                 else {
                     Type result = new ClassType(outer1, typarams1, 
                 	    t.getRegionParams(), t.getRegionActuals(),
-                    	    t.getEffectArguments(),
+                    	    t.getRefGroupArguments(),
                 	    t.tsym, (t.cellType == null) ? null: subst(t.cellType));
                     return result;
                 }
@@ -2335,11 +2338,11 @@ public class Types {
             if (tvars1 == t.tvars && qtype1 == t.qtype) {
                 return t;
             } else if (tvars1 == t.tvars) {
-                return new ForAll(tvars1, t.rvars, t.evars,
+                return new ForAll(tvars1, t.rvars, t.gvars,
                 	qtype1);
             } else {
                 return new ForAll(tvars1, t.rvars, 
-                	t.evars, Types.this.subst(qtype1, t.tvars, tvars1));
+                	t.gvars, Types.this.subst(qtype1, t.tvars, tvars1));
             }
         }
 
@@ -2408,8 +2411,9 @@ public class Types {
                 List<Type> typarams1 = substForThis(typarams);
                 List<RPL> rgnactuals = t.getRegionActuals();
                 List<RPL> rgnactuals1 = rpls.substForThis(rgnactuals, rpl);
-                List<Effects> effectargs = t.getEffectArguments();
-                List<Effects> effectargs1 = Effects.substForThis(effectargs, rpl);
+                List<RefGroup> effectargs = t.getRefGroupArguments();
+                List<RefGroup> effectargs1 = effectargs; // FIXME
+                //Effects.substForThis(effectargs, rpl);
                 Type outer = t.getEnclosingType();
                 Type outer1 = substForThis(outer);
                 return new ClassType(outer1, typarams1, t.getRegionParams(), 
@@ -2459,9 +2463,9 @@ public class Types {
             if (tvars1 == t.tvars && qtype1 == t.qtype) {
                 return t;
             } else if (tvars1 == t.tvars) {
-                return new ForAll(tvars1, t.rvars, t.evars, qtype1);
+                return new ForAll(tvars1, t.rvars, t.gvars, qtype1);
             } else {
-                return new ForAll(tvars1, t.rvars, t.evars, 
+                return new ForAll(tvars1, t.rvars, t.gvars, 
                 	Types.this.subst(qtype1, t.tvars, tvars1));
             }
         }
@@ -2544,9 +2548,9 @@ public class Types {
                 List<Type> typarams1 = substIndices(typarams);
                 List<RPL> rgnactuals = t.getRegionActuals();
                 List<RPL> rgnactuals1 = rpls.substIndices(rgnactuals, from, to);
-                List<Effects> effectparams = t.getEffectArguments();
-                List<Effects> effectparams1 = 
-                    Effects.substIndices(effectparams, from, to);
+                List<RefGroup> effectparams = t.getRefGroupArguments();
+                List<RefGroup> effectparams1 = effectparams; // FIXME
+                //Effects.substIndices(effectparams, from, to);
                 Type outer = t.getEnclosingType();
                 Type outer1 = substIndices(outer);
                 if (typarams1 == typarams && outer1 == outer && 
@@ -2601,10 +2605,10 @@ public class Types {
             if (tvars1 == t.tvars && qtype1 == t.qtype) {
                 return t;
             } else if (tvars1 == t.tvars) {
-                return new ForAll(tvars1, t.rvars, t.evars, qtype1);
+                return new ForAll(tvars1, t.rvars, t.gvars, qtype1);
             } else {
                 return new ForAll(tvars1, t.rvars, 
-                	t.evars, Types.this.subst(qtype1, t.tvars, tvars1));
+                	t.gvars, Types.this.subst(qtype1, t.tvars, tvars1));
             }
         }
 
@@ -2715,9 +2719,9 @@ public class Types {
                 List<RPL> rgnactuals = t.getRegionActuals();
                 List<RPL> rgnactuals1 = RPLs.substForParams(rgnactuals, from, to);
                 rgnactuals1 = RPLs.substForTRParams(rgnactuals1, fromTypes, toTypes);
-                List<Effects> effectargs = t.getEffectArguments();
-                List<Effects> effectargs1 = Effects.substForParams(effectargs,
-                	from, to);
+                List<RefGroup> effectargs = t.getRefGroupArguments();
+                List<RefGroup> effectargs1 = effectargs; // FIXME
+                // Effects.substForParams(effectargs, from, to);
                 Type outer = t.getEnclosingType();
                 Type outer1 = substRPL(outer);
                 return new ClassType(outer1, typarams1, t.getRegionParams(), 
@@ -2767,10 +2771,10 @@ public class Types {
             if (tvars1 == t.tvars && qtype1 == t.qtype) {
                 return t;
             } else if (tvars1 == t.tvars) {
-                return new ForAll(tvars1, t.rvars, t.evars, qtype1);
+                return new ForAll(tvars1, t.rvars, t.gvars, qtype1);
             } else {
                 return new ForAll(tvars1, t.rvars, 
-                	t.evars, Types.this.subst(qtype1, t.tvars, tvars1));
+                	t.gvars, Types.this.subst(qtype1, t.tvars, tvars1));
             }
         }
 
@@ -2786,22 +2790,22 @@ public class Types {
      * Substitute all occurrences of effect variables in `from' with the
      * corresponding effects in `to' in 't'.
      */
-    public List<Type> substEffect(List<Type> ts, List<Effects> from, 
-	    List<Effects> to) {
+    public List<Type> substEffect(List<Type> ts, List<RefGroup> from, 
+	    List<RefGroup> to) {
 	return new substEffect(from, to).substEffect(ts);
     }
-    public Type substEffect(Type t, List<Effects> from, List<Effects> to) {
+    public Type substEffect(Type t, List<RefGroup> from, List<RefGroup> to) {
 	return new substEffect(from, to).substEffect(t);
     }
-    public Type substEffect(Type t, Effects from, Effects to) {
+    public Type substEffect(Type t, RefGroup from, RefGroup to) {
 	return substEffect(t, List.of(from), List.of(to));
     }
 
     private class substEffect extends UnaryVisitor<Type> {
-	List<Effects> from;
-        List<Effects> to;
+	List<RefGroup> from;
+        List<RefGroup> to;
 
-        public substEffect(List<Effects> from, List<Effects> to) {
+        public substEffect(List<RefGroup> from, List<RefGroup> to) {
             this.from = from;
             this.to = to;
         }
@@ -2848,8 +2852,9 @@ public class Types {
             if (!t.isCompound()) {
                 List<Type> typarams = t.getTypeArguments();
                 List<Type> typarams1 = substEffect(typarams);
-                List<Effects> effectargs = t.getEffectArguments();
-                List<Effects> effectargs1 = Effects.substForEffectVars(effectargs, from, to);
+                List<RefGroup> effectargs = t.getRefGroupArguments();
+                List<RefGroup> effectargs1 = effectargs; // FIXME
+                //Effects.substForEffectVars(effectargs, from, to);
                 Type outer = t.getEnclosingType();
                 Type outer1 = substEffect(outer);
                 return new ClassType(outer1, typarams1, t.getRegionParams(), 
@@ -2888,10 +2893,10 @@ public class Types {
             if (tvars1 == t.tvars && qtype1 == t.qtype) {
                 return t;
             } else if (tvars1 == t.tvars) {
-                return new ForAll(tvars1, t.rvars, t.evars, qtype1);
+                return new ForAll(tvars1, t.rvars, t.gvars, qtype1);
             } else {
                 return new ForAll(tvars1, t.rvars, 
-                	t.evars, Types.this.subst(qtype1, t.tvars, tvars1));
+                	t.gvars, Types.this.subst(qtype1, t.tvars, tvars1));
             }
         }
 
@@ -3294,7 +3299,7 @@ public class Types {
             assert(act1.isEmpty() && act2.isEmpty() && typarams.isEmpty());
             return new ClassType(class1.getEnclosingType(), merged.toList(), 
         	    List.<RegionParameterSymbol>nil() /* Incorrect // DPJ */, 
-        	    List.<Effects>nil(), class1.tsym, null);
+        	    List.<RefGroup>nil(), class1.tsym, null);
         }
 
     /**
@@ -3763,22 +3768,9 @@ public class Types {
 	    rpls = rplBuf.toList();
 	}
 	
-	// Capture effects
-	boolean capturedEffects = false;
-	List<Effects> effects = ct.groupparams_field;
-	ListBuffer<Effects> effectsBuf = ListBuffer.lb();
-	for (Effects e : effects) {
-	    Effects newEffects = e.capture();
-	    effectsBuf.append(newEffects);
-	    if (newEffects != e) capturedEffects = true;
-	}
-	if (capturedEffects) {
-	    effects = effectsBuf.toList();
-	}
-	
-	return (capturedRPLs || capturedEffects) ? 
+	return (capturedRPLs) ? 
 		new ClassType(ct.outer_field, ct.typarams_field, 
-		ct.rgnparams_field, rpls, effects,
+		ct.rgnparams_field, rpls, ct.groupparams_field,
 		ct.tsym, ct.cellType) : t;
     }
     

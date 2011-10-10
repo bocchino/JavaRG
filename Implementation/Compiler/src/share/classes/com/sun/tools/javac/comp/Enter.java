@@ -40,40 +40,41 @@ import java.util.Map;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.code.Effect.VariableEffect;
 import com.sun.tools.javac.code.Effects;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.RPLs;
+import com.sun.tools.javac.code.RefGroup;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.code.Symtab;
-import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.Effect.VariableEffect;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
-import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
+import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
 import com.sun.tools.javac.code.Symbol.RegionNameSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
+import com.sun.tools.javac.code.Symtab;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.Type.ErrorType;
 import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.TreeInfo;
-import com.sun.tools.javac.tree.TreeMaker;
+import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
-import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
+import com.sun.tools.javac.tree.TreeInfo;
+import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 /** This class enters symbols for all encountered definitions into
  *  the symbol table. The pass consists of two phases, organized as
@@ -133,8 +134,6 @@ public class Enter extends JCTree.Visitor {
     RPLs rpls;
     Lint lint;
     JavaFileManager fileManager;
-    public ListBuffer<JCMethodDecl> effectsToAttr = ListBuffer.lb();
-
 
     private final Todo todo;
 
@@ -450,13 +449,13 @@ public class Enter extends JCTree.Visitor {
 		rplparams.append(param.sym);
 	    }
 	    ct.rgnparams_field = rplparams.toList();
-	    ListBuffer<Effects> effectparams = ListBuffer.lb();
+	    ListBuffer<RefGroup> refGroupParams = ListBuffer.lb();
 	    for (JCIdent param : tree.paramInfo.groupParams) {
 		classEnter(param, localEnv);
-		effectparams.append(new Effects(new 
-			VariableEffect((RefGroupParameterSymbol) param.sym)));
+		//effectparams.append(new Effects(new 
+		//	VariableEffect((RefGroupParameterSymbol) param.sym)));
 	    }
-	    ct.groupparams_field = effectparams.toList();
+	    ct.groupparams_field = refGroupParams.toList();
 	} else {
 	    ct.rgnparams_field = List.nil();
 	    ct.groupparams_field = List.nil();
@@ -526,7 +525,7 @@ public class Enter extends JCTree.Visitor {
 	result = null;
     }
 
-    /** Class enter visitor method for effect parameters.
+    /** Class enter visitor method for ref group parameters.
      */
     public void visitIdent(JCIdent tree) {
 	RefGroupParameterSymbol sym = new RefGroupParameterSymbol(tree.name,

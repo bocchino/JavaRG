@@ -46,12 +46,12 @@ import static com.sun.tools.javac.code.Kinds.ABSENT_REGION;
 import static com.sun.tools.javac.code.Kinds.ABSENT_TYP;
 import static com.sun.tools.javac.code.Kinds.ABSENT_VAR;
 import static com.sun.tools.javac.code.Kinds.AMBIGUOUS;
-import static com.sun.tools.javac.code.Kinds.REF_GROUP;
 import static com.sun.tools.javac.code.Kinds.ERR;
 import static com.sun.tools.javac.code.Kinds.ERRONEOUS;
 import static com.sun.tools.javac.code.Kinds.HIDDEN;
 import static com.sun.tools.javac.code.Kinds.MTH;
 import static com.sun.tools.javac.code.Kinds.PCK;
+import static com.sun.tools.javac.code.Kinds.REF_GROUP;
 import static com.sun.tools.javac.code.Kinds.RPL_ELT;
 import static com.sun.tools.javac.code.Kinds.STATICERR;
 import static com.sun.tools.javac.code.Kinds.TYP;
@@ -72,12 +72,10 @@ import com.sun.tools.javac.code.Effects;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLElement;
 import com.sun.tools.javac.code.RPLs;
+import com.sun.tools.javac.code.RefGroup;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.code.Symtab;
-import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
@@ -86,27 +84,30 @@ import com.sun.tools.javac.code.Symbol.RegionNameSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Symtab;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ErrorType;
 import com.sun.tools.javac.code.Type.ForAll;
 import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.code.Type.TypeVar;
+import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.JCTree.JCBinary;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCLiteral;
+import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.FatalError;
 import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Warner;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 /** Helper class for name resolution, used mostly by the attribution phase.
  *
@@ -358,7 +359,7 @@ public class Resolve {
                         List<Type> argtypes,
                         List<Type> typeargtypes,
                         List<RPL> regionargs,
-                        List<Effects> effectargs,
+                        List<RefGroup> refGroupArgs,
                         boolean allowBoxing,
                         boolean useVarargs,
                         Warner warn)
@@ -374,7 +375,7 @@ public class Resolve {
         List<RPL> rvars = env.info.rvars;
         if (typeargtypes == null) typeargtypes = List.nil();
         if (regionargs == null) regionargs = List.nil();
-        if (effectargs == null) effectargs = List.nil();
+        if (refGroupArgs == null) refGroupArgs = List.nil();
         Type mt_old = mt;
         if (mt.tag != FORALL && typeargtypes.nonEmpty()) {
             // This is not a polymorphic method, but typeargs are supplied
@@ -392,7 +393,7 @@ public class Resolve {
                                                 pmt.tvars, typeargtypes);
                 bounds = types.substRPL(bounds, formals, actuals, 
                 	rpls.toParams(pmt.rvars), regionargs);
-                bounds = types.substEffect(bounds, pmt.evars, effectargs);
+                bounds = types.substEffect(bounds, pmt.gvars, refGroupArgs);
                 for (; bounds.nonEmpty(); bounds = bounds.tail)
                     if (!types.isSubtypeUnchecked(actuals.head, bounds.head, warn)) {
                 	return null;
@@ -408,17 +409,17 @@ public class Resolve {
             mt = types.subst(pmt.qtype, pmt.tvars, tvars1);
         }
 
-        if (mt_old.tag == FORALL && (regionargs.nonEmpty() || effectargs.nonEmpty())) {
+        if (mt_old.tag == FORALL && (regionargs.nonEmpty() || refGroupArgs.nonEmpty())) {
             ForAll pmt = new ForAll(List.<Type>nil(), ((ForAll) mt_old).rvars, 
-        	    ((ForAll) mt_old).evars, mt);
+        	    ((ForAll) mt_old).gvars, mt);
             List<RegionParameterSymbol> formals = rpls.toParams(pmt.rvars);
             mt = pmt.qtype;
             mt = types.substRPL(mt, pmt.tvars, typeargtypes,
         	    formals, regionargs);
-            mt = types.substEffect(mt, pmt.evars, effectargs);
+            mt = types.substEffect(mt, pmt.gvars, refGroupArgs);
         } else if (mt_old.tag == FORALL){
             ForAll pmt = new ForAll(List.<Type>nil(), ((ForAll) mt_old).rvars,
-        	    ((ForAll) mt_old).evars, mt);
+        	    ((ForAll) mt_old).gvars, mt);
             List<RPL> rvars1 = pmt.rvars;
             rvars = rvars.appendList(rvars1);
             mt = types.substRPL(pmt.qtype, pmt.tvars, typeargtypes,
@@ -442,7 +443,7 @@ public class Resolve {
             }
         } else {
             ((MethodType) mt).regionActuals = regionargs;
-            ((MethodType) mt).effectactuals = effectargs;
+            ((MethodType) mt).refGroupActuals = refGroupArgs;
         }
         
         if (instNeeded) {
@@ -455,7 +456,7 @@ public class Resolve {
         	    warn);
             if (result instanceof MethodType) {
         	((MethodType) result).regionActuals = regionargs;
-        	((MethodType) result).effectactuals = effectargs;
+        	((MethodType) result).refGroupActuals = refGroupArgs;
             }
             return result;
         }
@@ -484,13 +485,13 @@ public class Resolve {
                      List<Type> argtypes,
                      List<Type> typeargtypes,
                      List<RPL> regionargs,
-                     List<Effects> effectargs,
+                     List<RefGroup> refGroupArgs,
                      boolean allowBoxing,
                      boolean useVarargs,
                      Warner warn) {
         try {
             return rawInstantiate(env, site, m, argtypes, typeargtypes, regionargs,
-                                  effectargs, allowBoxing, useVarargs, warn);
+                                  refGroupArgs, allowBoxing, useVarargs, warn);
         } catch (Infer.NoInstanceException ex) {
             return null;
         }
@@ -806,7 +807,7 @@ public class Resolve {
                       List<Type> argtypes,
                       List<Type> typeargtypes,
                       List<RPL> regionargs,
-                      List<Effects> effectargs,
+                      List<RefGroup> refGroupArgs,
                       Symbol sym,
                       Symbol bestSoFar,
                       boolean allowBoxing,
@@ -817,7 +818,7 @@ public class Resolve {
         assert sym.kind < AMBIGUOUS;
         try {
             if (rawInstantiate(env, site, sym, argtypes, typeargtypes, regionargs,
-        	    effectargs, allowBoxing, useVarargs, Warner.noWarnings) == null) {
+        	    refGroupArgs, allowBoxing, useVarargs, Warner.noWarnings) == null) {
                 // inapplicable
                 switch (bestSoFar.kind) {
                 case ABSENT_MTH: return wrongMethod.setWrongSym(sym);
@@ -970,7 +971,7 @@ public class Resolve {
                       List<Type> argtypes,
                       List<Type> typeargtypes,
                       List<RPL> regionargs,
-                      List<Effects> effectargs,
+                      List<RefGroup> refGroupArgs,
                       boolean allowBoxing,
                       boolean useVarargs,
                       boolean operator) {
@@ -980,7 +981,7 @@ public class Resolve {
                           argtypes,
                           typeargtypes,
                           regionargs,
-                          effectargs,
+                          refGroupArgs,
                           site.tsym.type,
                           true,
                           methodNotFound,
@@ -995,7 +996,7 @@ public class Resolve {
                               List<Type> argtypes,
                               List<Type> typeargtypes,
                               List<RPL> regionargs,
-                              List<Effects> effectargs,
+                              List<RefGroup> refGroupArgs,
                               Type intype,
                               boolean abstractok,
                               Symbol bestSoFar,
@@ -1013,7 +1014,7 @@ public class Resolve {
                     (e.sym.flags_field & SYNTHETIC) == 0) {
                     bestSoFar = selectBest(env, site, argtypes, typeargtypes,
                 	    		   regionargs,
-                	    		   effectargs,
+                	    		   refGroupArgs,
                                            e.sym, bestSoFar,
                                            allowBoxing,
                                            useVarargs,
@@ -1030,7 +1031,7 @@ public class Resolve {
                     bestSoFar = findMethod(env, site, name, argtypes,
                                            typeargtypes,
                                            regionargs,
-                                           effectargs,
+                                           refGroupArgs,
                                            l.head, abstractok, bestSoFar,
                                            allowBoxing, useVarargs, operator);
                 }
@@ -1053,7 +1054,7 @@ public class Resolve {
      */
     Symbol findFun(Env<AttrContext> env, Name name,
                    List<Type> argtypes, List<Type> typeargtypes,
-                   List<RPL> regionargs, List<Effects> effectargs,
+                   List<RPL> regionargs, List<RefGroup> refGroupArgs,
                    boolean allowBoxing, boolean useVarargs) {
         Symbol bestSoFar = methodNotFound;
         Symbol sym;
@@ -1063,7 +1064,7 @@ public class Resolve {
             if (isStatic(env1)) staticOnly = true;
             sym = findMethod(
                 env1, env1.enclClass.sym.type, name, argtypes, typeargtypes,
-                regionargs, effectargs, allowBoxing, useVarargs, false);
+                regionargs, refGroupArgs, allowBoxing, useVarargs, false);
             if (sym.exists()) {
                 if (staticOnly &&
                     sym.kind == MTH &&
@@ -1078,7 +1079,7 @@ public class Resolve {
         }
 
         sym = findMethod(env, syms.predefClass.type, name, argtypes,
-                         typeargtypes, regionargs, effectargs,
+                         typeargtypes, regionargs, refGroupArgs,
                          allowBoxing, useVarargs, false);
         if (sym.exists())
             return sym;
@@ -1095,7 +1096,7 @@ public class Resolve {
                 bestSoFar = selectBest(env, origin,
                                        argtypes, typeargtypes,
                                        regionargs,
-                                       effectargs,
+                                       refGroupArgs,
                                        sym, bestSoFar,
                                        allowBoxing, useVarargs, false);
             }
@@ -1115,7 +1116,7 @@ public class Resolve {
                 bestSoFar = selectBest(env, origin,
                                        argtypes, typeargtypes,
                                        regionargs,
-                                       effectargs,
+                                       refGroupArgs,
                                        sym, bestSoFar,
                                        allowBoxing, useVarargs, false);
             }
@@ -1560,15 +1561,15 @@ public class Resolve {
                          List<Type> argtypes,
                          List<Type> typeargtypes,
                          List<RPL> regionargs,
-                         List<Effects> effectargs) {
+                         List<RefGroup> refGroupArgs) {
         Symbol sym = findFun(env, name, argtypes, typeargtypes, 
-        	regionargs, effectargs, false, env.info.varArgs=false);
+        	regionargs, refGroupArgs, false, env.info.varArgs=false);
         if (varargsEnabled && sym.kind >= WRONG_MTHS) {
             sym = findFun(env, name, argtypes, typeargtypes, regionargs, 
-        	    effectargs, true, false);
+        	    refGroupArgs, true, false);
             if (sym.kind >= WRONG_MTHS)
                 sym = findFun(env, name, argtypes, typeargtypes, regionargs, 
-                	effectargs, true, env.info.varArgs=true);
+                	refGroupArgs, true, env.info.varArgs=true);
         }
         if (sym.kind >= AMBIGUOUS) {
             sym = access(
@@ -1589,15 +1590,15 @@ public class Resolve {
     Symbol resolveQualifiedMethod(DiagnosticPosition pos, Env<AttrContext> env,
                                   Type site, Name name, List<Type> argtypes,
                                   List<Type> typeargtypes, List<RPL> regionargs,
-                                  List<Effects> effectargs) {
+                                  List<RefGroup> refGroupArgs) {
         Symbol sym = findMethod(env, site, name, argtypes, typeargtypes, 
-        	regionargs, effectargs, false, env.info.varArgs=false, false);
+        	regionargs, refGroupArgs, false, env.info.varArgs=false, false);
         if (varargsEnabled && sym.kind >= WRONG_MTHS) {
             sym = findMethod(env, site, name, argtypes, typeargtypes, 
-        	    regionargs, effectargs, true, false, false);
+        	    regionargs, refGroupArgs, true, false, false);
             if (sym.kind >= WRONG_MTHS)
                 sym = findMethod(env, site, name, argtypes, typeargtypes,
-                	regionargs, effectargs, true, env.info.varArgs=true, false);
+                	regionargs, refGroupArgs, true, env.info.varArgs=true, false);
         }
         if (sym.kind >= AMBIGUOUS) {
             sym = access(sym, pos, site, name, true, argtypes, typeargtypes);
@@ -1620,9 +1621,9 @@ public class Resolve {
                                         List<Type> argtypes,
                                         List<Type> typeargtypes,
                                         List<RPL> regionargs,
-                                        List<Effects> effectargs) {
+                                        List<RefGroup> refGroupArgs) {
         Symbol sym = resolveQualifiedMethod(
-            pos, env, site, name, argtypes, typeargtypes, regionargs, effectargs);
+            pos, env, site, name, argtypes, typeargtypes, regionargs, refGroupArgs);
         if (sym.kind == MTH) return (MethodSymbol)sym;
         else throw new FatalError(
                  JCDiagnostic.fragment("fatal.err.cant.locate.meth",
@@ -1644,15 +1645,15 @@ public class Resolve {
                               List<Type> argtypes,
                               List<Type> typeargtypes,
                               List<RPL> regionargs,
-                              List<Effects> effectargs) {
+                              List<RefGroup> refGroupArgs) {
         Symbol sym = resolveConstructor(pos, env, site, argtypes, typeargtypes, 
-        	regionargs, effectargs, false, env.info.varArgs=false);
+        	regionargs, refGroupArgs, false, env.info.varArgs=false);
         if (varargsEnabled && sym.kind >= WRONG_MTHS) {
             sym = resolveConstructor(pos, env, site, argtypes, typeargtypes, 
-        	    regionargs, effectargs, true, false);
+        	    regionargs, refGroupArgs, true, false);
             if (sym.kind >= WRONG_MTHS)
                 sym = resolveConstructor(pos, env, site, argtypes, typeargtypes,
-                	regionargs, effectargs, true, env.info.varArgs=true);
+                	regionargs, refGroupArgs, true, env.info.varArgs=true);
         }
         if (sym.kind >= AMBIGUOUS) {
             sym = access(sym, pos, site, names.init, true, argtypes, typeargtypes);
@@ -1675,12 +1676,12 @@ public class Resolve {
                               Type site, List<Type> argtypes,
                               List<Type> typeargtypes,
                               List<RPL> regionargs,
-                              List<Effects> effectargs,
+                              List<RefGroup> refGroupArgs,
                               boolean allowBoxing,
                               boolean useVarargs) {
         Symbol sym = findMethod(env, site,
                                 names.init, argtypes,
-                                typeargtypes, regionargs, effectargs, allowBoxing,
+                                typeargtypes, regionargs, refGroupArgs, allowBoxing,
                                 useVarargs, false);
         if ((sym.flags() & DEPRECATED) != 0 &&
             (env.info.scope.owner.flags() & DEPRECATED) == 0 &&
@@ -1701,9 +1702,9 @@ public class Resolve {
                                         List<Type> argtypes,
                                         List<Type> typeargtypes,
                                         List<RPL> regionargs,
-                                        List<Effects> effectargs) {
+                                        List<RefGroup> refGroupArgs) {
         Symbol sym = resolveConstructor(
-            pos, env, site, argtypes, typeargtypes, regionargs, effectargs);
+            pos, env, site, argtypes, typeargtypes, regionargs, refGroupArgs);
         if (sym.kind == MTH) return (MethodSymbol)sym;
         else throw new FatalError(
                  JCDiagnostic.fragment("fatal.err.cant.locate.ctor", site));

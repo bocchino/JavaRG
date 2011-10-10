@@ -492,7 +492,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCExpression clazz = copy(t.functor, p);
         List<JCExpression> arguments = copy(t.typeArgs, p);
         List<DPJRegionPathList> rplArgs = copy(t.rplArgs, p);
-        List<JCIdent> groupArgs = copy(t.groupArgs, p);
+        List<JCIdent> groupArgs = copy(t.refGroupArgs, p);
         return M.at(t.pos).TypeApply(clazz, arguments, rplArgs, groupArgs);
     }
 

@@ -15,9 +15,13 @@ public abstract class RefGroup {
 	
     }
 
-    public static class RefGroupParam extends RefGroup {
+    public static class RefGroupParameter extends RefGroup {
 	
 	RefGroupParameterSymbol sym;
+	
+	public RefGroupParameter(RefGroupParameterSymbol sym) {
+	    this.sym = sym;
+	}
 
 	@Override public String toString() {
 	    return sym.toString();
