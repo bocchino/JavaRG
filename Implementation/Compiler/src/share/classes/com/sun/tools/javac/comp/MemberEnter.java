@@ -441,7 +441,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 		enter.classEnter(param, env);
 		rplBuf.append(new RPL(new RPLParameterElement(param.sym)));
 	    }
-	    for (JCIdent param : paramInfo.groupParams) {
+	    for (JCIdent param : paramInfo.refGroupParams) {
 		enter.classEnter(param, env);
 		effectsBuf.append(new Effects(new 
 			VariableEffect((RefGroupParameterSymbol) param.sym)));
@@ -715,7 +715,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             m.rgnParams = rgnParams.toList();
             // Set m.effectparams
             ListBuffer<RefGroup> refGroupParams = ListBuffer.lb();
-            for (JCIdent param : tree.paramInfo.groupParams) {
+            for (JCIdent param : tree.paramInfo.refGroupParams) {
         	refGroupParams.append(new RefGroupParameter(
         		(RefGroupParameterSymbol) param.sym));
             }
@@ -1200,7 +1200,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                  rparams.nonEmpty();
                  rparams = rparams.tail)
                 typaramScope.enter(rparams.head.sym);
-            for (List<JCIdent> eparams = tree.paramInfo.groupParams;
+            for (List<JCIdent> eparams = tree.paramInfo.refGroupParams;
             	eparams.nonEmpty();
             	eparams = eparams.tail)
         	typaramScope.enter(eparams.head.sym);

@@ -912,7 +912,7 @@ public class Attr extends JCTree.Visitor {
 	}
 	
 	// Enter all ref group params into the local method scope
-	for (JCIdent param : tree.groupParams) {
+	for (JCIdent param : tree.refGroupParams) {
 	    RefGroupParameterSymbol sym = (RefGroupParameterSymbol) param.sym;
 	    if (chk.checkUnique(param.pos(), sym, localEnv.info.scope)) {
 		localEnv.info.scope.enter(sym);

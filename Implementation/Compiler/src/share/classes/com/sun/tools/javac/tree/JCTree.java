@@ -2315,13 +2315,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class DPJParamInfo extends JCTree implements ParamInfoTree {
         public List<DPJRegionParameter> rplParams;
         public List<Pair<DPJRegionPathList,DPJRegionPathList>> rplConstraints;
-        public List<JCIdent> groupParams;
+        public List<JCIdent> refGroupParams;
         protected DPJParamInfo(List<DPJRegionParameter> rplParams,
         	List<Pair<DPJRegionPathList,DPJRegionPathList>> rplConstraints,
-        	List<JCIdent> groupParams) {
+        	List<JCIdent> refGroupParams) {
             this.rplParams = rplParams;
             this.rplConstraints = rplConstraints;
-            this.groupParams = groupParams;
+            this.refGroupParams = refGroupParams;
         }
 	@Override
 	public void accept(Visitor v) { v.visitParamInfo(this); }
@@ -2349,7 +2349,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 	}
 	
 	public boolean hasParams() {
-	    return rplParams.nonEmpty() || groupParams.nonEmpty();
+	    return rplParams.nonEmpty() || refGroupParams.nonEmpty();
 	}
     }
 

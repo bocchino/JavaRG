@@ -657,7 +657,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
             rplConstraints.append(new Pair<DPJRegionPathList,DPJRegionPathList>(pair.fst, 
         	    pair.snd));
         }
-        List<JCIdent> effectParams = copy(t.groupParams, p);
+        List<JCIdent> effectParams = copy(t.refGroupParams, p);
         return M.at(t.pos).ParamInfo(params, rplConstraints.toList(), 
         	effectParams);
     }

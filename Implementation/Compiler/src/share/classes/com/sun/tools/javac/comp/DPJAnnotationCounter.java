@@ -230,7 +230,7 @@ public class DPJAnnotationCounter extends TreeScanner {
 	    addLineFor(pair.fst.pos);
 	    addLineFor(pair.snd.pos);
 	}
-	for (JCIdent effectParam : tree.groupParams) {
+	for (JCIdent effectParam : tree.refGroupParams) {
 	    addLineFor(effectParam.pos);
 	    switch (context) {
 	    case CLASS:

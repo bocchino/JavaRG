@@ -450,7 +450,7 @@ public class Enter extends JCTree.Visitor {
 	    }
 	    ct.rgnparams_field = rplparams.toList();
 	    ListBuffer<RefGroup> refGroupParams = ListBuffer.lb();
-	    for (JCIdent param : tree.paramInfo.groupParams) {
+	    for (JCIdent param : tree.paramInfo.refGroupParams) {
 		classEnter(param, localEnv);
 		//effectparams.append(new Effects(new 
 		//	VariableEffect((RefGroupParameterSymbol) param.sym)));
