@@ -834,7 +834,8 @@ public class TreeMaker implements JCTree.Factory {
             tp = t.getTypeArguments().isEmpty()
                 ? clazz
                 // FIXME
-                : TypeApply(clazz, Types(t.getTypeArguments()), null, null);
+                : TypeApply(clazz, Types(t.getTypeArguments()), 
+                	List.<DPJRegionPathList>nil(), List.<JCIdent>nil());
             break;
         case ARRAY:
             tp = TypeArray(Type(types.elemtype(t)), null, null);

@@ -1909,7 +1909,7 @@ public class Pretty extends JCTree.Visitor {
             else if (tree.sym instanceof ClassSymbol) {
         	printType(tree.sym.type);
             }
-            else if (tree.sym == variableToMangle) {
+            else if (tree.sym != null && tree.sym == variableToMangle) {
         	    print(mangle(tree.name));
             }
             else {

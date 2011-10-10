@@ -40,11 +40,10 @@ import java.util.Map;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 
-import com.sun.tools.javac.code.Effect.VariableEffect;
-import com.sun.tools.javac.code.Effects;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.RPLs;
 import com.sun.tools.javac.code.RefGroup;
+import com.sun.tools.javac.code.RefGroup.RefGroupParameter;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
@@ -66,7 +65,6 @@ import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
-import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
@@ -452,8 +450,8 @@ public class Enter extends JCTree.Visitor {
 	    ListBuffer<RefGroup> refGroupParams = ListBuffer.lb();
 	    for (JCIdent param : tree.paramInfo.refGroupParams) {
 		classEnter(param, localEnv);
-		//effectparams.append(new Effects(new 
-		//	VariableEffect((RefGroupParameterSymbol) param.sym)));
+		refGroupParams.append(new 
+			RefGroupParameter((RefGroupParameterSymbol) param.sym));
 	    }
 	    ct.groupparams_field = refGroupParams.toList();
 	} else {
@@ -464,7 +462,6 @@ public class Enter extends JCTree.Visitor {
 	// Add non-local class to uncompleted, to make sure it will be
 	// completed later.
 	if (!c.isLocal() && uncompleted != null) uncompleted.append(c);
-//	System.err.println("entering " + c.fullname + " in " + c.owner);//DEBUG
 
 	// Recursively enter all member classes.
 	classEnter(tree.defs, localEnv);

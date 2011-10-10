@@ -71,6 +71,7 @@ import com.sun.tools.javac.code.Symbol.Completer;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
+import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
 import com.sun.tools.javac.code.Symbol.RegionNameSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
@@ -106,6 +107,7 @@ import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
+import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
@@ -765,6 +767,19 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             v.pos = tree.pos;
         }
     }
+    
+    public void visitRefGroupDecl(JRGRefGroupDecl tree) {
+	if (tree.sym == null) {
+            Env<AttrContext> localEnv = env;
+            Scope enclScope = enter.enterScope(env);
+            RefGroupNameSymbol v =
+        	new RefGroupNameSymbol(tree.name, enclScope.owner);
+            tree.sym = v;
+            if (chk.checkUnique(tree.pos(), v, enclScope)) {
+        	enclScope.enter(v);
+            }
+	}
+    }
 
     /** Create a fresh environment for a variable's initializer.
      *  If the variable is a field, the owner of the environment's scope
@@ -1233,7 +1248,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private JCExpression enumBase(int pos, ClassSymbol c) {
         JCExpression result = make.at(pos).
             TypeApply(make.QualIdent(syms.enumSym),
-                      List.<JCExpression>of(make.Type(c.type)), null, null);
+                      List.<JCExpression>of(make.Type(c.type)), 
+                      List.<DPJRegionPathList>nil(), 
+                      List.<JCIdent>nil());
         return result;
     }
 

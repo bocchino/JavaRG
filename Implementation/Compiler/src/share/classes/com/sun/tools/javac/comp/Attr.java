@@ -77,7 +77,6 @@ import com.sun.source.tree.TreeVisitor;
 import com.sun.source.util.SimpleTreeVisitor;
 import com.sun.tools.javac.code.BoundKind;
 import com.sun.tools.javac.code.Constraints;
-import com.sun.tools.javac.code.Effects;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
@@ -88,6 +87,8 @@ import com.sun.tools.javac.code.RPLElement.RPLParameterElement;
 import com.sun.tools.javac.code.RPLElement.VarRPLElement;
 import com.sun.tools.javac.code.RPLs;
 import com.sun.tools.javac.code.RefGroup;
+import com.sun.tools.javac.code.RefGroup.RefGroupName;
+import com.sun.tools.javac.code.RefGroup.RefGroupParameter;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Symbol;
@@ -96,6 +97,7 @@ import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.OperatorSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
+import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
 import com.sun.tools.javac.code.Symbol.RegionNameSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
@@ -722,14 +724,17 @@ public class Attr extends JCTree.Visitor {
         return buf.toList();
     }
     
-    List<Effects> attribEffects(List<JRGEffectPerm> trees) {
-	//if (trees == null) return List.nil();
-	ListBuffer<Effects> buf = ListBuffer.lb();
-	for (JRGEffectPerm tree : trees) {
+    List<RefGroup> attribRefGroups(List<JCIdent> trees) {
+	ListBuffer<RefGroup> lb = ListBuffer.lb();
+	for (JCIdent tree : trees) {
 	    attribTree(tree, env, Kinds.REF_GROUP, Type.noType);
-	    //buf.append(tree.effects);
+	    if (tree.sym instanceof RefGroupNameSymbol) {
+		lb.append(new RefGroupName((RefGroupNameSymbol) tree.sym));
+	    } else {
+		lb.append(new RefGroupParameter((RefGroupParameterSymbol) tree.sym));
+	    }
 	}
-	return buf.toList();
+	return lb.toList();
     }
     
     /**
@@ -942,8 +947,7 @@ public class Attr extends JCTree.Visitor {
 	    localEnv.info.constraints.disjointRPLs.appendList(rplConstraints);
 
 	// Return constraints
-	// FIXME
-	return new Constraints(rplConstraints, null);
+	return new Constraints(rplConstraints);
     }
     
     public void visitMethodDef(JCMethodDecl tree) {
@@ -3099,17 +3103,14 @@ public class Attr extends JCTree.Visitor {
         	functortype.tsym.type.getRefGroupArguments();
             
             // Handle error case of unexpected args
-            /*
-             // FIXME
             if (typeFormals.isEmpty() && 
         	    rplFormals.isEmpty() &&
-        	    	effectFormals.isEmpty() &&
+        	    	refGroupFormals.isEmpty() &&
         	    tree.typeArgs.nonEmpty()) {
                 log.error(tree.pos(), "type.doesnt.take.params", functortype.tsym);
                 result = check(tree, owntype, TYP, pkind, pt);
                 return;
             }    
-            */
             
             // Use the # of type params to separate the type args from the RPL and group args
             int counter = 0;
@@ -3144,12 +3145,12 @@ public class Attr extends JCTree.Visitor {
         	} while (counter++ < size);
             }
 
+            List<JCExpression> refGroupArgs = List.nil();
             if (tree.rplArgs == null) {
         	// Use the # of RPL params to separate the RPL args from the group args
         	counter = 0;
         	size = rplFormals.size();
         	listptr = rplArgs;
-        	List<JCExpression> groupArgs = List.nil();
         	if (size > rplArgs.size() && rplArgs.nonEmpty()) {
         	    log.error(tree.pos(), "wrong.number.rpl.args",
         		    Integer.toString(size));
@@ -3158,11 +3159,11 @@ public class Attr extends JCTree.Visitor {
         		if (counter >= size) {
         		    if (counter == 0) {
         			// No RPL arguments expected!
-        			groupArgs = rplArgs;
+        			refGroupArgs = rplArgs;
         			rplArgs = List.nil();
         		    } else {
         			// Rest of list from listptr.tail is rpl args
-        			groupArgs = listptr.tail;
+        			refGroupArgs = listptr.tail;
         			listptr.tail = List.nil();
         		    }
         		} else {
@@ -3188,12 +3189,10 @@ public class Attr extends JCTree.Visitor {
         	}
             }
              
-            // TODO:  Construct list of group args
-            
             // Attribute type args
-            List<Type> actuals = attribTypes(tree.typeArgs, env);            
+            List<Type> typeActuals = attribTypes(tree.typeArgs, env);            
 
-            List<Type> a = actuals;
+            List<Type> a = typeActuals;
             List<Type> f = typeFormals;
             while (a.nonEmpty()) {
         	a.head = a.head.withTypeVar(f.head);
@@ -3203,6 +3202,7 @@ public class Attr extends JCTree.Visitor {
 
             ClassType ct = (ClassType) functortype;
             List<RPL> rplActuals = attribRPLs(tree.rplArgs);
+            
             // Check actual vs. expected # of RPL args
             counter = rplFormals.size() - rplActuals.size();
             if (counter < 0) {
@@ -3217,18 +3217,34 @@ public class Attr extends JCTree.Visitor {
             }
 
             // Attribute ref group args
-            // TODO: Why does the null reference occur?
-            if (tree.refGroupArgs == null) tree.refGroupArgs = List.nil();
+            if (tree.refGroupArgs.isEmpty()) {
+        	ListBuffer<JCIdent> lb = ListBuffer.lb();
+        	for (JCExpression arg : refGroupArgs) {
+        	    if (!(arg instanceof JCIdent)) {
+        		log.error(arg.pos(), "expected.ref.group");
+        	    }
+        	    else {
+        		lb.append((JCIdent) arg);
+        	    }
+        	}
+        	tree.refGroupArgs = lb.toList();
+            } 
+            else {
+        	// We already have ref group in the tree, so there shouldn't be any
+        	// typeargs left over as ref group
+        	if (refGroupArgs.nonEmpty()) {
+        	    log.error(tree.pos(), "wrong.number.rpl.args",
+			Integer.toString(typeFormals.length()));        	    
+        	}        	
+            }
+            
 
             // TODO: Attribute group args
-            List<RefGroup> refGroupActuals = List.nil(); 
-            /*
-            // FIXME
-            if (effectActuals.length() != effectFormals.length()) {
-        	log.error(tree.pos(), "wrong.number.effect.args",
-        		Integer.toString(effectFormals.length())); 
+            List<RefGroup> refGroupActuals = attribRefGroups(tree.refGroupArgs);
+            if (refGroupActuals.length() != refGroupFormals.length()) {
+        	log.error(tree.pos(), "wrong.number.ref.group.args",
+        		Integer.toString(refGroupFormals.length())); 
             }
-            */
             
             // Compute the proper generic outer
             Type clazzOuter = functortype.getEnclosingType();
@@ -3249,7 +3265,7 @@ public class Attr extends JCTree.Visitor {
             }
             
             // Construct the instantiated type with the type, RPL, and ref group args
-            owntype = new ClassType(clazzOuter, actuals, 
+            owntype = new ClassType(clazzOuter, typeActuals, 
         	    rplFormals, rplActuals, refGroupActuals,
         	    functortype.tsym, null);
         }
@@ -3605,7 +3621,16 @@ public class Attr extends JCTree.Visitor {
     }
     
     public void visitRefGroupDecl(JRGRefGroupDecl tree) {
-	// TODO
+        // Local variables have not been entered yet, so we need to do it now:
+        if (env.info.scope.owner.kind == MTH) {
+            if (tree.sym != null) {
+                // parameters have already been entered
+                env.info.scope.enter(tree.sym);
+            } else {
+                memberEnter.memberEnter(tree, env);
+                annotate.flush();
+            }
+        }
     }
 
     public void visitPardo(JRGPardo tree) {

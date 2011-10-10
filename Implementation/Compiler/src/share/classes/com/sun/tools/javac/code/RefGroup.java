@@ -9,6 +9,10 @@ public abstract class RefGroup {
 	
 	RefGroupNameSymbol sym;
 	
+	public RefGroupName(RefGroupNameSymbol sym) {
+	    this.sym = sym;
+	}
+	
 	@Override public String toString() {
 	    return sym.toString();
 	}

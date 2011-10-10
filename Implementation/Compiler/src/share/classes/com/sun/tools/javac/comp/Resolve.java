@@ -40,7 +40,7 @@ import static com.sun.tools.javac.code.Flags.PUBLIC;
 import static com.sun.tools.javac.code.Flags.STATIC;
 import static com.sun.tools.javac.code.Flags.SYNTHETIC;
 import static com.sun.tools.javac.code.Flags.VARARGS;
-import static com.sun.tools.javac.code.Kinds.ABSENT_EFFECT;
+import static com.sun.tools.javac.code.Kinds.ABSENT_REF_GROUP;
 import static com.sun.tools.javac.code.Kinds.ABSENT_MTH;
 import static com.sun.tools.javac.code.Kinds.ABSENT_REGION;
 import static com.sun.tools.javac.code.Kinds.ABSENT_TYP;
@@ -150,8 +150,8 @@ public class Resolve {
             ResolveError(ABSENT_VAR, syms.errSymbol, "variable not found");
         regionNotFound = new // DPJ
             ResolveError(ABSENT_REGION, syms.errSymbol, "region not found"); // DPJ
-        effectNotFound = new
-            ResolveError(ABSENT_EFFECT, syms.errSymbol, "effect not found");
+        refGroupNotFound = new
+            ResolveError(ABSENT_REF_GROUP, syms.errSymbol, "reference group not found");
         wrongMethod = new
             ResolveError(WRONG_MTH, syms.errSymbol, "method not found");
         wrongMethods = new
@@ -182,7 +182,7 @@ public class Resolve {
      */
     final ResolveError varNotFound;
     final ResolveError regionNotFound; // DPJ
-    final ResolveError effectNotFound;
+    final ResolveError refGroupNotFound;
     final ResolveError wrongMethod;
     final ResolveError wrongMethods;
     final ResolveError methodNotFound;
@@ -1254,12 +1254,12 @@ public class Resolve {
         return bestSoFar;
     }
 
-    /** Find an effect parameter symbol.
+    /** Find the symbol corresponding to a reference group name.
      *  @param env       The current environment.
-     *  @param name      The effect parameter's name.
+     *  @param name      The reference group name.
      */
-    Symbol findEffect(Env<AttrContext> env, Name name) {
-        Symbol bestSoFar = effectNotFound;
+    Symbol findRefGroup(Env<AttrContext> env, Name name) {
+        Symbol bestSoFar = refGroupNotFound;
         Symbol sym;
         boolean staticOnly = false;
         for (Env<AttrContext> env1 = env; env1.outer != null; env1 = env1.outer) {
@@ -1309,7 +1309,7 @@ public class Resolve {
         }
 
         if ((kind & REF_GROUP) != 0) {
-            sym = findEffect(env, name);
+            sym = findRefGroup(env, name);
             if (sym.exists()) return sym;
             else if (sym.kind < bestSoFar.kind) bestSoFar = sym;
         }

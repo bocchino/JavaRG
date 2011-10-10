@@ -95,5 +95,5 @@ public class Kinds {
     public static final int WRONG_MTH    = ERRONEOUS+7; // one method with wrong arguments
     public static final int ABSENT_MTH   = ERRONEOUS+8; // missing method
     public static final int ABSENT_TYP   = ERRONEOUS+9; // missing type
-    public static final int ABSENT_EFFECT = ERRONEOUS+10; // missing effect
+    public static final int ABSENT_REF_GROUP = ERRONEOUS+10; // missing reference group
 }

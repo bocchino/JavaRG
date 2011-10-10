@@ -612,12 +612,6 @@ public abstract class Effect {
 	    if (atomicOK && isNondetAtomic(this, e)) {
 		return true;
 	    }
-	    for (Pair<Effects,Effects> constraint : constraints.noninterferingEffects) {
-		if (this.isSubeffectOf(constraint.fst) &&
-			e.isSubeffectOf(constraint.snd)) return true;
-		if (this.isSubeffectOf(constraint.snd) &&
-			e.isSubeffectOf(constraint.fst)) return true;
-	    }
 	    return false;
 	}
 
