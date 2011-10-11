@@ -1595,10 +1595,8 @@ public class Parser {
 
     private JCArrayTypeTree bracketsOptCont(JCExpression t, int pos) {
         accept(RBRACKET);
-        DPJRegionPathList rpl = null;
-        JCIdent indexParam = null;
         t = bracketsOpt(t);
-        return toP(F.at(pos).TypeArray(t, rpl, indexParam));
+        return toP(F.at(pos).TypeArray(t));
     }
 
     /** BracketsSuffixExpr = "." CLASS
@@ -3620,7 +3618,7 @@ public class Parser {
         if (S.token() == ELLIPSIS) {
             checkVarargs();
             mods.flags |= Flags.VARARGS;
-            type = to(F.at(S.pos()).TypeArray(type, null, null));
+            type = to(F.at(S.pos()).TypeArray(type));
             S.nextToken();
         }
         return variableDeclaratorId(mods, type);

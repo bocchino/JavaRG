@@ -368,8 +368,6 @@ public class TreeTranslator extends JCTree.Visitor {
 
     public void visitTypeArray(JCArrayTypeTree tree) {
 	tree.elemtype = translate(tree.elemtype);
-	tree.rpl = translate(tree.rpl);
-	tree.indexParam = translate(tree.indexParam);
 	result = tree;
     }
 

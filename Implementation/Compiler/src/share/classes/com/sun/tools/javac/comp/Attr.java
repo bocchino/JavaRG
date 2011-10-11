@@ -1764,9 +1764,6 @@ public class Attr extends JCTree.Visitor {
             if (tree.meth instanceof JCFieldAccess) {
                 JCFieldAccess fa = (JCFieldAccess) tree.meth;
                 RPL rpl = exprToRPL(fa.selected);
-                if (rpl != null) {
-                    restype = types.substForThis(restype, rpl);
-                }
             }
 
             // Substitute actual arguments for argument variables
@@ -2050,8 +2047,7 @@ public class Attr extends JCTree.Visitor {
             List<VarSymbol> indexSyms = indexBuf.toList().reverse();
             for (List<JCExpression> l = tree.dims; l.nonEmpty(); l = l.tail) {
                 attribExpr(l.head, env, syms.intType);
-                // FIXME
-                owntype = new ArrayType(owntype, null, null, syms.arrayClass);
+                owntype = new ArrayType(owntype, syms.arrayClass);
             }
 	    localEnv.info.scope.leave();
         } else {
@@ -2069,7 +2065,7 @@ public class Attr extends JCTree.Visitor {
         }
         if (tree.elems != null) {
             attribExprs(tree.elems, env, elemtype);
-            owntype = new ArrayType(elemtype, null,null,syms.arrayClass);
+            owntype = new ArrayType(elemtype, syms.arrayClass);
         }
         if (!types.isReifiable(elemtype))
             log.error(tree.pos(), "generic.array.creation");
@@ -2261,10 +2257,6 @@ public class Attr extends JCTree.Visitor {
         if (types.isArray(atype)) {
             ArrayType at = (ArrayType) atype;
             owntype = types.elemtype(atype);
-            if (at.indexVar != null) {
-        	owntype = types.substIndices(owntype, List.<VarSymbol>of(at.indexVar),
-        		List.<JCExpression>of(tree.index));
-            }
         } 
         else if (types.isArrayClass(atype)) {
             ClassType ct = (ClassType) atype;
@@ -2736,9 +2728,6 @@ public class Attr extends JCTree.Visitor {
                 if (tree instanceof JCFieldAccess) {
                     JCFieldAccess fa = (JCFieldAccess) tree;
                     RPL rpl = exprToRPL(fa.selected);
-                    if (rpl != null) {
-                	owntype = types.substForThis(owntype, rpl);
-                    }
                	}
                 
                 // If the variable is a constant, record constant value in
@@ -3050,28 +3039,15 @@ public class Attr extends JCTree.Visitor {
     }
 
     @Override public void visitTypeArray(JCArrayTypeTree tree) {
-	VarSymbol indexVar = null;
 	Env<AttrContext> localEnv =
 	    env.dup(tree, env.info.dup(env.info.scope.dup()));
 	// If we're in an initializer, we need the actual scope 
 	// so we can add params to it
 	Scope scope = enter.enterScope(localEnv).getActualScope();
-	if (tree.indexParam != null) {
-	    indexVar =
-		new VarSymbol(STATIC, tree.indexParam.name, 
-			syms.intType, scope.owner);
-	    tree.indexParam.sym = indexVar;
-	    scope.enter(indexVar);
-	}
-	if (tree.rpl != null) {
-	    attribTree(tree.rpl, localEnv, NIL, Type.noType);
-	}
 	Type etype = attribType(tree.elemtype, localEnv);
-	Type type = new ArrayType(etype, null, indexVar, syms.arrayClass);
+	Type type = new ArrayType(etype, syms.arrayClass);
 	result = check(tree, type, TYP, pkind, pt);
 	localEnv.info.scope.leave();
-	if (tree.rpl != null)
-	    ((ArrayType) tree.type).rpl = tree.rpl.rpl;
     }
     
     /** Visitor method for parameterized types.

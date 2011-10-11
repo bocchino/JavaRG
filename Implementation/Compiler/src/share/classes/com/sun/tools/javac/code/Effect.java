@@ -521,11 +521,6 @@ public abstract class Effect {
 	}
 	
 	@Override
-	public Effect substForThis(RPL rpl) {
-	    return new InvocationEffect(rpls, methSym, withEffects.substForThis(rpl));
-	}
-	
-	@Override
 	public Effect substIndices(List<VarSymbol> from, List<JCExpression> to) {
 	    return new InvocationEffect(rpls, methSym, withEffects.substIndices(from, to));
 	}

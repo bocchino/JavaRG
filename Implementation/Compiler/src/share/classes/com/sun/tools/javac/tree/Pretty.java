@@ -2021,15 +2021,6 @@ public class Pretty extends JCTree.Visitor {
         while (true) {
             elem = tree.elemtype;
             print("[]");
-            if ((codeGenMode == NONE) && tree.rpl != null) {
-        	print("<");
-        	printExpr(tree.rpl);
-        	print(">");
-        	if (tree.indexParam != null) {
-        	    print("#");
-        	    printExpr(tree.indexParam);
-        	}
-            }
             if (!(elem instanceof JCArrayTypeTree)) break;
             tree = (JCArrayTypeTree) elem;
         }

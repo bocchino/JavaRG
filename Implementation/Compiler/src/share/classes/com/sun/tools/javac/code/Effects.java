@@ -141,23 +141,6 @@ public class Effects implements Iterable<Effect> {
     }
 
     
-    public Effects substForThis(RPL rpl) {
-	Effects result = new Effects();
-	for (Effect e : effects) {
-	    result.add(e.substForThis(rpl));
-	}
-	return result;
-    }
-    
-    public static List<Effects> substForThis(List<Effects> list, RPL rpl) {
-	ListBuffer<Effects> buf = ListBuffer.lb();
-	for (Effects effects : list) {
-	    buf.append(effects.substForThis(rpl));
-	}	
-	return buf.toList();
-
-    }
-
     public Effects substForVars(List<VarSymbol> from, List<VarSymbol> to) {
 	Effects result = new Effects();
 	for (Effect e : effects) {
@@ -263,11 +246,6 @@ public class Effects implements Iterable<Effect> {
 	if (sym != null) {
 	    if (tree.meth instanceof JCFieldAccess) {
         	JCFieldAccess fa = (JCFieldAccess) tree.meth;
-                // Substitute for this
-        	RPL rpl = attr.exprToRPL(fa.selected);
-        	if (rpl != null) {
-        	    result = result.substForThis(rpl);
-        	}
         	// Translate to subclass and substitute for class 
         	// region and effect params
         	if (fa.selected.type instanceof ClassType) {

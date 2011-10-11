@@ -961,15 +961,11 @@ public class Type implements PrimitiveType {
             implements javax.lang.model.type.ArrayType {
 
         public Type elemtype;
-        public RPL rpl = RPLs.ROOT; //new RPL(Symtab.ROOT);
-        public VarSymbol indexVar;
         public Symtab syms;
         
-        public ArrayType(Type elemtype, RPL rpl, VarSymbol indexVar, TypeSymbol arrayClass) {
+        public ArrayType(Type elemtype, TypeSymbol arrayClass) {
             super(ARRAY, arrayClass);
             this.elemtype = elemtype;
-            if (rpl != null) this.rpl = rpl;
-            this.indexVar = indexVar;
         }
 
         @Override
@@ -989,16 +985,6 @@ public class Type implements PrimitiveType {
         	do {
         	    ArrayType currentType = (ArrayType) nextType;
         	    sb.append("[]");
-        	    if (!currentType.rpl.equals(RPLs.ROOT)) {
-        		sb.append("<");
-        		sb.append(currentType.rpl);
-        		sb.append(">");
-        	    }
-        	    if (currentType.indexVar != null &&
-        		    !currentType.indexVar.toString().equals("_")) {
-        		sb.append("#");
-        		sb.append(indexVar);
-        	    }
         	    nextType = currentType.elemtype;
         	} while (nextType instanceof ArrayType);
         	return sb.toString();
@@ -1034,7 +1020,7 @@ public class Type implements PrimitiveType {
         public Type map(Mapping f) {
             Type elemtype1 = f.apply(elemtype);
             if (elemtype1 == elemtype) return this;
-            else return new ArrayType(elemtype1, null, null, tsym);
+            else return new ArrayType(elemtype1, tsym);
         }
 
         public boolean contains(Type elem) {

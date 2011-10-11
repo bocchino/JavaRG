@@ -499,7 +499,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitArrayType(ArrayTypeTree node, P p) {
         JCArrayTypeTree t = (JCArrayTypeTree) node;
         JCExpression elemtype = copy(t.elemtype, p);
-        return M.at(t.pos).TypeArray(elemtype, null, null);
+        return M.at(t.pos).TypeArray(elemtype);
     }
 
     public JCTree visitTypeCast(TypeCastTree node, P p) {

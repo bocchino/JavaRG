@@ -384,7 +384,7 @@ public class Lower extends TreeTranslator {
             ClassSymbol outerCacheClass = outerCacheClass();
             this.mapVar = new VarSymbol(STATIC | SYNTHETIC | FINAL,
                                         varName,
-                                        new ArrayType(syms.intType, null, null, syms.arrayClass),
+                                        new ArrayType(syms.intType, syms.arrayClass),
                                         outerCacheClass);
             enterSynthetic(pos, mapVar, outerCacheClass.members());
         }
@@ -425,7 +425,7 @@ public class Lower extends TreeTranslator {
                         syms.lengthVar);
             JCExpression mapVarInit = make
                 .NewArray(make.Type(syms.intType), List.of(size), null)
-                .setType(new ArrayType(syms.intType, null, null, syms.arrayClass));
+                .setType(new ArrayType(syms.intType, syms.arrayClass));
 
             // try { $SwitchMap$Color[red.ordinal()] = 1; } catch (java.lang.NoSuchFieldError ex) {}
             ListBuffer<JCStatement> stmts = new ListBuffer<JCStatement>();
@@ -1556,7 +1556,6 @@ public class Lower extends TreeTranslator {
 			 List.<JCExpression>of(make.Literal(INT, 0).setType(syms.intType)),
 			 null);
 	    newcache.type = new ArrayType(types.erasure(outerCacheClass.type),
-		    			  null, null,
 					  syms.arrayClass);
 
 	    // forNameSym := java.lang.Class.forName(
@@ -2099,7 +2098,7 @@ public class Lower extends TreeTranslator {
 	Name valuesName = names.fromString(target.syntheticNameChar() + "VALUES");
         while (tree.sym.members().lookup(valuesName).scope != null) // avoid name clash
             valuesName = names.fromString(valuesName + "" + target.syntheticNameChar());
-	Type arrayType = new ArrayType(types.erasure(tree.type), null, null, syms.arrayClass);
+	Type arrayType = new ArrayType(types.erasure(tree.type), syms.arrayClass);
 	VarSymbol valuesVar = new VarSymbol(PRIVATE|FINAL|STATIC|SYNTHETIC,
 					    valuesName,
 					    arrayType,
@@ -2560,7 +2559,7 @@ public class Lower extends TreeTranslator {
 	    JCNewArray boxedArgs = make.NewArray(make.Type(varargsElement),
                                                List.<JCExpression>nil(),
                                                elems.toList());
-	    boxedArgs.type = new ArrayType(varargsElement, null, null, syms.arrayClass);
+	    boxedArgs.type = new ArrayType(varargsElement, syms.arrayClass);
 	    result.append(boxedArgs);
 	} else {
             if (args.length() != 1) throw new AssertionError(args);

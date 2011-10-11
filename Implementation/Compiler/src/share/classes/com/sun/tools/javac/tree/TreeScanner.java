@@ -276,9 +276,6 @@ public class TreeScanner extends Visitor {
 
     public void visitTypeArray(JCArrayTypeTree tree) {
 	scan(tree.elemtype);
-	scan(tree.rpl);
-	// Maybe this should be here, but it breaks the Flow pass
-	//scan(tree.indexParam);
     }
 
     public void visitTypeApply(JCTypeApply tree) {

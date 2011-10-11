@@ -137,7 +137,7 @@ public class TypesImpl implements Types {
 	    throw new IllegalArgumentException("void");
 	}
 	return (ArrayType) env.typeMaker.getType(
-		new Type.ArrayType(((TypeMirrorImpl) componentType).type, null,null,
+		new Type.ArrayType(((TypeMirrorImpl) componentType).type,
 				   env.symtab.arrayClass));
     }
 

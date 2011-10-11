@@ -2183,13 +2183,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      */
     public static class JCArrayTypeTree extends JCExpression implements ArrayTypeTree {
         public JCExpression elemtype;
-        public DPJRegionPathList rpl;
-        public JCIdent indexParam;
-        protected JCArrayTypeTree(JCExpression elemtype, DPJRegionPathList rpl, 
-        	JCIdent indexParam) {
+        protected JCArrayTypeTree(JCExpression elemtype) {
             this.elemtype = elemtype;
-            this.rpl = rpl;
-            this.indexParam = indexParam;
         }
         @Override
         public void accept(Visitor v) { v.visitTypeArray(this); }
@@ -2891,8 +2886,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         JCIdent Ident(Name idname);
         JCLiteral Literal(int tag, Object value);
         JCPrimitiveTypeTree TypeIdent(int typetag);
-        JCArrayTypeTree TypeArray(JCExpression elemtype, DPJRegionPathList rpl, 
-        	JCIdent indexParam);
+        JCArrayTypeTree TypeArray(JCExpression elemtype);
         JCTypeApply TypeApply(JCExpression clazz, List<JCExpression> typeArgs,
         	List<DPJRegionPathList> rplArgs, List<JCIdent> groupArgs);
         JCTypeParameter TypeParameter(Name name, List<DPJRegionParameter> rplparams,

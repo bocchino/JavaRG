@@ -595,7 +595,7 @@ public class ClassReader extends ClassFile implements Completer {
             return syms.booleanType;
         case '[':
             sigp++;
-            return new ArrayType(sigToType(), null, null, syms.arrayClass);
+            return new ArrayType(sigToType(), syms.arrayClass);
         case '(':
             sigp++;
             List<Type> argtypes = sigToTypes(')');

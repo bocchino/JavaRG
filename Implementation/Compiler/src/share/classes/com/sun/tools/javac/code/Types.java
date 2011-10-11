@@ -123,6 +123,7 @@ public class Types {
     List<Warner> warnStack = List.nil();
     final Name capturedName;
     final RPLs rpls;
+    final RefGroups refGroups;
 
     // HACK ALERT:  We put this flag in to "turn of" region and effect printing in 
     // the pretty printer.
@@ -146,6 +147,7 @@ public class Types {
         chk = Check.instance(context);
         capturedName = names.fromString("<captured wildcard>");
         rpls = RPLs.instance(context);
+        refGroups = RefGroups.instance(context);
     }
     // </editor-fold>
 
@@ -354,25 +356,6 @@ public class Types {
 	if (t.tag == ARRAY && s.tag == ARRAY) {
             ArrayType at = (ArrayType) t;
             ArrayType as = (ArrayType) s;
-            if (at.indexVar != null && as.indexVar != null) {
-        	JCExpression expr = new JCTree.DPJNegationExpression(null);
-        	RPL atrpl = at.rpl.substIndex(at.indexVar, expr);
-        	RPL asrpl = as.rpl.substIndex(as.indexVar, expr);
-        	if (requireEqualRegions && !atrpl.equals(asrpl)) return false;
-        	if (!atrpl.isIncludedIn(asrpl)) return false;
-        	return (((ArrayType)t).elemtype.tag <= lastBaseTag)
-        		? isSameType(elemtype(t), elemtype(s))
-        			: isSubtypeUnchecked(substIndices(elemtype(t),List.of(at.indexVar),
-        						          List.<JCExpression>of(expr)),
-        					     substIndices(elemtype(s),List.of(as.indexVar),
-        						          List.<JCExpression>of(expr)),
-        					     warn, true);
-            }
-            if (requireEqualRegions && !at.rpl.equals(as.rpl)) return false;
-            if (at.rpl != null) {
-        	if (as.rpl == null || !at.rpl.isIncludedIn(as.rpl))
-        	    return false;
-            }
             return (((ArrayType)t).elemtype.tag <= lastBaseTag)
 		? isSameType(elemtype(t), elemtype(s))
 		: isSubtypeUnchecked(elemtype(t), elemtype(s), 
@@ -1636,7 +1619,7 @@ public class Types {
                 	List<RefGroup> ownerParams = owner.type.allRefGroupParams();
                 	List<RefGroup> baseParams = base.allRefGroupParams();
                 	if (ownerParams.nonEmpty()) {
-                	    result = substEffect(result, ownerParams, baseParams);
+                	    result = substRefGroups(result, ownerParams, baseParams);
                 	}
                     }
                 }
@@ -1863,7 +1846,7 @@ public class Types {
                         List<RPL> rgnactuals = classBound(t).allrgnactuals();
                         List<RegionParameterSymbol> rgnformals = t.tsym.type.allrgnparams();
                         t.supertype_field = substRPL(t.supertype_field, rgnformals, rgnactuals);
-                        t.supertype_field = substEffect(t.supertype_field, 
+                        t.supertype_field = substRefGroups(t.supertype_field, 
                         	t.tsym.type.allRefGroupParams(), classBound(t).allRefGroupParams());
                     }
                 }
@@ -1891,8 +1874,7 @@ public class Types {
                 if (t.elemtype.isPrimitive() || isSameType(t.elemtype, syms.objectType))
                     return arraySuperType();
                 else
-                    return new ArrayType(supertype(t.elemtype), t.rpl, 
-                	  t.indexVar, t.tsym);
+                    return new ArrayType(supertype(t.elemtype), t.tsym);
             }
 
             @Override
@@ -1955,7 +1937,7 @@ public class Types {
                             formals, actuals,
                     	    t.tsym.type.allrgnparams(),
                     	    t.allrgnactuals());
-                        t.interfaces_field = substEffect(t.interfaces_field,
+                        t.interfaces_field = substRefGroups(t.interfaces_field,
                         	t.tsym.type.allRefGroupParams(),
                         	t.allRefGroupParams());
                     }
@@ -2326,8 +2308,7 @@ public class Types {
             if (elemtype == t.elemtype)
                 return t;
             else
-                return new ArrayType(upperBound(elemtype), t.rpl,
-                	t.indexVar, t.tsym);
+                return new ArrayType(upperBound(elemtype), t.tsym);
         }
 
         @Override
@@ -2352,134 +2333,6 @@ public class Types {
         }
     }
 
-    public Type substForThis(Type t, RPL rpl) {
-	return new SubstForThis(rpl).substForThis(t);
-    }
-
-    public List<Type> substForThis(List<Type> ts, RPL rpl) {
-	return new SubstForThis(rpl).substForThis(ts);
-    }
-    
-    private class SubstForThis extends UnaryVisitor<Type> {
-        RPL rpl;
-
-        public SubstForThis(RPL rpl) {
-            this.rpl = rpl;
-        }
-
-        Type substForThis(Type t) {
-            return visit(t);
-        }
-
-        List<Type> substForThis(List<Type> ts) {
-            if (ts.nonEmpty()) {
-        	Type head1 = substForThis(ts.head);
-                List<Type> tail1 = substForThis(ts.tail);
-                if (head1 != ts.head || tail1 != ts.tail)
-                    ts = tail1.prepend(head1);
-            }
-            return ts;
-        }
-        
-        public Type visitType(Type t, Void ignored) {
-            return t;
-        }
-
-        @Override
-        public Type visitMethodType(MethodType t, Void ignored) {
-            List<Type> argtypes = substForThis(t.argtypes);
-            Type restype = substForThis(t.restype);
-            List<Type> thrown = substForThis(t.thrown);
-            boolean isPure = false;
-           if (argtypes == t.argtypes &&
-                restype == t.restype &&
-                thrown == t.thrown)
-                return t;
-            else
-                return new MethodType(argtypes, restype, thrown, t.tsym);
-        }
-
-        @Override
-        public Type visitTypeVar(TypeVar t, Void ignored) {
-            return t;
-        }
-
-        @Override
-        public Type visitClassType(ClassType t, Void ignored) {
-            if (!t.isCompound()) {
-                List<Type> typarams = t.getTypeArguments();
-                List<Type> typarams1 = substForThis(typarams);
-                List<RPL> rgnactuals = t.getRegionActuals();
-                List<RPL> rgnactuals1 = rpls.substForThis(rgnactuals, rpl);
-                List<RefGroup> effectargs = t.getRefGroupArguments();
-                List<RefGroup> effectargs1 = effectargs; // FIXME
-                //Effects.substForThis(effectargs, rpl);
-                Type outer = t.getEnclosingType();
-                Type outer1 = substForThis(outer);
-                return new ClassType(outer1, typarams1, t.getRegionParams(), 
-                	rgnactuals1, effectargs1, t.tsym, 
-                	(t.cellType == null) ? null : substForThis(t.cellType));
-            } else {
-                Type st = substForThis(supertype(t));
-                List<Type> is = upperBounds(substForThis(interfaces(t)));
-                if (st == supertype(t) && is == interfaces(t))
-                    return t;
-                else
-                    return makeCompoundType(is.prepend(st));
-            }
-        }
-
-
-        @Override
-        public Type visitWildcardType(WildcardType t, Void ignored) {
-            Type bound = t.type;
-            if (t.kind != BoundKind.UNBOUND)
-                bound = substForThis(bound);
-            if (bound == t.type) {
-                return t;
-            } else {
-                if (t.isExtendsBound() && bound.isExtendsBound())
-                    bound = upperBound(bound);
-                return new WildcardType(bound, t.kind, syms.boundClass, t.bound);
-            }
-        }
-
-        @Override
-        public Type visitArrayType(ArrayType t, Void ignored) {
-            Type elemtype = substForThis(t.elemtype);
-            if (elemtype == t.elemtype)
-                return t;
-            else
-                return new ArrayType(upperBound(elemtype), t.rpl, 
-                		t.indexVar, t.tsym);
-        }
-
-        @Override
-        public Type visitForAll(ForAll t, Void ignored) {
-            // TODO:  Substitute into the region args
-            //List<Type> tvars1 = substBoundsForThis(t.tvars, from, to); // TODO
-            List<Type> tvars1 = t.tvars; 
-            Type qtype1 = substForThis(t.qtype);
-            if (tvars1 == t.tvars && qtype1 == t.qtype) {
-                return t;
-            } else if (tvars1 == t.tvars) {
-                return new ForAll(tvars1, t.rvars, t.gvars, qtype1);
-            } else {
-                return new ForAll(tvars1, t.rvars, t.gvars, 
-                	Types.this.subst(qtype1, t.tvars, tvars1));
-            }
-        }
-
-        @Override
-        public Type visitErrorType(ErrorType t, Void ignored) {
-            return t;
-        }
-        
-
-    
-    }
-
-    
     public List<Type> substIndices(List<Type> ts, List<VarSymbol> from,
 	    List<JCExpression> to) {
 	return new SubstIndices(from, to).substIndices(ts);
@@ -2548,18 +2401,14 @@ public class Types {
                 List<Type> typarams1 = substIndices(typarams);
                 List<RPL> rgnactuals = t.getRegionActuals();
                 List<RPL> rgnactuals1 = rpls.substIndices(rgnactuals, from, to);
-                List<RefGroup> effectparams = t.getRefGroupArguments();
-                List<RefGroup> effectparams1 = effectparams; // FIXME
-                //Effects.substIndices(effectparams, from, to);
                 Type outer = t.getEnclosingType();
                 Type outer1 = substIndices(outer);
                 if (typarams1 == typarams && outer1 == outer && 
-                	rgnactuals1 == rgnactuals && 
-                	effectparams1 == effectparams)
+                	rgnactuals1 == rgnactuals)
                     return t;
                 else
                     return new ClassType(outer1, typarams1, t.getRegionParams(), 
-                	    rgnactuals1, effectparams1, t.tsym, 
+                	    rgnactuals1, t.getRefGroupArguments(), t.tsym, 
                 	    (t.cellType == null) ? null : substIndices(t.cellType));
             } else {
                 Type st = substIndices(supertype(t));
@@ -2588,18 +2437,16 @@ public class Types {
         @Override
         public Type visitArrayType(ArrayType t, Void ignored) {
             Type elemtype = substIndices(t.elemtype);
-            RPL rpl = t.rpl.substIndices(from, to);
-            if (elemtype == t.elemtype && rpl == t.rpl)
+            if (elemtype == t.elemtype)
                 return t;
             else
-                return new ArrayType(upperBound(elemtype), rpl, 
-                		t.indexVar, t.tsym);
+                return new ArrayType(upperBound(elemtype), t.tsym);
         }
 
         @Override
         public Type visitForAll(ForAll t, Void ignored) {
             // TODO:  Substitute into the region args
-            //List<Type> tvars1 = substBoundsIndices(t.tvars, from, to); // TODO
+            // List<Type> tvars1 = substBoundsIndices(t.tvars, from, to); // TODO
             List<Type> tvars1 = t.tvars; 
             Type qtype1 = substIndices(t.qtype);
             if (tvars1 == t.tvars && qtype1 == t.qtype) {
@@ -2719,13 +2566,10 @@ public class Types {
                 List<RPL> rgnactuals = t.getRegionActuals();
                 List<RPL> rgnactuals1 = RPLs.substForParams(rgnactuals, from, to);
                 rgnactuals1 = RPLs.substForTRParams(rgnactuals1, fromTypes, toTypes);
-                List<RefGroup> effectargs = t.getRefGroupArguments();
-                List<RefGroup> effectargs1 = effectargs; // FIXME
-                // Effects.substForParams(effectargs, from, to);
                 Type outer = t.getEnclosingType();
                 Type outer1 = substRPL(outer);
                 return new ClassType(outer1, typarams1, t.getRegionParams(), 
-                	rgnactuals1, effectargs1, t.tsym, 
+                	rgnactuals1, t.getRefGroupArguments(), t.tsym, 
                 	(t.cellType == null) ? null : substRPL(t.cellType));
             } else {
                 Type st = substRPL(supertype(t));
@@ -2754,18 +2598,14 @@ public class Types {
         @Override
         public Type visitArrayType(ArrayType t, Void ignored) {
             Type elemtype = substRPL(t.elemtype);
-            RPL rpl = t.rpl.substForParams(from, to);
-            rpl = rpl.substForTRParams(fromTypes, toTypes);
-            if (elemtype == t.elemtype && rpl == t.rpl)
+            if (elemtype == t.elemtype)
                 return t;
             else
-                return new ArrayType(upperBound(elemtype), rpl, 
-                		t.indexVar, t.tsym);
+                return new ArrayType(upperBound(elemtype), t.tsym);
         }
 
         @Override
         public Type visitForAll(ForAll t, Void ignored) {
-            // TODO:  Substitute into the region args
             List<Type> tvars1 = substBoundsRPL(t.tvars, from, to);
             Type qtype1 = substRPL(t.qtype);
             if (tvars1 == t.tvars && qtype1 == t.qtype) {
@@ -2784,45 +2624,43 @@ public class Types {
         }
     }
 
-    // START
-    
     /**
-     * Substitute all occurrences of effect variables in `from' with the
-     * corresponding effects in `to' in 't'.
+     * Substitute all occurrences of reference group variables in `from' with the
+     * corresponding reference groups in `to'.
      */
-    public List<Type> substEffect(List<Type> ts, List<RefGroup> from, 
+    public List<Type> substRefGroups(List<Type> ts, List<RefGroup> from, 
 	    List<RefGroup> to) {
-	return new substEffect(from, to).substEffect(ts);
+	return new SubstRefGroups(from, to).substRefGroups(ts);
     }
-    public Type substEffect(Type t, List<RefGroup> from, List<RefGroup> to) {
-	return new substEffect(from, to).substEffect(t);
+    public Type substRefGroups(Type t, List<RefGroup> from, List<RefGroup> to) {
+	return new SubstRefGroups(from, to).substRefGroups(t);
     }
-    public Type substEffect(Type t, RefGroup from, RefGroup to) {
-	return substEffect(t, List.of(from), List.of(to));
+    public Type substRefGroup(Type t, RefGroup from, RefGroup to) {
+	return substRefGroups(t, List.of(from), List.of(to));
     }
 
-    private class substEffect extends UnaryVisitor<Type> {
+    private class SubstRefGroups extends UnaryVisitor<Type> {
 	List<RefGroup> from;
         List<RefGroup> to;
 
-        public substEffect(List<RefGroup> from, List<RefGroup> to) {
+        public SubstRefGroups(List<RefGroup> from, List<RefGroup> to) {
             this.from = from;
             this.to = to;
         }
         
-        Type substEffect(Type t) {
+        Type substRefGroups(Type t) {
             if (from.tail == null)
                 return t;
             else
                 return visit(t);
         }
 
-        List<Type> substEffect(List<Type> ts) {
+        List<Type> substRefGroups(List<Type> ts) {
             if (from.tail == null)
                 return ts;
             if (ts.nonEmpty() && from.nonEmpty()) {
-        	Type head1 = substEffect(ts.head);
-                List<Type> tail1 = substEffect(ts.tail);
+        	Type head1 = substRefGroups(ts.head);
+                List<Type> tail1 = substRefGroups(ts.tail);
                 if (head1 != ts.head || tail1 != ts.tail)
                     ts = tail1.prepend(head1);
             }
@@ -2835,9 +2673,9 @@ public class Types {
 
         @Override
         public Type visitMethodType(MethodType t, Void ignored) {
-            List<Type> argtypes = substEffect(t.argtypes);
-            Type restype = substEffect(t.restype);
-            List<Type> thrown = substEffect(t.thrown);
+            List<Type> argtypes = substRefGroups(t.argtypes);
+            Type restype = substRefGroups(t.restype);
+            List<Type> thrown = substRefGroups(t.thrown);
             boolean isPure = false;
             if (argtypes == t.argtypes &&
                 restype == t.restype &&
@@ -2850,19 +2688,19 @@ public class Types {
         @Override
         public Type visitClassType(ClassType t, Void ignored) {
             if (!t.isCompound()) {
-                List<Type> typarams = t.getTypeArguments();
-                List<Type> typarams1 = substEffect(typarams);
-                List<RefGroup> effectargs = t.getRefGroupArguments();
-                List<RefGroup> effectargs1 = effectargs; // FIXME
-                //Effects.substForEffectVars(effectargs, from, to);
+                List<Type> typeArgs = t.getTypeArguments();
+                List<Type> typeArgsSubst = substRefGroups(typeArgs);
+                List<RefGroup> refGroupArgs = t.getRefGroupArguments();
+                List<RefGroup> refGroupArgsSubst = 
+                	refGroups.subst(refGroupArgs, from, to);
                 Type outer = t.getEnclosingType();
-                Type outer1 = substEffect(outer);
-                return new ClassType(outer1, typarams1, t.getRegionParams(), 
-                	t.getRegionActuals(), effectargs1, t.tsym, 
-                	(t.cellType == null) ? null : substEffect(t.cellType));
+                Type outerSubst = substRefGroups(outer);
+                return new ClassType(outerSubst, typeArgsSubst, t.getRegionParams(), 
+                	t.getRegionActuals(), refGroupArgsSubst, t.tsym, 
+                	(t.cellType == null) ? null : substRefGroups(t.cellType));
             } else {
-                Type st = substEffect(supertype(t));
-                List<Type> is = upperBounds(substEffect(interfaces(t)));
+                Type st = substRefGroups(supertype(t));
+                List<Type> is = upperBounds(substRefGroups(interfaces(t)));
                 if (st == supertype(t) && is == interfaces(t))
                     return t;
                 else
@@ -2874,7 +2712,7 @@ public class Types {
         public Type visitWildcardType(WildcardType t, Void ignored) {
             Type bound = t.type;
             if (t.kind != BoundKind.UNBOUND)
-                bound = substEffect(bound);
+                bound = substRefGroups(bound);
             if (bound == t.type) {
                 return t;
             } else {
@@ -2889,7 +2727,7 @@ public class Types {
             // TODO:  Substitute into the region args
             //List<Type> tvars1 = substBoundsEffect(t.tvars, from, to);  // TODO
             List<Type> tvars1 = t.tvars;
-            Type qtype1 = substEffect(t.qtype);
+            Type qtype1 = substRefGroups(t.qtype);
             if (tvars1 == t.tvars && qtype1 == t.qtype) {
                 return t;
             } else if (tvars1 == t.tvars) {
@@ -2905,8 +2743,6 @@ public class Types {
             return t;
         }
     }
-
-    // END
     
     public List<Type> substBounds(List<Type> tvars,
                                   List<Type> from,
@@ -3404,7 +3240,7 @@ public class Types {
                 }
             }
             // lub(A[], B[]) is lub(A, B)[]
-            return new ArrayType(lub(elements), null,null,syms.arrayClass);
+            return new ArrayType(lub(elements), syms.arrayClass);
 
         case CLASS_BOUND:
             // calculate lub(A, B)
@@ -3745,8 +3581,8 @@ public class Types {
 
     /**
      * Compute the DPJ capture of a type, i.e., the type with the capture
-     * of its actual region and effect arguments substituted for the region 
-     * and effect params.
+     * of its actual region arguments substituted for the region params.
+     * 
      * TODO:  Capture as described in the frameworks tech report isn't fully
      * implemented here.  It's unclear what the implications are for
      * soundness in the presence of type region params.

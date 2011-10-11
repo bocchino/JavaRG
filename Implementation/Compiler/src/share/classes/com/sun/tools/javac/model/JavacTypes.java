@@ -178,7 +178,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
 	case PACKAGE:
 	    throw new IllegalArgumentException(componentType.toString());
 	}
-	return new Type.ArrayType((Type) componentType, null, null, syms.arrayClass);
+	return new Type.ArrayType((Type) componentType, syms.arrayClass);
     }
 
     public WildcardType getWildcardType(TypeMirror extendsBound,

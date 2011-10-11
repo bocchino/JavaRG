@@ -528,7 +528,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
      *  to the symbol table.
      */
     private void addEnumMembers(JCClassDecl tree, Env<AttrContext> env) {
-        JCExpression valuesType = make.Type(new ArrayType(tree.sym.type, null, null, syms.arrayClass));
+        JCExpression valuesType = make.Type(new ArrayType(tree.sym.type, syms.arrayClass));
 
         // public static T[] values() { return ???; }
         JCMethodDecl values = make.

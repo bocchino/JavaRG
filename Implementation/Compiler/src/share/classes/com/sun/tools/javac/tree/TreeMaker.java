@@ -49,6 +49,7 @@ import static com.sun.tools.javac.code.TypeTags.WILDCARD;
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.BoundKind;
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
@@ -62,7 +63,6 @@ import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.code.Type.WildcardType;
 import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.tree.JCTree.JRGForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
@@ -120,6 +120,7 @@ import com.sun.tools.javac.tree.JCTree.JCWildcard;
 import com.sun.tools.javac.tree.JCTree.JRGCopyPerm;
 import com.sun.tools.javac.tree.JCTree.JRGDerefSet;
 import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
+import com.sun.tools.javac.tree.JCTree.JRGForLoop;
 import com.sun.tools.javac.tree.JCTree.JRGMethodPerms;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
@@ -536,8 +537,8 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCArrayTypeTree TypeArray(JCExpression elemtype, DPJRegionPathList rpl, JCIdent indexParam) {
-        JCArrayTypeTree tree = new JCArrayTypeTree(elemtype, rpl, indexParam);
+    public JCArrayTypeTree TypeArray(JCExpression elemtype) {
+        JCArrayTypeTree tree = new JCArrayTypeTree(elemtype);
         tree.pos = pos;
         return tree;
     }
@@ -833,12 +834,11 @@ public class TreeMaker implements JCTree.Factory {
                 : QualIdent(t.tsym);
             tp = t.getTypeArguments().isEmpty()
                 ? clazz
-                // FIXME
                 : TypeApply(clazz, Types(t.getTypeArguments()), 
                 	List.<DPJRegionPathList>nil(), List.<JCIdent>nil());
             break;
         case ARRAY:
-            tp = TypeArray(Type(types.elemtype(t)), null, null);
+            tp = TypeArray(Type(types.elemtype(t)));
             break;
         case ERROR:
             tp = TypeIdent(ERROR);
@@ -862,7 +862,7 @@ public class TreeMaker implements JCTree.Factory {
             types.append(Type(l.head));
         return types.toList();
     }
-
+    
     /** Create a variable definition from a variable symbol and an initializer
      *  expression.
      */

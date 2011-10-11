@@ -243,18 +243,6 @@ public class CheckEffects extends EnvScanner { // DPJ
             if (types.isArray(atype)) {
                 ArrayType at = (ArrayType) atype;
                 Type elemtype = types.elemtype(atype);
-                result = at.rpl;
-                if (result != null) {
-                    if (at.indexVar != null) {
-                	result = result.substIndex(at.indexVar, tree.index);
-                	if (tree.indexed instanceof JCFieldAccess) {
-                	    RPL rpl = selectedRPL((JCFieldAccess) tree.indexed);
-                	    if (rpl != null)
-                		result = result.substForThis(rpl);
-                	}
-                	return;
-                    }
-                }    
             }
         }
         @Override
