@@ -2179,7 +2179,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     }
 
     /**
-     * An array type, T[] or T[]#i or T[]<<R>> or T[]<<R>>#i
+     * An array type, T[]
      */
     public static class JCArrayTypeTree extends JCExpression implements ArrayTypeTree {
         public JCExpression elemtype;

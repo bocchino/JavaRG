@@ -215,12 +215,6 @@ public abstract class Effect {
 	}
 	
 	@Override
-	public Effect substForTRParams(List<Type> from, List<Type> to) {
-	    return new ReadEffect(rpls, rpl.substForTRParams(from, to), 
-		    this.isAtomic(), this.isNonint());
-	}	    
-	
-	@Override
 	public Effect substForVars(List<VarSymbol> from, List<VarSymbol> to) {
 	    return new ReadEffect(rpls, rpl.substForVars(from, to), 
 		    this.isAtomic(), this.isNonint());
@@ -355,12 +349,6 @@ public abstract class Effect {
 		    this.isAtomic(), this.isNonint());
 	}
 	
-	@Override
-	public Effect substForTRParams(List<Type> from, List<Type> to) {
-	    return new WriteEffect(rpls, rpl.substForTRParams(from, to), 
-		    this.isAtomic(), this.isNonint());
-	}	    
-
 	@Override
 	public Effect substForVars(List<VarSymbol> from, List<VarSymbol> to) {
 	    return new WriteEffect(rpls, rpl.substForVars(from, to), 

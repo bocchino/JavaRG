@@ -210,8 +210,6 @@ public class CheckEffects extends EnvScanner { // DPJ
 		result = rpls.memberRPL(types, ct, 
 			vsym).substForAllParams(ct);
 		RPL rpl = attr.exprToRPL(tree.selected);
-		if (rpl != null)
-		    result = result.substForThis(rpl);
 	    }
         }
 	

@@ -142,20 +142,6 @@ public class RPLs {
 	return true;
     }
     
-    /**
-     * Are regions being consistently bound to parameters, with regard to atomic?
-     */
-    public boolean atomicConstraintsAreSatisfied(List<RegionParameterSymbol> formals,
-	    List<RPL> actuals) {
-	while (formals.nonEmpty() && actuals.nonEmpty()) {
-	    if (formals.head.isAtomic != actuals.head.isAtomic())
-		return false;
-	    formals = formals.tail;
-	    actuals = actuals.tail;
-	}
-	return true;
-    }
-    
     public static List<RegionParameterSymbol> toParams(List<RPL> rpls) {
 	ListBuffer<RegionParameterSymbol> buf = ListBuffer.lb();
 	for (RPL rpl : rpls) {
