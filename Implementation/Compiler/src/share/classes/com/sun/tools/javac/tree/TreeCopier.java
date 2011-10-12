@@ -537,9 +537,12 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitVariable(VariableTree node, P p) {
         JCVariableDecl t = (JCVariableDecl) node;
         JCModifiers mods = copy(t.mods, p);
+        JRGRefPerm refPerm = copy(t.refPerm, p);
         JCExpression vartype = copy(t.vartype, p);
+        DPJRegionPathList rpl = copy(t.rpl, p);
         JCExpression init = copy(t.init, p);
-        JCVariableDecl result = M.at(t.pos).VarDef(mods, t.name, t.rpl, vartype, init); // DPJ
+        JCVariableDecl result = M.at(t.pos).VarDef(mods, t.name, 
+        	refPerm, vartype, rpl, init);
         result.sym = t.sym;
         return result;
     }

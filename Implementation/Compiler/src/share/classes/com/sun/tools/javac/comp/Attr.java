@@ -80,6 +80,8 @@ import com.sun.tools.javac.code.Constraints;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Permission.LocallyUnique;
+import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLElement;
 import com.sun.tools.javac.code.RPLElement.NameRPLElement;
@@ -99,6 +101,7 @@ import com.sun.tools.javac.code.Symbol.OperatorSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
+import com.sun.tools.javac.code.Symbol.RefGroupSymbol;
 import com.sun.tools.javac.code.Symbol.RegionNameSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
@@ -174,6 +177,7 @@ import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
 import com.sun.tools.javac.tree.JCTree.JRGForLoop;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
+import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
@@ -672,6 +676,29 @@ public class Attr extends JCTree.Visitor {
 	Type result = attribTree(tree, env, TYP, Type.noType);
         return result;
     }
+    
+    RPL attribRPL(DPJRegionPathList tree, Env<AttrContext> env) {
+	attribTree(tree, env, NIL, Type.noType);
+	return tree.rpl;
+    }
+    
+    RefGroup attribRefGroup(JCIdent tree, Env<AttrContext> env) {
+	attribTree(tree, env, REF_GROUP, Type.noType);
+	if (tree.sym instanceof RefGroupNameSymbol)
+	    return new RefGroupName((RefGroupNameSymbol) tree.sym);
+	return new RefGroupParameter((RefGroupParameterSymbol) tree.sym);
+    }
+    
+    RefPerm attribRefPerm(JRGRefPerm tree, Env<AttrContext> env) {
+	if (tree.group == null) {
+	    tree.refPerm = RefPerm.SHARED;
+	}
+	else {
+	    RefGroup refGroup = attribRefGroup(tree.group, env);
+	    tree.refPerm = new LocallyUnique(refGroup);
+	}
+	return tree.refPerm;
+    }
 
     /** Derived visitor method: attribute a statement or definition tree.
      */
@@ -716,23 +743,17 @@ public class Attr extends JCTree.Visitor {
     }
 
     List<RPL> attribRPLs(List<DPJRegionPathList> trees) {
-	ListBuffer<RPL> buf = ListBuffer.lb();
+	ListBuffer<RPL> lb = ListBuffer.lb();
 	for (DPJRegionPathList tree : trees) {
-	    attribTree(tree, env, NIL, Type.noType);
-	    buf.append(tree.rpl);
+	    lb.append(attribRPL(tree, env));
 	}
-        return buf.toList();
+        return lb.toList();
     }
     
     List<RefGroup> attribRefGroups(List<JCIdent> trees) {
 	ListBuffer<RefGroup> lb = ListBuffer.lb();
 	for (JCIdent tree : trees) {
-	    attribTree(tree, env, Kinds.REF_GROUP, Type.noType);
-	    if (tree.sym instanceof RefGroupNameSymbol) {
-		lb.append(new RefGroupName((RefGroupNameSymbol) tree.sym));
-	    } else {
-		lb.append(new RefGroupParameter((RefGroupParameterSymbol) tree.sym));
-	    }
+	    lb.append(attribRefGroup(tree, env));
 	}
 	return lb.toList();
     }

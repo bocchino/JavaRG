@@ -43,8 +43,8 @@ import static com.sun.tools.javac.code.Flags.VARARGS;
 import static com.sun.tools.javac.code.Kinds.ERR;
 import static com.sun.tools.javac.code.Kinds.MTH;
 import static com.sun.tools.javac.code.Kinds.PCK;
-import static com.sun.tools.javac.code.Kinds.RPL_ELT;
 import static com.sun.tools.javac.code.Kinds.REF_GROUP;
+import static com.sun.tools.javac.code.Kinds.RPL_ELT;
 import static com.sun.tools.javac.code.Kinds.TYP;
 import static com.sun.tools.javac.code.Kinds.VAR;
 import static com.sun.tools.javac.code.TypeTags.CLASS;
@@ -67,7 +67,7 @@ import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.tools.JavaFileObject;
 
-import com.sun.tools.javac.code.RPLElement.RPLParameterElement;
+import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.Type.ErrorType;
 import com.sun.tools.javac.code.Type.ForAll;
@@ -86,7 +86,6 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Name;
-import com.sun.tools.javac.util.Pair;
 import com.sun.tools.javac.util.Position;
 import com.sun.tools.javac.util.Warner;
 
@@ -919,7 +918,7 @@ public abstract class Symbol implements Element {
         
         /** The reference permission associated with the variable
          */
-        public Permission refPerm;
+        public RefPerm refPerm = RefPerm.SHARED;
         
         /** The RPL in which this variable is declared
          */

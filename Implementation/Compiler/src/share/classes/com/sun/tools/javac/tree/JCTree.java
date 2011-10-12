@@ -51,7 +51,6 @@ import com.sun.source.tree.CompoundAssignmentTree;
 import com.sun.source.tree.ConditionalExpressionTree;
 import com.sun.source.tree.ContinueTree;
 import com.sun.source.tree.CopyPermTree;
-import com.sun.source.tree.JRGForLoopTree;
 import com.sun.source.tree.DerefSetTree;
 import com.sun.source.tree.DoWhileLoopTree;
 import com.sun.source.tree.EffectPermTree;
@@ -64,6 +63,7 @@ import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.IfTree;
 import com.sun.source.tree.ImportTree;
 import com.sun.source.tree.InstanceOfTree;
+import com.sun.source.tree.JRGForLoopTree;
 import com.sun.source.tree.LabeledStatementTree;
 import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberSelectTree;
@@ -101,6 +101,7 @@ import com.sun.tools.javac.code.BoundKind;
 import com.sun.tools.javac.code.Effects;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLElement;
 import com.sun.tools.javac.code.Scope;
@@ -862,20 +863,23 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCVariableDecl extends JCStatement implements VariableTree {
         public JCModifiers mods;
         public Name name;
-        public DPJRegionPathList rpl; // DPJ
+        public JRGRefPerm refPerm;
         public JCExpression vartype;
+        public DPJRegionPathList rpl;
         public JCExpression init;
         public VarSymbol sym;
         protected JCVariableDecl(JCModifiers mods,
 			 Name name,
-			 DPJRegionPathList rpl, // DPJ
+			 JRGRefPerm refPerm,
 			 JCExpression vartype,
+			 DPJRegionPathList rpl, // DPJ
 			 JCExpression init,
 			 VarSymbol sym) {
             this.mods = mods;
             this.name = name;
-            this.rpl = rpl; // DPJ
+            this.refPerm = refPerm;
             this.vartype = vartype;
+            this.rpl = rpl;
             this.init = init;
             this.sym = sym;
         }
@@ -2424,6 +2428,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
 	/** Group G in 'unique(G)'; set to 'null' if permission is 'shared' */
 	public JCIdent group;
+	public RefPerm refPerm;
 	
 	/** Internal representation */
 	// public RefPerm refPerm;
@@ -2830,8 +2835,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                             JCExpression defaultValue);
         JCVariableDecl VarDef(JCModifiers mods,
                       Name name,
-                      DPJRegionPathList rpl, // DPJ
+                      JRGRefPerm refPerm,
                       JCExpression vartype,
+                      DPJRegionPathList rpl,
                       JCExpression init);
         JCSkip Skip();
         JCBlock Block(long flags, List<JCStatement> stats);

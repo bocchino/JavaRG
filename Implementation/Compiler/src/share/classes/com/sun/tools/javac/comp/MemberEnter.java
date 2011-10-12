@@ -554,7 +554,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                       List.of(make.VarDef(make.Modifiers(Flags.PARAMETER),
                                             names.fromString("name"),
                                             null, // DPJ: null region
-                                            make.Type(syms.stringType), null)),
+                                            make.Type(syms.stringType), 
+                                            null, null)),
                       null,
                       List.<JCExpression>nil(), // thrown
                       null, //make.Block(0, Tree.emptyList.prepend(make.Return(make.Ident(names._null)))),
@@ -837,12 +838,14 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             localEnv = env.dup(tree, env.info.dup());
             localEnv.info.staticLevel++;
         }
+        attr.attribRefPerm(tree.refPerm, localEnv);
         attr.attribType(tree.vartype, localEnv);
         Scope enclScope = enter.enterScope(env);
         VarSymbol v =
             new VarSymbol(0, tree.name, tree.vartype.type, enclScope.owner);
         v.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, v, tree);
         tree.sym = v;
+        tree.sym.refPerm = tree.refPerm.refPerm;
         
         if ((v.flags_field & FINAL) == 0) {
             if (tree.rpl != null) {
@@ -1144,6 +1147,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 	names.length,
                 	null,
                 	make.Type(syms.typeOfTag[TypeTags.INT]),
+                	null,
                 	make.Literal(new Integer(0)));
                 tree.defs = tree.defs.prepend(fieldDef);
             }

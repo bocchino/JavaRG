@@ -42,7 +42,6 @@ import java.util.Set;
 
 import com.sun.tools.javac.code.BoundKind;
 import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
@@ -50,7 +49,6 @@ import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.TypeTags;
 import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.tree.JCTree.JRGForLoop;
 import com.sun.tools.javac.tree.JCTree.DPJNegationExpression;
 import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
@@ -106,8 +104,10 @@ import com.sun.tools.javac.tree.JCTree.JCUnary;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JCWhileLoop;
 import com.sun.tools.javac.tree.JCTree.JCWildcard;
+import com.sun.tools.javac.tree.JCTree.JRGForLoop;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
+import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.JCTree.TypeBoundKind;
 import com.sun.tools.javac.util.Convert;
@@ -774,6 +774,17 @@ public class Pretty extends JCTree.Visitor {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }	
+    }
+    
+    public void visitRefPerm(JRGRefPerm tree) {
+	try {
+	    if (codeGenMode == NONE && tree.group != null) {
+		print("unique(" + tree.group + ")");
+	    }
+	}
+	catch (IOException e) {
+	    throw new UncheckedIOException(e);
+	}
     }
     
     public void visitRPLElt(DPJRegionPathListElt tree) { 

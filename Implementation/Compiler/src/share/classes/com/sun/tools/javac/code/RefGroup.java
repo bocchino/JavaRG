@@ -2,9 +2,12 @@ package com.sun.tools.javac.code;
 
 import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
+import com.sun.tools.javac.code.Symbol.RefGroupSymbol;
 import com.sun.tools.javac.util.List;
 
 public abstract class RefGroup {
+    
+    public abstract RefGroupSymbol getSymbol();
     
     public RefGroup subst(List<RefGroup> from, List<RefGroup> to) {
 	while (from.nonEmpty() && to.nonEmpty()) {
@@ -22,7 +25,11 @@ public abstract class RefGroup {
 	public RefGroupName(RefGroupNameSymbol sym) {
 	    this.sym = sym;
 	}
-	
+
+	@Override public RefGroupSymbol getSymbol() {
+	    return this.sym;
+	}
+
 	@Override public String toString() {
 	    return sym.toString();
 	}
@@ -50,6 +57,10 @@ public abstract class RefGroup {
 	
 	public RefGroupParameter(RefGroupParameterSymbol sym) {
 	    this.sym = sym;
+	}
+
+	@Override public RefGroupSymbol getSymbol() {
+	    return this.sym;
 	}
 
 	@Override public String toString() {

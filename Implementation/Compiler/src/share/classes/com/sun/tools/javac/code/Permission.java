@@ -4,22 +4,26 @@ import com.sun.tools.javac.code.Symbol.RefGroupSymbol;
 
 public abstract class Permission {
     
-    public static abstract class ReferencePermission extends Permission {
+    public static abstract class RefPerm extends Permission {
 	
     }
     
-    public static final ReferencePermission SHARED = new ReferencePermission() {
+    public static final RefPerm SHARED = new RefPerm() {
         @Override public String toString() {
             return "shared";
         }
     };
     
-    public static class LocallyUnique extends ReferencePermission {
+    public static class LocallyUnique extends RefPerm {
 	
-	RefGroupSymbol refGroup;
+	RefGroup refGroup;
+
+	public LocallyUnique(RefGroup refGroup) {
+	    this.refGroup = refGroup;
+	}
 	
 	@Override public String toString() {
-	    return "unique(" + refGroup.name + ")";
+	    return "unique(" + refGroup + ")";
 	}
 	
     }

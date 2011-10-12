@@ -288,10 +288,11 @@ public class TreeMaker implements JCTree.Factory {
     }
 
     public JCVariableDecl VarDef(JCModifiers mods, Name name, 
-	    DPJRegionPathList rpl, JCExpression vartype, 
-	    JCExpression init) {
+	    JRGRefPerm refPerm, JCExpression vartype, 
+	    DPJRegionPathList rpl, JCExpression init) {
+	if (refPerm == null) refPerm = RefPerm(null);
         JCVariableDecl tree = new JCVariableDecl(mods, name, 
-        	rpl, vartype, init, null);
+        	refPerm, vartype, rpl, init, null);
         tree.pos = pos;
         return tree;
     }
@@ -871,9 +872,9 @@ public class TreeMaker implements JCTree.Factory {
             new JCVariableDecl(
                 Modifiers(v.flags(), Annotations(v.getAnnotationMirrors())),
                 v.name,
-//                v.rgn == null ? null : DPJRegionPathList(v.rgn), // DPJ
-                null, // FIXME
+                RefPerm(null), // FIXME
                 Type(v.type),
+                null, // FIXME
                 init,
                 v).setPos(pos).setType(v.type);
     }

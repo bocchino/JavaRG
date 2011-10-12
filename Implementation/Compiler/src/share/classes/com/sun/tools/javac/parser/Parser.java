@@ -2150,7 +2150,7 @@ public class Parser {
         JCExpression type =
         	to(F.at(S.pos()).TypeIdent(typetag(INT)));
 	JCVariableDecl indexVar = 
-		toP(F.at(pos).VarDef(mods, indexVarName, null, type, null));
+		toP(F.at(pos).VarDef(mods, indexVarName, null, type, null, null));
 	acceptIdent("in");
 	JCExpression array = expression();
 	boolean isParallel = false;
@@ -2170,7 +2170,7 @@ public class Parser {
         accept(LPAREN);
         JCVariableDecl formal =
             variableDeclaratorId(optFinal(Flags.PARAMETER),
-                                 qualident());
+                                 null, qualident());
         accept(RPAREN);
         JCBlock body = block();
         return F.at(pos).Catch(formal, body);
@@ -2498,20 +2498,21 @@ public class Parser {
         }
         else if (reqInit) syntaxError(S.pos(), "expected", keywords.token2string(EQ));
         JCVariableDecl result =
-            toP(F.at(pos).VarDef(mods, name, rpl, type, init));
+            toP(F.at(pos).VarDef(mods, name, refPerm, type, rpl, init));
         attach(result, dc);
         return result;
     }
 
     /** VariableDeclaratorId = Ident BracketsOpt RegionOpt
      */
-    JCVariableDecl variableDeclaratorId(JCModifiers mods, JCExpression type) {
+    JCVariableDecl variableDeclaratorId(JCModifiers mods, JRGRefPerm refPerm,
+	    JCExpression type) {
         int pos = S.pos();
         Name name = name();
         if ((mods.flags & Flags.VARARGS) == 0)
             type = bracketsOpt(type);
         JCTree.DPJRegionPathList rpl = regionOpt();
-        return toP(F.at(pos).VarDef(mods, name, rpl, type, null));
+        return toP(F.at(pos).VarDef(mods, name, refPerm, type, rpl, null));
     }
 
     /** RegionOpt = { "in" RegionPathList }
@@ -3015,7 +3016,7 @@ public class Parser {
         if (createPos != Position.NOPOS)
             storeEnd(create, S.prevEndPos());
         ident = F.at(Position.NOPOS).Ident(enumName);
-        JCTree result = toP(F.at(pos).VarDef(mods, name, null, ident, create));
+        JCTree result = toP(F.at(pos).VarDef(mods, name, null, ident, null, create));
         attach(result, dc);
         return result;
     }
@@ -3614,6 +3615,7 @@ public class Parser {
      */
     JCVariableDecl formalParameter() {
         JCModifiers mods = optFinal(Flags.PARAMETER);
+        JRGRefPerm refPerm = refPermOpt();
         JCExpression type = type();
         if (S.token() == ELLIPSIS) {
             checkVarargs();
@@ -3621,7 +3623,7 @@ public class Parser {
             type = to(F.at(S.pos()).TypeArray(type));
             S.nextToken();
         }
-        return variableDeclaratorId(mods, type);
+        return variableDeclaratorId(mods, refPerm, type);
     }
 
 /* ---------- auxiliary methods -------------- */

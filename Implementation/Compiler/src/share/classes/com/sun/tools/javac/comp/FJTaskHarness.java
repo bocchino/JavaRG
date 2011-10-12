@@ -112,7 +112,7 @@ public class FJTaskHarness extends TreeScanner {
                          names.fromString("args"), null,
                          make.TypeArray(
                           make.Ident(names.fromString("String"))),
-                         null));
+                         null, null));
 
     	    //add boilerplate "public static void main()" method to method list
     	    List<JCExpression> literalList = List.<JCExpression>nil();
@@ -151,7 +151,7 @@ public class FJTaskHarness extends TreeScanner {
 		        names.fromString("args"), null,
 		        make.TypeArray(
 		        	make.Ident(names.fromString("String"))),
-		        		null));
+		        		null, null));
 
 	    thrown = List.<JCExpression>nil().append(
 		    make.Ident(names.fromString("Throwable")));
