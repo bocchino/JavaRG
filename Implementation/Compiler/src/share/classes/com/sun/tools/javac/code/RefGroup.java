@@ -7,6 +7,11 @@ import com.sun.tools.javac.util.List;
 public abstract class RefGroup {
     
     public RefGroup subst(List<RefGroup> from, List<RefGroup> to) {
+	while (from.nonEmpty() && to.nonEmpty()) {
+	    if (from.head.equals(this)) return to.head;
+	    from = from.tail;
+	    to = to.tail;
+	}
 	return this;
     }
     
@@ -32,6 +37,11 @@ public abstract class RefGroup {
 	    return this;
 	}
 	
+	@Override public boolean equals(Object obj) {
+	    if (!(obj instanceof RefGroupName)) return false;
+	    return sym.equals(((RefGroupName) obj).sym);
+	}
+	
     }
 
     public static class RefGroupParameter extends RefGroup {
@@ -46,6 +56,11 @@ public abstract class RefGroup {
 	    return sym.toString();
 	}
 	
+	@Override public boolean equals(Object obj) {
+	    if (!(obj instanceof RefGroupParameter)) return false;
+	    return sym.equals(((RefGroupParameter) obj).sym);
+	}
+
     }
     
 }

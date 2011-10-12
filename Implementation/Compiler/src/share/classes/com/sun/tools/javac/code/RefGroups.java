@@ -36,5 +36,15 @@ public class RefGroups {
 	}
 	return lb.toList();
     }
+        
+    boolean equalEffects(List<Effects> ts, List<Effects> ss) {
+	while (ts.nonEmpty() && ss.nonEmpty()
+		&& ss.head.equals(ts.head)) {
+	    ts = ts.tail;
+	    ss = ss.tail;
+	}
+	return ts.isEmpty() && ss.isEmpty();
+    }
+
     
 }

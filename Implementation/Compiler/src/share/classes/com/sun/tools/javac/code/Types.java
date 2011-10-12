@@ -465,24 +465,19 @@ public class Types {
                 }
             }
             
-            private boolean containsEffectsRecursive(Type t, Type s) {
-        	/*
+            private boolean equalRefGroups(Type t, Type s) {
                 TypePair pair = new TypePair(t, s);
                 if (cache.add(pair)) {
                     try {
-                        return containsEffects(t.getEffectArguments(),
-                                               s.getEffectArguments(),
-                                               requireEqualRegions);
+                        return List.equals(t.getRefGroupArguments(),
+                        	s.getRefGroupArguments());
                     } finally {
                         cache.remove(pair);
                     }
                 } else {
-                    return containsEffects(t.getEffectArguments(),
-                                           rewriteSupers(s).getEffectArguments(),
-                                           requireEqualRegions);
+                    return List.equals(t.getRefGroupArguments(),
+                              	rewriteSupers(s).getRefGroupArguments());
                 }
-                */
-        	return true; // FIXME
             }
 
             private Type rewriteSupers(Type t) {
@@ -537,7 +532,7 @@ public class Types {
                     // here instead of same-type checking (via containsType).
                     && (!s.isParameterized() || containsTypeRecursive(s, sup))
                     && (!s.tsym.type.hasRegionParams() || containsRegionsRecursive(s, sup))
-                    && (!s.tsym.type.hasRefGroupParams() || containsEffectsRecursive(s, sup))
+                    && (!s.tsym.type.hasRefGroupParams() || equalRefGroups(s, sup))
                     && isSubtypeNoCapture(sup.getEnclosingType(),
                                           s.getEnclosingType());
             }
@@ -858,19 +853,6 @@ public class Types {
         return ts.isEmpty() && ss.isEmpty();	
     }
     
-    boolean containsEffects(List<Effects> ts, List<Effects> ss, 
-	    boolean requireEqualRegions) {
-	if (requireEqualRegions) return equalEffects(ts, ss);
-	while (ts.nonEmpty() && ss.nonEmpty()
-		&& ss.head.areSubeffectsOf(ts.head)) {
-	    ts = ts.tail;
-	    ss = ss.tail;
-	}
-	if (ts.isEmpty() && ss.isEmpty())
-	    return true;
-	return false;
-    }
-    
     boolean equalRegions(List<RPL> ts, List<RPL> ss ) {
 	while (ts.nonEmpty() && ss.nonEmpty()
 		&& ss.head.equals(ts.head)) {
@@ -880,15 +862,6 @@ public class Types {
 	return ts.isEmpty() && ss.isEmpty();
     }
 
-    boolean equalEffects(List<Effects> ts, List<Effects> ss) {
-	while (ts.nonEmpty() && ss.nonEmpty()
-		&& ss.head.equals(ts.head)) {
-	    ts = ts.tail;
-	    ss = ss.tail;
-	}
-	return ts.isEmpty() && ss.isEmpty();
-    }
-    
     /**
      * Check if t contains s.
      *

@@ -48,5 +48,9 @@ public class ClassParams extends DPJTestCase {
     @Test public void testAllParamsImplements() throws Throwable {
 	compile("AllParamsImplements");
     }
+    
+    @Test public void testErrorClassParamArg() throws Throwable {
+	compileExpectingErrors("ErrorClassParamArg", 1);
+    }
 
 }
