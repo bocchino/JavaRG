@@ -2464,7 +2464,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     
     public static class JRGMethodPerms extends JCTree implements MethodPermsTree {
 
-	public JRGRefPerm refPerm;
+	public JRGRefPerm thisPerm;
 	public List<JCIdent> freshGroups;
 	public List<JRGCopyPerm> copyPerms;
 	public boolean defaultEffectPerms;
@@ -2473,12 +2473,12 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 	public List<JCIdent> preservedGroups;
 	public List<JCIdent> updatedGroups;
 	
-	protected JRGMethodPerms(JRGRefPerm refPerm, List<JCIdent> freshGroups,
+	protected JRGMethodPerms(JRGRefPerm thisPerm, List<JCIdent> freshGroups,
 		List<JRGCopyPerm> copyPerms,boolean defaultEffectPerms,
 		List<JRGEffectPerm> readffectPerms, 
 		List<JRGEffectPerm> writeEffectPerms,
 		List<JCIdent> preservedGroups, List<JCIdent> updatedGroups) {
-	    this.refPerm = refPerm;
+	    this.thisPerm = thisPerm;
 	    this.freshGroups = freshGroups;
 	    this.copyPerms = copyPerms;
 	    this.defaultEffectPerms = defaultEffectPerms;
@@ -2911,7 +2911,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         JRGPardo Pardo(JCBlock body);
         JCWildcard Wildcard(TypeBoundKind kind, JCTree type);
         JRGRefPerm RefPerm(JCIdent group);
-        JRGMethodPerms MethodPerms(JRGRefPerm refPerm, List<JCIdent> freshGroups,
+        JRGMethodPerms MethodPerms(JRGRefPerm thisPerm, List<JCIdent> freshGroups,
         	List<JRGCopyPerm> copyPerms, boolean defaultEffectPerms,
         	List<JRGEffectPerm> readEffectPerms, 
         	List<JRGEffectPerm> writeEffectPerms, 

@@ -2126,28 +2126,9 @@ public class Attr extends JCTree.Visitor {
 	}
     }
     
-    private void assignRefPerm__(RefPerm leftPerm, JCExpression right) {
-	Symbol rightSym = right.getSymbol();
-	if (rightSym instanceof VarSymbol) {
-	    VarSymbol rightVarSym = (VarSymbol) rightSym;
-	    RefPerm rightPerm = rightVarSym.refPerm;
-	    if (right instanceof JCFieldAccess) {
-		JCFieldAccess fa = (JCFieldAccess) right;
-		rightPerm = leftPerm.asMemberOf(types, fa.selected.type);
-	    }
-	    RefPerm remainder = permissions.split(leftPerm, rightPerm);
-	    if (remainder == RefPerm.SHARED) {
-		rightVarSym.refPerm = RefPerm.SHARED;
-	    }
-	    else if (remainder == RefPerm.ERROR){
-		log.error(right.pos, "insufficent.ref.perm");
-	    }
-	}
-    }
-    
-    private void assignRefPerm(RefPerm leftPerm, JCExpression right) {
+    private RefPerm assignRefPerm(RefPerm leftPerm, JCExpression right) {
 	RefPermAssigner refPermAssigner = new RefPermAssigner(leftPerm, right);
-	refPermAssigner.assign();
+	return refPermAssigner.assign();
     }
  
     private class RefPermAssigner extends JCTree.Visitor {
@@ -2161,11 +2142,12 @@ public class Attr extends JCTree.Visitor {
 	    this.right = right;
 	}
 
-	void assign() {
+	RefPerm assign() {
 	    right.accept(this);
 	    if (remainder == RefPerm.ERROR) {
 		log.error(right.pos, "insufficent.ref.perm");
 	    }
+	    return remainder;
 	}
 
         @Override
@@ -2199,43 +2181,49 @@ public class Attr extends JCTree.Visitor {
         }
         
         @Override public void visitNewClass(JCNewClass right) {
-            // TODO
+            // Nothing to do
         }
         
         @Override public void visitNewArray(JCNewArray right) {
-            // TODO
+            // Nothing to do
         }
         
         @Override public void visitTypeCast(JCTypeCast right) {
-            // TODO
+            right.expr.accept(this);
         }
         
         @Override public void visitLiteral(JCLiteral right) {
-            // TODO
+            // Nothing to do
         }
         
         @Override public void visitParens(JCParens right) {
-            // TODO
+            right.expr.accept(this);
         }
         
         @Override public void visitConditional(JCConditional right) {
-            // TODO
+            remainder = assignRefPerm(leftPerm, right.truepart);
+            if (remainder != RefPerm.ERROR)
+        	remainder = assignRefPerm(leftPerm, right.falsepart);
+            else
+        	assignRefPerm(leftPerm, right.falsepart);
         }
         
         @Override public void visitAssign(JCAssign right) {
-            // TODO
+            remainder = (leftPerm == RefPerm.SHARED) ? 
+        	    RefPerm.SHARED : RefPerm.ERROR;
         }
         
         @Override public void visitAssignop(JCAssignOp right) {
-            // TODO
+            // Nothing to do
         }
         
         @Override public void visitBinary(JCBinary right) {
-            // TODO
+            // Nothing to do
         }
         
         @Override public void visitIndexed(JCArrayAccess right) {
-            // TODO
+            remainder = (leftPerm == RefPerm.SHARED) ? 
+        	    RefPerm.SHARED : RefPerm.ERROR;
         }
     }
     
