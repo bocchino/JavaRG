@@ -82,6 +82,7 @@ import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Permission.LocallyUnique;
 import com.sun.tools.javac.code.Permission.RefPerm;
+import com.sun.tools.javac.code.Permissions;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLElement;
 import com.sun.tools.javac.code.RPLElement.NameRPLElement;
@@ -101,7 +102,6 @@ import com.sun.tools.javac.code.Symbol.OperatorSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
-import com.sun.tools.javac.code.Symbol.RefGroupSymbol;
 import com.sun.tools.javac.code.Symbol.RegionNameSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
@@ -226,6 +226,7 @@ public class Attr extends JCTree.Visitor {
     final Types types;
     final Annotate annotate;
     final RPLs rpls;
+    final Permissions permissions;
 
     /**
      * A small pass that happens after Enter and before Attr.  It scans the tree and
@@ -348,6 +349,7 @@ public class Attr extends JCTree.Visitor {
         types = Types.instance(context);
         annotate = Annotate.instance(context);
         rpls = RPLs.instance(context);
+        permissions = Permissions.instance(context);
         
         Options options = Options.instance(context);
 
@@ -2107,8 +2109,37 @@ public class Attr extends JCTree.Visitor {
         Type capturedType = capture(owntype);
         attribExpr(tree.rhs, env, owntype);
         result = check(tree, capturedType, VAL, pkind, pt);
+        assignRefPerm(tree.lhs, tree.rhs);
     }
 
+    private void assignRefPerm(JCExpression left, JCExpression right) {
+	Symbol leftSym = left.getSymbol();
+	Symbol rightSym = right.getSymbol();
+	if (leftSym instanceof VarSymbol) {
+	    VarSymbol leftVarSym = (VarSymbol) leftSym;
+	    if (rightSym instanceof VarSymbol) {
+		VarSymbol rightVarSym = (VarSymbol) rightSym;
+		RefPerm leftPerm = leftVarSym.refPerm;
+		RefPerm rightPerm = rightVarSym.refPerm;
+		if (left instanceof JCFieldAccess) {
+		    JCFieldAccess fa = (JCFieldAccess) left;
+		    leftPerm = leftPerm.asMemberOf(types, fa.selected.type);
+		}
+		if (right instanceof JCFieldAccess) {
+		    JCFieldAccess fa = (JCFieldAccess) right;
+		    rightPerm = leftPerm.asMemberOf(types, fa.selected.type);
+		}
+		RefPerm remainder = permissions.split(leftPerm, rightPerm);
+		if (remainder == RefPerm.SHARED) {
+		    rightVarSym.refPerm = RefPerm.SHARED;
+		}
+		else {
+		    log.error(right.pos, "insufficent.ref.perm");
+		}
+	    }
+	}
+    }
+    
     public void visitAssignop(JCAssignOp tree) {
         // Attribute arguments.
         Type owntype = attribTree(tree.lhs, env, VAR, Type.noType);

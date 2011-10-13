@@ -348,7 +348,7 @@ public class Type implements PrimitiveType {
     /** Return reference group parameters of this type and all its outer types in order
      *  outer (first) to inner (last).
      */
-     public List<RefGroup> allRefGroupParams() { return List.nil(); }
+     public List<RefGroup> allRefGroups() { return List.nil(); }
 
      /** Does this type contain "error" elements?
      */
@@ -884,10 +884,10 @@ public class Type implements PrimitiveType {
         }
         
         @Override
-        public List<RefGroup> allRefGroupParams() {
+        public List<RefGroup> allRefGroups() {
             if (allRefGroupParams_field == null) {
                 allRefGroupParams_field = 
-                    getRefGroupArguments().prependList(getEnclosingType().allRefGroupParams());
+                    getRefGroupArguments().prependList(getEnclosingType().allRefGroups());
             }
             return allRefGroupParams_field;
         }
@@ -909,7 +909,7 @@ public class Type implements PrimitiveType {
         }
         
         public boolean hasRefGroupParams() {
-            return allRefGroupParams().tail != null;
+            return allRefGroups().tail != null;
         }
 
         /** A cache for the rank. */

@@ -1,8 +1,10 @@
 package com.sun.tools.javac.code;
 
+import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupSymbol;
+import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.util.List;
 
 public abstract class RefGroup {
@@ -15,6 +17,13 @@ public abstract class RefGroup {
 	    from = from.tail;
 	    to = to.tail;
 	}
+	return this;
+    }
+    
+    /**
+     * The reference group 'this' as a member of type t
+     */
+    public RefGroup asMemberOf(Types types, Type t) {
 	return this;
     }
     
@@ -63,6 +72,23 @@ public abstract class RefGroup {
 	    return this.sym;
 	}
 
+	@Override public RefGroup asMemberOf(Types types, Type t) {
+	    RefGroup result = this;
+	    Symbol enclosingClass = this.sym.owner;
+	    if (enclosingClass instanceof MethodSymbol) {
+		enclosingClass = sym.owner;
+	    }
+	    if (enclosingClass.type.hasRefGroupParams()) {
+		Type baseClass = types.asOuterSuper(t, enclosingClass);
+		if (baseClass != null) {
+		    List<RefGroup> from = enclosingClass.type.allRefGroups();
+		    List<RefGroup> to = baseClass.allRefGroups();
+		    result = result.subst(from, to);
+		}
+	    }
+	    return result;
+	}
+	
 	@Override public String toString() {
 	    return sym.toString();
 	}

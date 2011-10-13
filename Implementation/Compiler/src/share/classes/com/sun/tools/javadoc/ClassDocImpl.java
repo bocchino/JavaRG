@@ -398,7 +398,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
      */
     static boolean isGeneric(ClassSymbol c) {
 	return c.type.alltyparams().nonEmpty() || c.type.allrgnparams().nonEmpty() ||
-		c.type.allRefGroupParams().nonEmpty();
+		c.type.allRefGroups().nonEmpty();
     }
 
     /**

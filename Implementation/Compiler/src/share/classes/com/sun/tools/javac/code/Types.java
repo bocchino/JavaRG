@@ -1589,8 +1589,8 @@ public class Types {
                 if (((flags & STATIC) == 0) && owner.type.hasRefGroupParams()) {
                     Type base = asOuterSuper(t, owner);
                     if (base != null) {
-                	List<RefGroup> ownerParams = owner.type.allRefGroupParams();
-                	List<RefGroup> baseParams = base.allRefGroupParams();
+                	List<RefGroup> ownerParams = owner.type.allRefGroups();
+                	List<RefGroup> baseParams = base.allRefGroups();
                 	if (ownerParams.nonEmpty()) {
                 	    result = substRefGroups(result, ownerParams, baseParams);
                 	}
@@ -1820,7 +1820,7 @@ public class Types {
                         List<RegionParameterSymbol> rgnformals = t.tsym.type.allrgnparams();
                         t.supertype_field = substRPL(t.supertype_field, rgnformals, rgnactuals);
                         t.supertype_field = substRefGroups(t.supertype_field, 
-                        	t.tsym.type.allRefGroupParams(), classBound(t).allRefGroupParams());
+                        	t.tsym.type.allRefGroups(), classBound(t).allRefGroups());
                     }
                 }
                 return t.supertype_field;
@@ -1911,8 +1911,8 @@ public class Types {
                     	    t.tsym.type.allrgnparams(),
                     	    t.allrgnactuals());
                         t.interfaces_field = substRefGroups(t.interfaces_field,
-                        	t.tsym.type.allRefGroupParams(),
-                        	t.allRefGroupParams());
+                        	t.tsym.type.allRefGroups(),
+                        	t.allRefGroups());
                     }
                 }
                 return t.interfaces_field;
