@@ -343,8 +343,6 @@ public class TreeScanner extends Visitor {
 	// TODO	
     }
 
-    public void visitTree(JCTree tree) {
-	assert false;
-    }
+    public void visitTree(JCTree tree) { assert false; }
     
 }

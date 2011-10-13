@@ -24,4 +24,12 @@ public class RefPerms extends DPJTestCase {
     @Test public void testErrorInit() throws Throwable {
 	compileExpectingErrors("ErrorInit", 1);
     }
+    
+    @Test public void testErrorFieldAccess() throws Throwable {
+	compileExpectingErrors("ErrorFieldAccess", 1);
+    }
+    
+    @Test public void testDestructiveRead() throws Throwable {
+	compile("DestructiveRead");
+    }
 }

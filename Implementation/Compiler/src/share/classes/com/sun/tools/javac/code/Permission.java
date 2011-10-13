@@ -13,13 +13,20 @@ public abstract class Permission {
 	    return this;
 	}
 	
+	public static final RefPerm SHARED = new RefPerm() {
+	    @Override public String toString() {
+		return "shared";
+	    }
+	};
+	    
+	public static final RefPerm ERROR = new RefPerm() {
+	    @Override public String toString() {
+		return "error";
+	    }
+	};
+    
     }
     
-    public static final RefPerm SHARED = new RefPerm() {
-        @Override public String toString() {
-            return "shared";
-        }
-    };
     
     public static class LocallyUnique extends RefPerm {
 	

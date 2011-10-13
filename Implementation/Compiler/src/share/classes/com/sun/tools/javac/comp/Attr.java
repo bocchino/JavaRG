@@ -535,7 +535,7 @@ public class Attr extends JCTree.Visitor {
             @Override
             public Symbol visitIdentifier(IdentifierTree node, Env<AttrContext> env) {
                 return rs.findIdent(env, (Name)node.getName(), TYP | PCK);
-            }
+            }            
         }
 
     public Type coerce(Type etype, Type ttype) {
@@ -2126,7 +2126,7 @@ public class Attr extends JCTree.Visitor {
 	}
     }
     
-    private void assignRefPerm(RefPerm leftPerm, JCExpression right) {
+    private void assignRefPerm__(RefPerm leftPerm, JCExpression right) {
 	Symbol rightSym = right.getSymbol();
 	if (rightSym instanceof VarSymbol) {
 	    VarSymbol rightVarSym = (VarSymbol) rightSym;
@@ -2139,11 +2139,106 @@ public class Attr extends JCTree.Visitor {
 	    if (remainder == RefPerm.SHARED) {
 		rightVarSym.refPerm = RefPerm.SHARED;
 	    }
-	    else {
+	    else if (remainder == RefPerm.ERROR){
 		log.error(right.pos, "insufficent.ref.perm");
 	    }
 	}
     }
+    
+    private void assignRefPerm(RefPerm leftPerm, JCExpression right) {
+	RefPermAssigner refPermAssigner = new RefPermAssigner(leftPerm, right);
+	refPermAssigner.assign();
+    }
+ 
+    private class RefPermAssigner extends JCTree.Visitor {
+	
+	RefPerm leftPerm;
+	JCExpression right;
+	RefPerm remainder;
+	
+	RefPermAssigner(RefPerm leftPerm, JCExpression right) {
+	    this.leftPerm = leftPerm;
+	    this.right = right;
+	}
+
+	void assign() {
+	    right.accept(this);
+	    if (remainder == RefPerm.ERROR) {
+		log.error(right.pos, "insufficent.ref.perm");
+	    }
+	}
+
+        @Override
+        public void visitIdent(JCIdent right) {
+    	    VarSymbol rightVarSym = (VarSymbol) right.sym;
+    	    RefPerm rightPerm = rightVarSym.refPerm;
+    	    remainder = permissions.split(leftPerm, rightPerm);
+    	    if (remainder == RefPerm.SHARED) {
+    		rightVarSym.refPerm = RefPerm.SHARED;
+    	    }
+    	}
+        
+        @Override
+        public void visitSelect(JCFieldAccess right) {
+            remainder = (leftPerm == RefPerm.SHARED) ? 
+        	    RefPerm.SHARED : RefPerm.ERROR;
+        }
+        
+        @Override public void visitUnary(JCUnary right) {
+            if (right.isDestructiveAccess) {
+        	JCFieldAccess fa = (JCFieldAccess) right.arg;
+    	    	VarSymbol rightVarSym = (VarSymbol) fa.sym;
+    	    	RefPerm rightPerm = rightVarSym.refPerm;
+    		rightPerm = rightPerm.asMemberOf(types, fa.selected.type);
+    		remainder = permissions.split(leftPerm, rightPerm);
+             }
+        }
+        
+        @Override public void visitApply(JCMethodInvocation right) {
+            // TODO
+        }
+        
+        @Override public void visitNewClass(JCNewClass right) {
+            // TODO
+        }
+        
+        @Override public void visitNewArray(JCNewArray right) {
+            // TODO
+        }
+        
+        @Override public void visitTypeCast(JCTypeCast right) {
+            // TODO
+        }
+        
+        @Override public void visitLiteral(JCLiteral right) {
+            // TODO
+        }
+        
+        @Override public void visitParens(JCParens right) {
+            // TODO
+        }
+        
+        @Override public void visitConditional(JCConditional right) {
+            // TODO
+        }
+        
+        @Override public void visitAssign(JCAssign right) {
+            // TODO
+        }
+        
+        @Override public void visitAssignop(JCAssignOp right) {
+            // TODO
+        }
+        
+        @Override public void visitBinary(JCBinary right) {
+            // TODO
+        }
+        
+        @Override public void visitIndexed(JCArrayAccess right) {
+            // TODO
+        }
+    }
+    
     
     public void visitAssignop(JCAssignOp tree) {
         // Attribute arguments.
