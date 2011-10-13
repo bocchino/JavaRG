@@ -21,4 +21,7 @@ public class RefPerms extends DPJTestCase {
 	compileExpectingErrors("ErrorConsumeUnique", 1);
     }
     
+    @Test public void testErrorInit() throws Throwable {
+	compileExpectingErrors("ErrorInit", 1);
+    }
 }

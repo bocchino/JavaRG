@@ -1152,6 +1152,7 @@ public class Attr extends JCTree.Visitor {
                     v.pos = Position.MAXPOS;
                     attribExpr(tree.init, initEnv, v.type);
                     v.pos = tree.pos;
+                    assignRefPerm(v.refPerm, tree.init);
                 }
             }
             result = tree.type = v.type;
@@ -2114,28 +2115,32 @@ public class Attr extends JCTree.Visitor {
 
     private void assignRefPerm(JCExpression left, JCExpression right) {
 	Symbol leftSym = left.getSymbol();
-	Symbol rightSym = right.getSymbol();
 	if (leftSym instanceof VarSymbol) {
 	    VarSymbol leftVarSym = (VarSymbol) leftSym;
-	    if (rightSym instanceof VarSymbol) {
-		VarSymbol rightVarSym = (VarSymbol) rightSym;
-		RefPerm leftPerm = leftVarSym.refPerm;
-		RefPerm rightPerm = rightVarSym.refPerm;
-		if (left instanceof JCFieldAccess) {
-		    JCFieldAccess fa = (JCFieldAccess) left;
-		    leftPerm = leftPerm.asMemberOf(types, fa.selected.type);
-		}
-		if (right instanceof JCFieldAccess) {
-		    JCFieldAccess fa = (JCFieldAccess) right;
-		    rightPerm = leftPerm.asMemberOf(types, fa.selected.type);
-		}
-		RefPerm remainder = permissions.split(leftPerm, rightPerm);
-		if (remainder == RefPerm.SHARED) {
-		    rightVarSym.refPerm = RefPerm.SHARED;
-		}
-		else {
-		    log.error(right.pos, "insufficent.ref.perm");
-		}
+	    RefPerm leftPerm = leftVarSym.refPerm;
+	    if (left instanceof JCFieldAccess) {
+		JCFieldAccess fa = (JCFieldAccess) left;
+		leftPerm = leftPerm.asMemberOf(types, fa.selected.type);
+	    }
+	    assignRefPerm(leftPerm, right);
+	}
+    }
+    
+    private void assignRefPerm(RefPerm leftPerm, JCExpression right) {
+	Symbol rightSym = right.getSymbol();
+	if (rightSym instanceof VarSymbol) {
+	    VarSymbol rightVarSym = (VarSymbol) rightSym;
+	    RefPerm rightPerm = rightVarSym.refPerm;
+	    if (right instanceof JCFieldAccess) {
+		JCFieldAccess fa = (JCFieldAccess) right;
+		rightPerm = leftPerm.asMemberOf(types, fa.selected.type);
+	    }
+	    RefPerm remainder = permissions.split(leftPerm, rightPerm);
+	    if (remainder == RefPerm.SHARED) {
+		rightVarSym.refPerm = RefPerm.SHARED;
+	    }
+	    else {
+		log.error(right.pos, "insufficent.ref.perm");
 	    }
 	}
     }
