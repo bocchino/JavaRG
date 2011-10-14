@@ -1238,7 +1238,7 @@ public abstract class Symbol implements Element {
         public Code code = null;
 
         /** The return permission of the method */
-        public RefPerm resPerm;
+        public RefPerm resPerm = RefPerm.SHARED;
         
         /** The parameters of the method. */
         public List<VarSymbol> params = null;

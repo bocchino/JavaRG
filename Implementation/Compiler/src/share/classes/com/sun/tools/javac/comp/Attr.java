@@ -2199,14 +2199,8 @@ public class Attr extends JCTree.Visitor {
             MethodSymbol methSym = right.getMethodSymbol();
             if (methSym != null) {
         	RefPerm rightPerm = methSym.resPerm;
-        	if (rightPerm == null) {
-        	    // TODO: Why does this happen?
-        	    rightPerm = methSym.resPerm = RefPerm.SHARED;
-        	}
-        	else {
-        	    rightPerm = rightPerm.subst(methSym.refGroupParams, 
-        		    right.mtype.refGroupActuals);
-        	}
+        	rightPerm = rightPerm.subst(methSym.refGroupParams, 
+        		right.mtype.refGroupActuals);
         	remainder = permissions.split(leftPerm, rightPerm);
             }
         }
