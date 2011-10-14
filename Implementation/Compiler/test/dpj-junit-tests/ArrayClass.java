@@ -69,4 +69,8 @@ public class ArrayClass extends DPJTestCase {
 	compile("ArrayOfArrayOfInt");
     }
     
+    @Test public void testErrorNonDestructive() throws Throwable {
+	compileExpectingErrors("ErrorNonDestructive", 1);
+    }
+    
 }

@@ -3143,8 +3143,8 @@ public class Parser {
                     } else {
                         pos = S.pos();
                         List<JCTree> err = isVoid
-                            ? List.<JCTree>of(toP(F.at(pos).MethodDef(mods, name, type, 
-                        	    dpjParamInfo, typarams,
+                            ? List.<JCTree>of(toP(F.at(pos).MethodDef(mods, name, 
+                        	    refPerm, type, dpjParamInfo, typarams,
                                 List.<JCVariableDecl>nil(), null, List.<JCExpression>nil(), null, null)))
                             : null;
                         return List.<JCTree>of(syntaxError(S.pos(), err, "expected", keywords.token2string(LPAREN)));
@@ -3226,7 +3226,7 @@ public class Parser {
      */
     JCTree methodDeclaratorRest(int pos,
                               JCModifiers mods,
-                              JRGRefPerm refPerm,
+                              JRGRefPerm resPerm,
                               JCExpression type,
                               Name name,
                               JCTree.DPJParamInfo rgnParamInfo,
@@ -3263,7 +3263,7 @@ public class Parser {
             }
         }
         JCMethodDecl result =
-            toP(F.at(pos).MethodDef(mods, name, type, rgnParamInfo, 
+            toP(F.at(pos).MethodDef(mods, name, resPerm, type, rgnParamInfo, 
         	    		    typarams, params, perms, thrown,
                                     body, defaultValue));
         ++methodCount;

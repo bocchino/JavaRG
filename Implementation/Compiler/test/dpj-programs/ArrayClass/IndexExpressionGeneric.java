@@ -7,5 +7,5 @@ arrayclass DataArray<type T1, region R1, refgroup G1> {
 }
 
 class IndexExpression<type T2, region R2, refgroup G2> {
-    unique(G2) T2 m(DataArray<T2,R2,G2> a) { return a[0]; }
+    unique(G2) T2 m(DataArray<T2,R2,G2> a) { return !a[0]; }
 }

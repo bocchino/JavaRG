@@ -371,6 +371,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitMethod(MethodTree node, P p) {
         JCMethodDecl t  = (JCMethodDecl) node;
         JCModifiers mods = copy(t.mods, p);
+        JRGRefPerm resperm = copy(t.resPerm, p);
         JCExpression restype = copy(t.restype, p);
         DPJParamInfo rgnParamInfo = copy(t.paramInfo, p);
         List<JCTypeParameter> typarams = copy(t.typarams, p);
@@ -379,8 +380,8 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCBlock body = copy(t.body, p);
         JCExpression defaultValue = copy(t.defaultValue, p);
         JRGMethodPerms perms = copy(t.perms, p);
-        JCMethodDecl result = M.at(t.pos).MethodDef(mods, t.name, restype, rgnParamInfo,
-        	typarams, params, perms, thrown, body, defaultValue);
+        JCMethodDecl result = M.at(t.pos).MethodDef(mods, t.name, resperm, restype, 
+        	rgnParamInfo, typarams, params, perms, thrown, body, defaultValue);
         result.sym = t.sym;
         return result;
     }

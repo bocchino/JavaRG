@@ -786,19 +786,21 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCMethodDecl extends JCTree implements MethodTree {
         public JCModifiers mods;
         public Name name;
+        public JRGRefPerm resPerm;
         public JCExpression restype;
         public DPJParamInfo paramInfo;
         public List<JCTypeParameter> typarams;
         public List<JCVariableDecl> params;
+        public JRGMethodPerms perms;
         public List<JCExpression> thrown;
         public JCBlock body;
         public JCExpression defaultValue; // for annotation types
-        public JRGMethodPerms perms;
         public MethodSymbol sym;
 	public Lint lint;
 
         protected JCMethodDecl(JCModifiers mods,
                             Name name,
+                            JRGRefPerm resPerm,
                             JCExpression restype,
                             DPJParamInfo rgnParamInfo,
                             List<JCTypeParameter> typarams,
@@ -811,6 +813,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         {
             this.mods = mods;
             this.name = name;
+            this.resPerm = resPerm;
             this.restype = restype;
             this.paramInfo = rgnParamInfo;
             this.typarams = typarams;
@@ -2825,6 +2828,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                           List<JCTree> defs);
         JCMethodDecl MethodDef(JCModifiers mods,
                             Name name,
+                            JRGRefPerm resperm,
                             JCExpression restype,
                             DPJParamInfo rgnParamInfo,
                             List<JCTypeParameter> typarams,

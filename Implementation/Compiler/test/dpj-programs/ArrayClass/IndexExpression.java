@@ -9,5 +9,5 @@ arrayclass DataArray<region R1, refgroup G1> {
 }
 
 class IndexExpression<region R2, refgroup G2> {
-    unique(G2) Data m(DataArray<R2,G2> a) { return a[0]; }
+    unique(G2) Data m(DataArray<R2,G2> a) { return !a[0]; }
 }

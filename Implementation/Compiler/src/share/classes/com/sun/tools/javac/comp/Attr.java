@@ -234,9 +234,9 @@ public class Attr extends JCTree.Visitor {
      * 
      * 1. Resolve all declared method effects.
      * 
-     * 2. Attribute and record RPL and effect constraints for class definitions.
+     * 2. Attribute and record RPL constraints for class definitions.
      * 
-     * 3. Check satisfaction of RPL and effect constraints for types appearing in
+     * 3. Check satisfaction of RPL constraints for types appearing in
      *    class members.
      * 
      * Because RPLs use global symbols, these operations must wait until after Enter
@@ -1588,7 +1588,7 @@ public class Attr extends JCTree.Visitor {
 
     public void visitReturn(JCReturn tree) {
         // Check that there is an enclosing method which is
-        // nested within than the enclosing class.
+        // nested within the enclosing class.
         if (env.enclMethod == null ||
             env.enclMethod.sym.owner != env.enclClass.sym) {
             log.error(tree.pos(), "ret.outside.meth");
@@ -1605,6 +1605,7 @@ public class Attr extends JCTree.Visitor {
                 log.error(tree.pos(), "missing.ret.val");
             } else {
                 attribExpr(tree.expr, env, m.type.getReturnType());
+                assignRefPerm(env.enclMethod.sym.resPerm, tree.expr);
             }
         }
         result = null;
@@ -2168,12 +2169,30 @@ public class Attr extends JCTree.Visitor {
         
         @Override public void visitUnary(JCUnary right) {
             if (right.isDestructiveAccess) {
-        	JCFieldAccess fa = (JCFieldAccess) right.arg;
-    	    	VarSymbol rightVarSym = (VarSymbol) fa.sym;
-    	    	RefPerm rightPerm = rightVarSym.refPerm;
-    		rightPerm = rightPerm.asMemberOf(types, fa.selected.type);
-    		remainder = permissions.split(leftPerm, rightPerm);
-             }
+        	VarSymbol rightVarSym = null;
+        	RefPerm rightPerm = null;
+        	if (right.arg instanceof JCFieldAccess) {
+        	    JCFieldAccess fa = (JCFieldAccess) right.arg;
+        	    rightVarSym = (VarSymbol) fa.sym;
+        	    rightPerm = rightVarSym.refPerm;
+        	    rightPerm = rightPerm.asMemberOf(types, fa.selected.type);
+        	    remainder = permissions.split(leftPerm, rightPerm);
+        	}
+        	else {
+        	    JCArrayAccess aa = (JCArrayAccess) right.arg;
+        	    Type atype = aa.indexed.type;
+        	    if (types.isArrayClass(atype)) {
+        		ClassType ct = (ClassType) atype;
+        		Type site = capture(ct);
+        		rightVarSym = (VarSymbol)
+        			rs.findIdentInType(env, site, 
+        				names.fromString("cell"), VAR);
+        		rightPerm = rightVarSym.refPerm;
+        		rightPerm = rightPerm.asMemberOf(types, atype);
+        		remainder = permissions.split(leftPerm, rightPerm);
+        	    }
+        	}
+            }
         }
         
         @Override public void visitApply(JCMethodInvocation right) {
@@ -2273,12 +2292,13 @@ public class Attr extends JCTree.Visitor {
         if (operator.kind == MTH) {
             if (tree.getTag() == JCTree.NOT && !types.isAssignable(tree.arg.type, syms.booleanType)) {
         	// Destructive field access
-     		if (tree.arg instanceof JCFieldAccess) {
+     		if (tree.arg instanceof JCFieldAccess ||
+     			tree.arg instanceof JCArrayAccess) {
      		    owntype = tree.arg.type;
      		    tree.isDestructiveAccess = true;
      		}
      		else {
-     		    log.error(tree.arg.pos(), "expected.field.access");
+     		    log.error(tree.arg.pos(), "expected.access");
      		}
             } else {
                 owntype = (JCTree.PREINC <= tree.getTag() && tree.getTag() <= JCTree.POSTDEC)
@@ -2403,7 +2423,7 @@ public class Attr extends JCTree.Visitor {
             Type site = capture(ct);
             Symbol sym = rs.findIdentInType(env, site, names.fromString("cell"), VAR);
             owntype = types.memberType(site, sym);
-            result = check(tree, owntype, VAR, pkind, pt); //checkId(tree, site, sym, env, pkind, pt, false);
+            result = check(tree, owntype, VAR, pkind, pt);
             return;
         }
         else if (atype.tag != ERROR)

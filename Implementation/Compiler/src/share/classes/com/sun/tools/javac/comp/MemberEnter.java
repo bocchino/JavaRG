@@ -58,6 +58,7 @@ import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Effect.VariableEffect;
 import com.sun.tools.javac.code.Effects;
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLElement;
 import com.sun.tools.javac.code.RPLElement.RPLParameterElement;
@@ -106,8 +107,9 @@ import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
-import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
+import com.sun.tools.javac.tree.JCTree.JRGMethodPerms;
 import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
+import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
@@ -421,8 +423,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     /** Construct method type from method signature.
      *  @param typarams    The method's type parameters.
      *  @param params      The method's value parameters.
-     *  @param res             The method's result type,
-     *                 null if it is a constructor.
+     *  @param resTypeTree     The method's result type,
+     *                     null if it is a constructor.
      *  @param thrown      The method's thrown exceptions.
      *  @parm  isPure      Whether the method is pure
      *  @param env             The method's (local) environment.
@@ -430,9 +432,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     Type signature(List<JCTypeParameter> typarams,
 	           DPJParamInfo paramInfo,
                    List<JCVariableDecl> params,
-                   JCTree res,
+                   JCTree resTypeTree,
+                   JRGMethodPerms methodPerms,
                    List<JCExpression> thrown,
-                   JRGEffectPerm effects,
                    Env<AttrContext> env) {
 
         // Enter and attribute region and effect parameters.
@@ -463,9 +465,10 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             memberEnter(l.head, env);
             argbuf.append(l.head.vartype.type);
         }
-
+        
         // Attribute result type, if one is given.
-        Type restype = res == null ? syms.voidType : attr.attribType(res, env);
+        Type restype = (resTypeTree == null) ? syms.voidType : 
+            attr.attribType(resTypeTree, env);
 
         // Attribute thrown exceptions.
         ListBuffer<Type> thrownbuf = new ListBuffer<Type>();
@@ -534,6 +537,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         JCMethodDecl values = make.
             MethodDef(make.Modifiers(Flags.PUBLIC|Flags.STATIC),
                       names.values,
+                      make.RefPerm(null),
                       valuesType,
                       null,
                       List.<JCTypeParameter>nil(),
@@ -548,6 +552,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         JCMethodDecl valueOf = make.
             MethodDef(make.Modifiers(Flags.PUBLIC|Flags.STATIC),
                       names.valueOf,
+                      make.RefPerm(null),
                       make.Type(tree.sym.type),
                       null,
                       List.<JCTypeParameter>nil(),
@@ -569,6 +574,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         JCMethodDecl ordinal = make.at(tree.pos).
             MethodDef(make.Modifiers(Flags.PUBLIC|Flags.FINAL),
                       names.ordinal,
+                      make.RefPerm(null),
                       make.Type(syms.intType),
                       null,
                       List.<JCTypeParameter>nil(),
@@ -583,6 +589,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         JCMethodDecl name = make.
             MethodDef(make.Modifiers(Flags.PUBLIC|Flags.FINAL),
                       names._name,
+                      make.RefPerm(null),
                       make.Type(syms.stringType),
                       null,
                       List.<JCTypeParameter>nil(),
@@ -684,13 +691,16 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         // Attribute type, RPL, and effect params, and 
         // compute the method type
         m.type = signature(tree.typarams, tree.paramInfo, tree.params,
-                           tree.restype, tree.thrown,
-                           null, localEnv); // FIXME
+                           tree.restype, tree.perms, tree.thrown, localEnv);
         ListBuffer<Type> typarams = ListBuffer.lb();
         for (JCTypeParameter param : tree.typarams) {
             typarams.append(param.type);
         }
         m.typarams = typarams.toList();
+        
+        // Set m.resPerm
+        m.resPerm = (tree.resPerm == null) ? RefPerm.SHARED : 
+            attr.attribRefPerm(tree.resPerm, localEnv);
         
         // Set m.params
         ListBuffer<VarSymbol> params = new ListBuffer<VarSymbol>();
@@ -706,8 +716,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         if (lastParam != null && (lastParam.mods.flags & Flags.VARARGS) != 0)
             m.flags_field |= Flags.VARARGS;
 
-        // DPJ BEGIN
- 
         if (tree.paramInfo != null) {
             // Set m.rgnParams
             ListBuffer<RegionParameterSymbol> rgnParams = ListBuffer.lb();
@@ -722,13 +730,11 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         	refGroupParams.append(new RefGroupParameter(
         		(RefGroupParameterSymbol) param.sym));
             }
+            // Set m.refGroupParams
             m.refGroupParams = refGroupParams.toList();
         } else {
             m.refGroupParams = List.nil();
         }
-
-                
-        // DPJ END
 
         localEnv.info.scope.leave();
         if (chk.checkUnique(tree.pos(), m, enclScope)) {
@@ -1131,6 +1137,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 JCTree constrDef = make.MethodDef(
                     make.Modifiers(ctorFlags),
                     names.init,
+                    make.RefPerm(null),
                     null,
                     null,
                     make.TypeParams(List.<Type>nil()),
@@ -1303,6 +1310,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         JCTree result = make.MethodDef(
             make.Modifiers(flags),
             names.init,
+            make.RefPerm(null),
             null,
             null, // DPJ FIXME
             make.TypeParams(typarams),

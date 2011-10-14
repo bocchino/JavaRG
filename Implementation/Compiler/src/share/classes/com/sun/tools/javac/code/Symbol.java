@@ -1237,6 +1237,9 @@ public abstract class Symbol implements Element {
         /** The code of the method. */
         public Code code = null;
 
+        /** The return permission of the method */
+        public RefPerm resPerm;
+        
         /** The parameters of the method. */
         public List<VarSymbol> params = null;
 
@@ -1252,7 +1255,7 @@ public abstract class Symbol implements Element {
         /** The disjointness constraints on the region params */
         public Constraints constraints = null;
         
-        /** The effect parameters of the method */
+        /** The reference group parameters of the method */
         public List<RefGroup> refGroupParams = null;
         
         /** The declared effects of the method. //DPJ */

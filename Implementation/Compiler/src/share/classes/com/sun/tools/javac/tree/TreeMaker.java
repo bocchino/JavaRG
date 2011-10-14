@@ -263,6 +263,7 @@ public class TreeMaker implements JCTree.Factory {
 
     public JCMethodDecl MethodDef(JCModifiers mods,
                                Name name,
+                               JRGRefPerm resperm,
                                JCExpression restype,
                                DPJParamInfo rgnParamInfo,
                                List<JCTypeParameter> typarams,
@@ -274,6 +275,7 @@ public class TreeMaker implements JCTree.Factory {
     {
         JCMethodDecl tree = new JCMethodDecl(mods,
                                        name,
+                                       resperm,
                                        restype,
                                        rgnParamInfo,
                                        typarams,
@@ -986,6 +988,7 @@ public class TreeMaker implements JCTree.Factory {
             new JCMethodDecl(
                 Modifiers(m.flags(), Annotations(m.getAnnotationMirrors())),
                 m.name,
+                RefPerm(null),
                 Type(mtype.getReturnType()),
                 null, // DPJ FIXME
                 TypeParams(mtype.getTypeArguments()),
