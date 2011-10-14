@@ -1,6 +1,6 @@
 package com.sun.tools.javac.code;
 
-import com.sun.tools.javac.code.Symbol.RefGroupSymbol;
+import com.sun.tools.javac.util.List;
 
 public abstract class Permission {
     
@@ -10,6 +10,10 @@ public abstract class Permission {
 	 * The reference permission 'this' as a member of type t
 	 */
 	public RefPerm asMemberOf(Types types, Type t) {
+	    return this;
+	}
+	
+	public RefPerm subst(List<RefGroup> from, List<RefGroup> to) {
 	    return this;
 	}
 	
@@ -40,6 +44,12 @@ public abstract class Permission {
 	    RefGroup refGroup = this.refGroup.asMemberOf(types, t);
 	    return (this.refGroup == refGroup) ?
 		    this: new LocallyUnique(refGroup);
+	}
+	
+	@Override public RefPerm subst(List<RefGroup> from, List<RefGroup> to) {
+	    RefGroup refGroup = this.refGroup.subst(from, to);
+	    return (this.refGroup == refGroup) ?
+		    this : new LocallyUnique(refGroup);
 	}
 	
 	@Override public String toString() {

@@ -32,4 +32,9 @@ public class RefPerms extends DPJTestCase {
     @Test public void testDestructiveRead() throws Throwable {
 	compile("DestructiveRead");
     }
+    
+    @Test public void testErrorWrongGroup() throws Throwable {
+	compileExpectingErrors("ErrorWrongGroup", 1);
+    }
+    
 }

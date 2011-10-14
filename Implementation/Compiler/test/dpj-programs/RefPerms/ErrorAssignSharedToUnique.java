@@ -6,6 +6,6 @@ class ErrorAssignSharedToUnique {
     
     <refgroup G>void m() {
 	Data x = new Data();
-	unique(G) y = x; // Should cause error
+	unique(G) Data y = x; // Should cause error
     }
 }

@@ -438,9 +438,8 @@ public class TreeMaker implements JCTree.Factory {
 		       JCExpression fn,
 		       List<JCExpression> args)
     {
-	// FIXME
         JCMethodInvocation tree = 
-            new JCMethodInvocation(regionArgs, typeargs, null, fn, args);
+            new JCMethodInvocation(regionArgs, typeargs, groupArgs, fn, args);
         tree.pos = pos;
         return tree;
     }

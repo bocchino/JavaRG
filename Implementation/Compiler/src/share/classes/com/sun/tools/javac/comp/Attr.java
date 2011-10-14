@@ -1740,7 +1740,7 @@ public class Attr extends JCTree.Visitor {
             argtypes = attribArgs(tree.args, localEnv);
             typeargtypes = attribTypes(tree.typeargs, localEnv);
             regionargs = attribRPLs(tree.regionArgs);
-            refGroupArgs = null; // FIXME attribEffects(tree.groupArgs);
+            refGroupArgs = attribRefGroups(tree.groupArgs);
             
             // ... and attribute the method using as a prototype a methodtype
             // whose formal argument types is exactly the list of actual
@@ -1837,9 +1837,9 @@ public class Attr extends JCTree.Visitor {
         Type newMethTemplate(List<Type> argtypes, List<Type> typeargtypes, 
         	List<RPL> regionargs, List<RefGroup> refGroupArgs) {
             MethodType mt = new MethodType(argtypes, null, null, syms.methodClass);
-            return ((typeargtypes == null) && (regionargs == null) &&
-        	    (refGroupArgs == null)) ? 
-        	    mt : (Type)new ForAll(typeargtypes, regionargs, refGroupArgs, mt);
+            return ((typeargtypes == null) && (regionargs.isEmpty()) &&
+        	    (refGroupArgs.isEmpty())) ? 
+        	    mt : (Type) new ForAll(typeargtypes, regionargs, refGroupArgs, mt);
         }
 
     public void visitNewClass(JCNewClass tree) {
@@ -2196,7 +2196,19 @@ public class Attr extends JCTree.Visitor {
         }
         
         @Override public void visitApply(JCMethodInvocation right) {
-            // TODO
+            MethodSymbol methSym = right.getMethodSymbol();
+            if (methSym != null) {
+        	RefPerm rightPerm = methSym.resPerm;
+        	if (rightPerm == null) {
+        	    // TODO: Why does this happen?
+        	    rightPerm = methSym.resPerm = RefPerm.SHARED;
+        	}
+        	else {
+        	    rightPerm = rightPerm.subst(methSym.refGroupParams, 
+        		    right.mtype.refGroupActuals);
+        	}
+        	remainder = permissions.split(leftPerm, rightPerm);
+            }
         }
         
         @Override public void visitNewClass(JCNewClass right) {
