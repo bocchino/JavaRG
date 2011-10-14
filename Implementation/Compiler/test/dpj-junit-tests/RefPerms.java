@@ -53,4 +53,8 @@ public class RefPerms extends DPJTestCase {
 	compile("MethodArgClassParam");
     }
     
+    @Test public void testConstructorArg() throws Throwable {
+	compile("ConstructorArg");
+    }
+    
 }

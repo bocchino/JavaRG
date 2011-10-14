@@ -1798,7 +1798,6 @@ public class Attr extends JCTree.Visitor {
             // current context.  Also, capture the return type
             result = check(tree, capture(restype), VAL, pkind, pt);
 
-        
         }
 
         // Check that there's enough permission to bind each argument to the corresponding
