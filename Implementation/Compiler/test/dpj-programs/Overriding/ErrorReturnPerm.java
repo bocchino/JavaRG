@@ -8,5 +8,5 @@ class A<refgroup G> {
 }
 
 class B<refgroup G> extends A<G> {
-    Data m(); // Error:  Bad return permission
+    Data m() {} // Error:  Bad return permission
 }

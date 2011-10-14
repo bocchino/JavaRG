@@ -1292,7 +1292,20 @@ public class Check {
 		    "override.return.permission");
 	}
 	
-	// TODO:  Permissions of 'this'
+	// Check compatibility of 'this' permission
+	if (m.thisPerm != null) {
+	    if (other.thisPerm == null)
+		other.thisPerm = RefPerm.SHARED;
+	    RefPerm mThisPerm = m.thisPerm.asMemberOf(types, origin.type);
+	    RefPerm oThisPerm = other.thisPerm.asMemberOf(types, origin.type);
+	    if (permissions.split(mThisPerm, oThisPerm) == RefPerm.ERROR) {
+		System.err.println("Permission for this " + mThisPerm +
+			" is incompatible with overridden permission " +
+			oThisPerm + " in class " + other.owner.type);
+		log.error(TreeInfo.diagnosticPositionFor(m, tree),
+			"override.this.permission");
+	    }
+	}
 	
 	// Check compatibility of explicit param permissions	
 	List<VarSymbol> oParams = other.params;

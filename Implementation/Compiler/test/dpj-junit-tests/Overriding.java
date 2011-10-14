@@ -20,4 +20,9 @@ public class Overriding extends DPJTestCase {
     @Test public void testErrorArgPerm() throws Throwable {
 	compileExpectingErrors("ErrorArgPerm", 1);
     }
+    
+    @Test public void testErrorThisPerm() throws Throwable {
+	compileExpectingErrors("ErrorThisPerm", 1);
+    }
+    
 }

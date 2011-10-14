@@ -2431,10 +2431,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
 	/** Group G in 'unique(G)'; set to 'null' if permission is 'shared' */
 	public JCIdent group;
-	public RefPerm refPerm;
 	
 	/** Internal representation */
-	// public RefPerm refPerm;
+	public RefPerm refPerm;
 	
 	public JRGRefPerm(JCIdent group) {
 	    this.group = group;

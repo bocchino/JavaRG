@@ -702,6 +702,22 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         m.resPerm = (tree.resPerm == null) ? RefPerm.SHARED : 
             attr.attribRefPerm(tree.resPerm, localEnv);
         
+        // Attribute method permissions
+        if (tree.perms != null) {
+            attribMethodPerms(tree.perms, localEnv);
+            if ((m.flags_field & STATIC) == 0) {
+        	m.thisPerm = (tree.perms.thisPerm == null) ? RefPerm.SHARED :
+        	    tree.perms.thisPerm.refPerm;
+            }
+        }
+        else {
+            if ((m.flags_field & STATIC) == 0) {
+        	m.thisPerm = RefPerm.SHARED;
+            }
+        }
+        
+        // TODO: Set more perms in m
+        
         // Set m.params
         ListBuffer<VarSymbol> params = new ListBuffer<VarSymbol>();
         JCVariableDecl lastParam = null;
@@ -745,6 +761,14 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             annotateDefaultValueLater(tree.defaultValue, localEnv, m);
     }
 
+    public void attribMethodPerms(JRGMethodPerms tree, Env<AttrContext> env) {
+
+	// Attribute thisPerm
+	attr.attribRefPerm(tree.thisPerm, env);
+	
+	// TODO:  More
+    }
+    
     /** Create a fresh environment for method bodies.
      *  @param tree     The method definition.
      *  @param env      The environment current outside of the method definition.

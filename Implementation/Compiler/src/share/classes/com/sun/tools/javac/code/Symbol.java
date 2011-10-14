@@ -1240,6 +1240,9 @@ public abstract class Symbol implements Element {
         /** The return permission of the method */
         public RefPerm resPerm = RefPerm.SHARED;
         
+        /** The permission associated with 'this'; null if the method is static */
+        public RefPerm thisPerm;
+        
         /** The parameters of the method. */
         public List<VarSymbol> params = null;
 
