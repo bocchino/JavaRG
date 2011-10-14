@@ -418,9 +418,6 @@ public class Attr extends JCTree.Visitor {
      *  @param pt       The expected type (or: prototype) of the tree
      */
     Type check(JCTree tree, Type owntype, int ownkind, int pkind, Type pt) {
-	if (ownkind == VAR && pkind == RPL_ELT) {
-	    // OK, using a variable as a z region RPL element
-	} else
 	if (owntype.tag != ERROR && pt.tag != METHOD && pt.tag != FORALL) {
             if ((ownkind & ~pkind) == 0) {
                 owntype = chk.checkType(tree.pos(), owntype, pt);
@@ -1665,7 +1662,7 @@ public class Attr extends JCTree.Visitor {
                 argtypes = attribArgs(tree.args, localEnv);
                 typeargtypes = attribTypes(tree.typeargs, localEnv);
                 regionargs = attribRPLs(tree.regionArgs);
-                refGroupArgs = null; // FIXME attribEffects(tree.groupArgs);
+                refGroupArgs = attribRefGroups(tree.groupArgs);
                 
                 // Variable `site' points to the class in which the called
                 // constructor is defined.
@@ -1748,6 +1745,8 @@ public class Attr extends JCTree.Visitor {
             Type mpt = newMethTemplate(argtypes, typeargtypes, 
         	    regionargs, refGroupArgs);
             localEnv.info.varArgs = false;
+            // This call ensures the actual argument types conform to the formal
+            // parameter types
             Type mtype = attribExpr(tree.meth, localEnv, mpt);
             if (mtype instanceof MethodType)
         	tree.mtype = (MethodType) mtype;
@@ -1785,20 +1784,8 @@ public class Attr extends JCTree.Visitor {
                               restype.tsym, null);
             }
 
-            // Substitutions required by DPJ type system
-            if (tree.meth instanceof JCFieldAccess) {
-                JCFieldAccess fa = (JCFieldAccess) tree.meth;
-                RPL rpl = exprToRPL(fa.selected);
-            }
-
-            // Substitute actual arguments for argument variables
-            MethodSymbol methSym = tree.getMethodSymbol();
-            if (methSym != null && methSym.params != null) {
-        	restype = types.substIndices(restype, methSym.params, 
-        		tree.getArguments());
-            }
-            
             // Check that constraints on rpl args are satisfied
+            MethodSymbol methSym = tree.getMethodSymbol();
             if (mtype instanceof MethodType && methSym.constraints != null) {
         	regionargs = ((MethodType) mtype).regionActuals;
         	if (!rpls.disjointnessConstraintsAreSatisfied(methSym.constraints.disjointRPLs,
@@ -1806,11 +1793,37 @@ public class Attr extends JCTree.Visitor {
         	    log.warning(tree, "rpl.constraints");        	    
         	}
             }
-            
+                     
             // Check that value of resulting type is admissible in the
             // current context.  Also, capture the return type
             result = check(tree, capture(restype), VAL, pkind, pt);
+
+        
         }
+
+        // Check that there's enough permission to bind each argument to the corresponding
+        // formal parameter.
+        MethodSymbol methSym = tree.getMethodSymbol();
+        if (!localEnv.info.varArgs && methSym != null) {
+            List<JCExpression> args = tree.args;
+            ListBuffer<VarSymbol> lb = ListBuffer.lb();
+            for (VarSymbol param : methSym.params) {
+        	RefPerm argPerm = param.refPerm;
+        	if (tree.meth instanceof JCFieldAccess) {
+        	    JCFieldAccess fa = (JCFieldAccess) tree.meth;
+        	    argPerm = argPerm.asMemberOf(types, fa.selected.type);
+        	}
+        	argPerm = argPerm.subst(methSym.refGroupParams, 
+        		((MethodType) tree.meth.type).refGroupActuals);
+        	if (args.head == null) {
+        	    // Something weird with enum constructors going on here...
+        	    break;
+        	}
+        	assignRefPerm(argPerm, args.head);
+    	    	args = args.tail;
+            }
+       }
+
         chk.validate(tree.typeargs);
     }
     //where
@@ -2218,6 +2231,10 @@ public class Attr extends JCTree.Visitor {
         }
         
         @Override public void visitLiteral(JCLiteral right) {
+            // Nothing to do
+        }
+        
+        @Override public void visitTypeTest(JCInstanceOf right) {
             // Nothing to do
         }
         

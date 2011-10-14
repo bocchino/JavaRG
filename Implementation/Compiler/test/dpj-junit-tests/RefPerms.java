@@ -37,4 +37,20 @@ public class RefPerms extends DPJTestCase {
 	compileExpectingErrors("ErrorWrongGroup", 1);
     }
     
+    @Test public void testErrorArgumentMismatch() throws Throwable {
+	compileExpectingErrors("ErrorArgumentMismatch", 1);
+    }
+    
+    @Test public void testErrorConsumeArgument() throws Throwable {
+	compileExpectingErrors("ErrorConsumeArgument", 1);
+    }
+    
+    @Test public void testMethodArgMethodParam() throws Throwable {
+	compile("MethodArgMethodParam");
+    }
+    
+    @Test public void testMethodArgClassParam() throws Throwable {
+	compile("MethodArgClassParam");
+    }
+    
 }
