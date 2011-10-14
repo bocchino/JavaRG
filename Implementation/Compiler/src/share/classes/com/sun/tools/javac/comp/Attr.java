@@ -1800,12 +1800,11 @@ public class Attr extends JCTree.Visitor {
 
         }
 
-        // Check that there's enough permission to bind each argument to the corresponding
-        // formal parameter.
+        // Check that there's enough permission to bind each explicit argument 
+        // to the corresponding formal parameter.
         MethodSymbol methSym = tree.getMethodSymbol();
         if (!localEnv.info.varArgs && methSym != null) {
             List<JCExpression> args = tree.args;
-            ListBuffer<VarSymbol> lb = ListBuffer.lb();
             for (VarSymbol param : methSym.params) {
         	RefPerm argPerm = param.refPerm;
         	if (tree.meth instanceof JCFieldAccess) {
@@ -1821,7 +1820,9 @@ public class Attr extends JCTree.Visitor {
         	assignRefPerm(argPerm, args.head);
     	    	args = args.tail;
             }
-       }
+        }
+        
+        // TODO:  Check that there's enough permission for 'this' to call the method
 
         chk.validate(tree.typeargs);
     }

@@ -86,21 +86,17 @@ import java.util.Map;
 import java.util.Set;
 
 import com.sun.tools.javac.code.Attribute;
-import com.sun.tools.javac.code.Effects;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Lint.LintCategory;
+import com.sun.tools.javac.code.Permission.RefPerm;
+import com.sun.tools.javac.code.Permissions;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLs;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.code.Symtab;
-import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.TypeTags;
-import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.code.Lint.LintCategory;
-import com.sun.tools.javac.code.RPLElement.RPLParameterElement;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
@@ -108,15 +104,19 @@ import com.sun.tools.javac.code.Symbol.OperatorSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Symtab;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.Type.ErrorType;
 import com.sun.tools.javac.code.Type.ForAll;
+import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.code.Type.TypeVar;
+import com.sun.tools.javac.code.TypeTags;
+import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.jvm.ByteCodes;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.JCTree.JCAnnotation;
 import com.sun.tools.javac.tree.JCTree.JCArrayTypeTree;
 import com.sun.tools.javac.tree.JCTree.JCAssign;
@@ -132,9 +132,11 @@ import com.sun.tools.javac.tree.JCTree.JCTypeApply;
 import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JCWildcard;
+import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Abort;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
@@ -142,7 +144,6 @@ import com.sun.tools.javac.util.MandatoryWarningHandler;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Warner;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 /** Type checking helper class for the attribution phase.
  *
@@ -165,6 +166,7 @@ public class Check {
     private final boolean skipAnnotations;
     private final TreeInfo treeinfo;
     private final RPLs rpls;
+    private final Permissions permissions;
 
     // The set of lint options currently in effect. It is initialized
     // from the context, and then is set/reset as needed by Attr as it 
@@ -192,6 +194,7 @@ public class Check {
 	lint = Lint.instance(context);
         treeinfo = TreeInfo.instance(context);
         rpls = RPLs.instance(context);
+        permissions = Permissions.instance(context);
         
 	Source source = Source.instance(context);
 	allowGenerics = source.allowGenerics();
@@ -1245,12 +1248,15 @@ public class Check {
 	Type ot = types.memberType(origin.type, other);
 	// Error if overriding result type is different
 	// (or, in the case of generics mode, not a subtype) of
-	// overridden result type. We have to rename any type parameters
+	// overridden result type. We have to rename parameters
 	// before comparing types.
 	List<Type> mtvars = mt.getTypeArguments();
 	List<Type> otvars = ot.getTypeArguments();
 	Type mtres = mt.getReturnType();
 	Type otres = types.subst(ot.getReturnType(), otvars, mtvars);
+	otres = types.substRPL(otres, ot.getRegionParams(), mt.getRegionActuals());
+	otres = types.substRefGroups(otres, ot.getRefGroupArguments(), 
+		mt.getRefGroupArguments());
 
 	overrideWarner.warned = false;
 	boolean resultTypesOK =
@@ -1273,6 +1279,39 @@ public class Check {
 			  JCDiagnostic.fragment("override.unchecked.ret",
 					      uncheckedOverrides(m, other)),
 			  mtres, otres);
+	}
+	
+	// Check compatibility of return permission
+	RefPerm mResPerm = m.resPerm.asMemberOf(types, origin.type);
+	RefPerm oResPerm = other.resPerm.asMemberOf(types, origin.type);
+	if (permissions.split(oResPerm, mResPerm) == RefPerm.ERROR) {
+	    System.err.println("Return permission " + mResPerm +
+		    " is incompatible with overridden permission " +
+		    oResPerm + " in class " + other.owner.type);
+	    log.error(TreeInfo.diagnosticPositionFor(m, tree), 
+		    "override.return.permission");
+	}
+	
+	// TODO:  Permissions of 'this'
+	
+	// Check compatibility of explicit param permissions	
+	List<VarSymbol> oParams = other.params;
+	try {
+	    for (VarSymbol mParam : m.params) {
+		RefPerm argPerm = mParam.refPerm;
+		if (permissions.split(mParam.refPerm, oParams.head.refPerm) 
+			== RefPerm.ERROR) {
+		    System.err.println("Parameter permission " + mParam.refPerm +
+			    " is incompatible with overridden permission " +
+			    oParams.head.refPerm + " in class " + other.owner.type);
+		    log.error(TreeInfo.diagnosticPositionFor(m, tree), 
+			    "override.param.permission");
+		}
+		oParams = oParams.tail;
+	    }
+	}
+	catch (NullPointerException e) {
+	    // Various things are null in the bootstrap build...
 	}
 	
 	// Error if overriding effects not a subeffect of overridden effects (DPJ)
