@@ -987,7 +987,7 @@ public class Attr extends JCTree.Visitor {
 
             localEnv.info.lint = lint;
 
-            // Enter region and type parameters into the local scope
+            // Enter type, region, and ref group parameters into the local scope
             enterMethodParams(tree, localEnv);
 
             ClassSymbol owner = env.enclClass.sym;
@@ -1072,6 +1072,12 @@ public class Attr extends JCTree.Visitor {
                     }
                 }
 
+                // Set permission of 'this' for attributing the method body.
+                if ((m.flags() & STATIC) == 0) {
+                    VarSymbol thisSym = (VarSymbol) thisSym(tree.body.pos(), localEnv);
+                    thisSym.refPerm = m.thisPerm;
+                }
+                
                 // Attribute method body.
                 attribStat(tree.body, localEnv);
 

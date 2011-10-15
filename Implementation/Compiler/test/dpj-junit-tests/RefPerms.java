@@ -57,4 +57,16 @@ public class RefPerms extends DPJTestCase {
 	compile("ConstructorArg");
     }
     
+    @Test public void testErrorSharedThis() throws Throwable {
+	compileExpectingErrors("ErrorSharedThis", 1);
+    }
+    
+    @Test public void testLocallyUniqueThis() throws Throwable {
+	compile("LocallyUniqueThis");
+    }
+    
+    @Test public void testErrorConsumeUniqueThis() throws Throwable {
+	compileExpectingErrors("ErrorConsumeUniqueThis", 1);
+    }
+    
 }
