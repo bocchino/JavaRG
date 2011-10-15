@@ -1803,6 +1803,27 @@ public class Attr extends JCTree.Visitor {
             // Check that value of resulting type is admissible in the
             // current context.  Also, capture the return type
             result = check(tree, capture(restype), VAL, pkind, pt);
+            
+            // Check that there's enough permission for 'this' to call the method
+            if (methSym != null && ((methSym.flags() & STATIC) == 0)) {
+                RefPerm thisPerm = methSym.thisPerm;
+                if (thisPerm != null) {
+                    if (tree.meth instanceof JCFieldAccess) {
+                	JCFieldAccess fa = (JCFieldAccess) tree.meth;
+                	assignRefPerm(thisPerm, fa.selected);
+                    }
+                    else {
+                	VarSymbol thisSym = (VarSymbol) thisSym(tree.pos(), localEnv);
+                	RefPerm remainder = permissions.split(thisPerm, thisSym.refPerm);
+                	if (remainder == RefPerm.ERROR) {
+                	    log.error(tree.pos, "insufficent.ref.perm");
+                	}
+                	else if (remainder == RefPerm.SHARED){
+                	    thisSym.refPerm = RefPerm.SHARED;
+                	}
+                    }
+                }
+            }
 
         }
 
@@ -1828,8 +1849,6 @@ public class Attr extends JCTree.Visitor {
             }
         }
         
-        // TODO:  Check that there's enough permission for 'this' to call the method
-
         chk.validate(tree.typeargs);
     }
     //where

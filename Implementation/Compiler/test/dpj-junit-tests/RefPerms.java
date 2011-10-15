@@ -69,4 +69,24 @@ public class RefPerms extends DPJTestCase {
 	compileExpectingErrors("ErrorConsumeUniqueThis", 1);
     }
     
+    @Test public void testExplicitThis() throws Throwable {
+	compile("ExplicitThis");
+    }
+    
+    @Test public void testImplicitThis() throws Throwable {
+	compile("ImplicitThis");
+    }
+    
+    @Test public void testErrorExplicitThis() throws Throwable {
+	compileExpectingErrors("ErrorExplicitThis", 1);
+    }
+    
+    @Test public void testErrorImplicitThis() throws Throwable {
+	compileExpectingErrors("ErrorImplicitThis", 1);
+    }
+    
+    @Test public void testErrorSharedArgToThis() throws Throwable {
+	compileExpectingErrors("ErrorSharedArgToThis", 1);
+    }
+    
 }
