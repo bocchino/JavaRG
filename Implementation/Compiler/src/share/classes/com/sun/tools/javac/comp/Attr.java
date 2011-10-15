@@ -971,6 +971,9 @@ public class Attr extends JCTree.Visitor {
     }
     
     public void visitMethodDef(JCMethodDecl tree) {
+	
+	//log.error(0, "abstract.meth.cant.have.body");
+	
 	MethodSymbol m = tree.sym;
 
         Lint lint = env.info.lint.augment(m.attributes_field, m.flags());
@@ -1816,7 +1819,8 @@ public class Attr extends JCTree.Visitor {
                 	VarSymbol thisSym = (VarSymbol) thisSym(tree.pos(), localEnv);
                 	RefPerm remainder = permissions.split(thisPerm, thisSym.refPerm);
                 	if (remainder == RefPerm.ERROR) {
-                	    log.error(tree.pos, "insufficent.ref.perm");
+                	    chk.refPermError(tree.pos(), JCDiagnostic.fragment("insufficient.ref.perm"), 
+                		    thisSym.refPerm, thisPerm);
                 	}
                 	else if (remainder == RefPerm.SHARED){
                 	    thisSym.refPerm = RefPerm.SHARED;
@@ -2173,6 +2177,7 @@ public class Attr extends JCTree.Visitor {
     private class RefPermAssigner extends JCTree.Visitor {
 	
 	RefPerm leftPerm;
+	RefPerm rightPerm;
 	JCExpression right;
 	RefPerm remainder;
 	
@@ -2184,7 +2189,8 @@ public class Attr extends JCTree.Visitor {
 	RefPerm assign() {
 	    right.accept(this);
 	    if (remainder == RefPerm.ERROR) {
-		log.error(right.pos, "insufficent.ref.perm");
+    	    chk.refPermError(right.pos(), JCDiagnostic.fragment("insufficient.ref.perm"), 
+		    rightPerm, leftPerm);
 	    }
 	    return remainder;
 	}
@@ -2192,7 +2198,7 @@ public class Attr extends JCTree.Visitor {
         @Override
         public void visitIdent(JCIdent right) {
     	    VarSymbol rightVarSym = (VarSymbol) right.sym;
-    	    RefPerm rightPerm = rightVarSym.refPerm;
+    	    rightPerm = rightVarSym.refPerm;
     	    remainder = permissions.split(leftPerm, rightPerm);
     	    if (remainder == RefPerm.SHARED) {
     		rightVarSym.refPerm = RefPerm.SHARED;
@@ -2201,6 +2207,7 @@ public class Attr extends JCTree.Visitor {
         
         @Override
         public void visitSelect(JCFieldAccess right) {
+            rightPerm = RefPerm.SHARED;
             remainder = (leftPerm == RefPerm.SHARED) ? 
         	    RefPerm.SHARED : RefPerm.ERROR;
         }
@@ -2208,7 +2215,6 @@ public class Attr extends JCTree.Visitor {
         @Override public void visitUnary(JCUnary right) {
             if (right.isDestructiveAccess) {
         	VarSymbol rightVarSym = null;
-        	RefPerm rightPerm = null;
         	if (right.arg instanceof JCFieldAccess) {
         	    JCFieldAccess fa = (JCFieldAccess) right.arg;
         	    rightVarSym = (VarSymbol) fa.sym;
@@ -2236,7 +2242,7 @@ public class Attr extends JCTree.Visitor {
         @Override public void visitApply(JCMethodInvocation right) {
             MethodSymbol methSym = right.getMethodSymbol();
             if (methSym != null) {
-        	RefPerm rightPerm = methSym.resPerm;
+        	rightPerm = methSym.resPerm;
         	rightPerm = rightPerm.subst(methSym.refGroupParams, 
         		right.mtype.refGroupActuals);
         	remainder = permissions.split(leftPerm, rightPerm);
@@ -2289,6 +2295,7 @@ public class Attr extends JCTree.Visitor {
         }
         
         @Override public void visitIndexed(JCArrayAccess right) {
+            rightPerm = RefPerm.SHARED;
             remainder = (leftPerm == RefPerm.SHARED) ? 
         	    RefPerm.SHARED : RefPerm.ERROR;
         }

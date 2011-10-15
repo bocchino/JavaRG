@@ -302,6 +302,14 @@ public class Check {
 	return syms.errType;
     }
 
+    /** Report a reference permission splitting error
+     */
+    RefPerm refPermError(DiagnosticPosition pos, Object problem, 
+	    RefPerm found, RefPerm req) {
+	log.error(pos, "prob.found.req", problem, found, req);
+	return RefPerm.ERROR;
+    }
+
     /** Report an error that wrong type tag was found.
      *  @param pos        Position to be used for error reporting.
      *  @param required   An internationalized string describing the type tag
@@ -1285,11 +1293,8 @@ public class Check {
 	RefPerm mResPerm = m.resPerm.asMemberOf(types, origin.type);
 	RefPerm oResPerm = other.resPerm.asMemberOf(types, origin.type);
 	if (permissions.split(oResPerm, mResPerm) == RefPerm.ERROR) {
-	    System.err.println("Return permission " + mResPerm +
-		    " is incompatible with overridden permission " +
-		    oResPerm + " in class " + other.owner.type);
 	    log.error(TreeInfo.diagnosticPositionFor(m, tree), 
-		    "override.return.permission");
+		    "override.return.perm", mResPerm, oResPerm, other.owner.type);
 	}
 	
 	// Check compatibility of 'this' permission
@@ -1299,11 +1304,9 @@ public class Check {
 	    RefPerm mThisPerm = m.thisPerm.asMemberOf(types, origin.type);
 	    RefPerm oThisPerm = other.thisPerm.asMemberOf(types, origin.type);
 	    if (permissions.split(mThisPerm, oThisPerm) == RefPerm.ERROR) {
-		System.err.println("Permission for this " + mThisPerm +
-			" is incompatible with overridden permission " +
-			oThisPerm + " in class " + other.owner.type);
 		log.error(TreeInfo.diagnosticPositionFor(m, tree),
-			"override.this.permission");
+			"override.this.perm", mThisPerm, oThisPerm,
+			other.owner.type);
 	    }
 	}
 	
@@ -1314,11 +1317,9 @@ public class Check {
 		RefPerm argPerm = mParam.refPerm;
 		if (permissions.split(mParam.refPerm, oParams.head.refPerm) 
 			== RefPerm.ERROR) {
-		    System.err.println("Parameter permission " + mParam.refPerm +
-			    " is incompatible with overridden permission " +
-			    oParams.head.refPerm + " in class " + other.owner.type);
 		    log.error(TreeInfo.diagnosticPositionFor(m, tree), 
-			    "override.param.permission");
+			    "override.param.perm", mParam.refPerm, mParam,
+			    oParams.head.refPerm, other.owner.type);
 		}
 		oParams = oParams.tail;
 	    }

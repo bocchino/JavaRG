@@ -1,2 +1,3 @@
 ant -Dboot.java.home=${JAVA_HOME}
+cp ../build/classes/com/sun/tools/javac/resources/* ../bin/com/sun/tools/javac/resources/
 

@@ -25,9 +25,10 @@
 
 package com.sun.tools.javac.util;
 
-import java.util.ResourceBundle;
-import java.util.MissingResourceException;
 import java.text.MessageFormat;
+import java.util.Locale;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 
 /** 
  *  Support for localized messages.
@@ -147,33 +148,7 @@ public class Messages {
 	    }
 	}
 	if (msg == null) {
-	    // TODO:  Figure out how to get this into the real message file
-	    if (key.equals("compiler.err.empty.rpl"))
-		msg = "empty RPL";
-	    else if (key.equals("compiler.err.illegal.rpl"))
-		msg = "illegal RPL";
-	    else if (key.equals("compiler.err.root.must.start.rpl"))
-		msg = "Root must start RPL";
-            else if (key.equals("compiler.err.region.param.must.start.rpl"))
-        	msg = "region parameter must start RPL";
-            else if (key.equals("compiler.err.bad.effect.summary"))
-        	msg = "bad effect summary";
-            else if (key.equals("compiler.warn.interference.cobegin"))
-        	msg = "interference between statements in cobegin";
-            else if (key.equals("compiler.warn.interference.foreach"))
-        	msg = "interference between statements in foreach";
-            else if (key.equals("compiler.warn.unsound.cast"))
-        	msg = "unsound cast";
-            else if (key.equals("compiler.err.local.var.in.region"))
-        	msg = "local variables should not be declared in regions";
-            else if (key.equals("compiler.err.too.many.rpl.args"))
-        	msg = "too many RPL arguments";
-            else if (key.equals("compiler.warn.rpl.constraints"))
-        	msg = "RPL parameter constraints violated";
-            else if (key.equals("compiler.err.rpls.not.disjoint"))
-        	msg = "RPLs are not disjoint";
-            else
-		msg = "compiler message file broken: key=" + key;
+	    msg = "compiler message file broken: key=" + key;
 	}
 	return MessageFormat.format(msg, args);
     }

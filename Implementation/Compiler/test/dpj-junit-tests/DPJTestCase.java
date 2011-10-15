@@ -155,8 +155,8 @@ public abstract class DPJTestCase extends TestCase {
 	Context context = new Context();
 	JavacFileManager.preRegister(context); 
 	// Force Java 1.5 parsing and code generation
-	Options.instance(context).put(OptionName.SOURCE, Source.JDK1_5.name);
-	Options.instance(context).put(OptionName.TARGET, Target.JDK1_5.name);
+	//Options.instance(context).put(OptionName.SOURCE, Source.JDK1_5.name);
+	//Options.instance(context).put(OptionName.TARGET, Target.JDK1_5.name);
 	return context;
     }
 
