@@ -25,10 +25,20 @@
 
 package com.sun.tools.javac.comp;
 
-import com.sun.tools.javac.tree.JCTree.JCExpression;
-import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.code.*;
+import java.util.HashSet;
+import java.util.Set;
+
+import com.sun.tools.javac.code.Constraints;
+import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Permission.EnvPerm;
+import com.sun.tools.javac.code.RPL;
+import com.sun.tools.javac.code.Scope;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.tree.JCTree.JCExpression;
+import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.Pair;
 
 /** Contains information specific to the attribute and enter
  *  passes, to be used in place of the generic field in environments.
@@ -75,10 +85,14 @@ public class AttrContext {
     List<JCExpression> actualArgs;
     
     
-    /** RPL and effect constraints active in the environment
+    /** RPL constraints active in the environment
      */
     List<Pair<RPL,RPL>> constraintsOld = List.nil();
     public Constraints constraints = new Constraints();
+    
+    /** Permissions available in the environment
+     */
+    public Set<EnvPerm> envPerms = new HashSet<EnvPerm>();
     
     /** A record of the lint/SuppressWarnings currently in effect
      */
@@ -96,6 +110,7 @@ public class AttrContext {
 	info.tvars = tvars;
 	info.rvars = rvars;
 	info.constraints = constraints;
+	info.envPerms = envPerms;
 	info.lint = lint;
 	return info;
     }

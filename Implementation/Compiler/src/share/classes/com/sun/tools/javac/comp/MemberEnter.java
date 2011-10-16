@@ -64,6 +64,7 @@ import com.sun.tools.javac.code.RPLElement;
 import com.sun.tools.javac.code.RPLElement.RPLParameterElement;
 import com.sun.tools.javac.code.RPLs;
 import com.sun.tools.javac.code.RefGroup;
+import com.sun.tools.javac.code.RefGroup.RefGroupName;
 import com.sun.tools.javac.code.RefGroup.RefGroupParameter;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
@@ -109,7 +110,6 @@ import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JRGMethodPerms;
 import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
-import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
@@ -800,15 +800,15 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     }
     
     public void visitRefGroupDecl(JRGRefGroupDecl tree) {
-	if (tree.sym == null) {
+	if (tree.refGroup == null) {
             Env<AttrContext> localEnv = env;
             Scope enclScope = enter.enterScope(env);
-            RefGroupNameSymbol v =
+            RefGroupNameSymbol sym =
         	new RefGroupNameSymbol(tree.name, enclScope.owner);
-            tree.sym = v;
-            if (chk.checkUnique(tree.pos(), v, enclScope)) {
-        	enclScope.enter(v);
+            if (chk.checkUnique(tree.pos(), sym, enclScope)) {
+        	enclScope.enter(sym);
             }
+            tree.refGroup = new RefGroupName(sym);
 	}
     }
 

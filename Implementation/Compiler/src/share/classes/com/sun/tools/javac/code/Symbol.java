@@ -184,6 +184,12 @@ public abstract class Symbol implements Element {
         return name.toString();
     }
 
+    /** Provide a hash code for the symbol.
+     */
+    @Override public int hashCode() {
+        return name.hashCode();
+    }
+    
     /** A Java source description of the location of this symbol; used for
      *  error reporting.  Use of this method may result in the loss of the
      *  symbol's description.

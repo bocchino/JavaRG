@@ -1,5 +1,6 @@
 package com.sun.tools.javac.code;
 
+import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
@@ -9,7 +10,7 @@ import com.sun.tools.javac.util.List;
 
 public abstract class RefGroup {
     
-    public abstract RefGroupSymbol getSymbol();
+    public RefGroupSymbol getSymbol() { return null; }
     
     public RefGroup subst(List<RefGroup> from, List<RefGroup> to) {
 	while (from.nonEmpty() && to.nonEmpty()) {
@@ -27,9 +28,15 @@ public abstract class RefGroup {
 	return this;
     }
     
+    public static final RefGroup NO_GROUP = new RefGroup() {
+	@Override public String toString() {
+	    return "[no group]";
+	}
+    };
+    
     public static class RefGroupName extends RefGroup {
 	
-	RefGroupNameSymbol sym;
+	private final RefGroupNameSymbol sym;
 	
 	public RefGroupName(RefGroupNameSymbol sym) {
 	    this.sym = sym;
@@ -58,11 +65,15 @@ public abstract class RefGroup {
 	    return sym.equals(((RefGroupName) obj).sym);
 	}
 	
+	@Override public int hashCode() {
+	    return sym.hashCode();
+	}
+	
     }
 
     public static class RefGroupParameter extends RefGroup {
 	
-	RefGroupParameterSymbol sym;
+	private final RefGroupParameterSymbol sym;
 	
 	public RefGroupParameter(RefGroupParameterSymbol sym) {
 	    this.sym = sym;
@@ -96,6 +107,10 @@ public abstract class RefGroup {
 	@Override public boolean equals(Object obj) {
 	    if (!(obj instanceof RefGroupParameter)) return false;
 	    return sym.equals(((RefGroupParameter) obj).sym);
+	}
+
+	@Override public int hashCode() {
+	    return sym.hashCode();
 	}
 
     }

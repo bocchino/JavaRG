@@ -587,7 +587,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitRefGroupDecl(RefGroupDeclTree node, P p) {
 	JRGRefGroupDecl t = (JRGRefGroupDecl) node;
 	JRGRefGroupDecl result = M.at(t.pos).RefGroupDecl(t.name);
-	result.sym = t.sym;
+	result.refGroup = t.refGroup;
 	return result;
     }
     

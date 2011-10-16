@@ -104,6 +104,7 @@ import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLElement;
+import com.sun.tools.javac.code.RefGroup.RefGroupName;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
@@ -947,10 +948,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
      */
     public static class JRGRefGroupDecl extends JCStatement implements RefGroupDeclTree {
         public Name name;
-        public RefGroupNameSymbol sym;
-        protected JRGRefGroupDecl(Name name, RefGroupNameSymbol sym) {
+        public RefGroupName refGroup;
+        protected JRGRefGroupDecl(Name name) {
             this.name = name;
-            this.sym = sym;
         }
         @Override
         public void accept(Visitor v) { v.visitRefGroupDecl(this); }

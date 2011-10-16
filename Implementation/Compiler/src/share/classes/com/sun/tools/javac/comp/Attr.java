@@ -80,7 +80,9 @@ import com.sun.tools.javac.code.Constraints;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Permission.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.LocallyUnique;
+import com.sun.tools.javac.code.Permission.PreservesPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.Permissions;
 import com.sun.tools.javac.code.RPL;
@@ -3812,16 +3814,10 @@ public class Attr extends JCTree.Visitor {
     }
     
     public void visitRefGroupDecl(JRGRefGroupDecl tree) {
-        // Local variables have not been entered yet, so we need to do it now:
-        if (env.info.scope.owner.kind == MTH) {
-            if (tree.sym != null) {
-                // parameters have already been entered
-                env.info.scope.enter(tree.sym);
-            } else {
-                memberEnter.memberEnter(tree, env);
-                annotate.flush();
-            }
-        }
+	memberEnter.memberEnter(tree, env);
+	annotate.flush();
+	env.info.envPerms.add(new FreshGroupPerm(tree.refGroup));
+	env.info.envPerms.add(new PreservesPerm(tree.refGroup));
     }
 
     public void visitPardo(JRGPardo tree) {

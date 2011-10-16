@@ -618,7 +618,7 @@ public class TreeMaker implements JCTree.Factory {
     }
     
     public JRGRefGroupDecl RefGroupDecl(Name name) {
-	JRGRefGroupDecl tree = new JRGRefGroupDecl(name, null);
+	JRGRefGroupDecl tree = new JRGRefGroupDecl(name);
 	tree.pos = pos;
 	return tree;
     }

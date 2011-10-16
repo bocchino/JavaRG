@@ -3359,7 +3359,7 @@ public class Parser {
 	return toP(F.at(pos).EffectPerm(rpl, derefSet));
     }    
     
-    /** DerefSet = Expression3 [ DOT DOT Ident ]
+    /** DerefSet = Expression3 [ ELLIPSIS Ident ]
      */
     JRGDerefSet derefSet() {
 	int pos = S.pos();
