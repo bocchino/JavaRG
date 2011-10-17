@@ -4,8 +4,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.sun.tools.javac.code.Permission.EnvPerm;
-import com.sun.tools.javac.code.Permission.EnvPerm.PreservesPerm;
-import com.sun.tools.javac.code.Permission.EnvPerm.UpdatesPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.util.Context;
 
@@ -37,7 +37,7 @@ public class Permissions {
     }
     
     public HashSet<EnvPerm> addPreservesPerm(HashSet<EnvPerm> oldSet, 
-	    PreservesPerm newPerm) {
+	    PreservedGroupPerm newPerm) {
 	HashSet<EnvPerm> newSet = new HashSet();
 	newSet.add(newPerm);
 	for (EnvPerm oldPerm : oldSet) {
@@ -48,7 +48,7 @@ public class Permissions {
     }
     
     public HashSet<EnvPerm> addUpdatesPerm(HashSet<EnvPerm> oldSet, 
-	    UpdatesPerm newPerm) {
+	    UpdatedGroupPerm newPerm) {
 	HashSet<EnvPerm> newSet = new HashSet();
 	newSet.add(newPerm);
 	for (EnvPerm oldPerm : oldSet) {

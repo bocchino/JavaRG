@@ -19,6 +19,12 @@ public abstract class Permission {
 	    return this;
 	}
 	
+	public static final RefPerm NO_PERM = new RefPerm() {
+	    @Override public String toString() {
+		return "[no permission]";
+	    }
+	};
+	
 	public static final RefPerm SHARED = new RefPerm() {
 	    @Override public String toString() {
 		return "shared";
@@ -247,12 +253,12 @@ public abstract class Permission {
 	/**
 	 * Class representing a permission 'preserves G'
 	 */
-	public static class PreservesPerm extends EnvPerm {
+	public static class PreservedGroupPerm extends EnvPerm {
 	
 	    /** The preserved group */	
 	    public final RefGroup refGroup;
 	    	
-	    public PreservesPerm(RefGroup refGroup) {
+	    public PreservedGroupPerm(RefGroup refGroup) {
 		super(refGroup, RefGroup.NO_GROUP);
 		this.refGroup = refGroup;
 	    }
@@ -262,9 +268,9 @@ public abstract class Permission {
 	    }	
 	
 	    @Override public boolean equals(Object obj) {
-		if (!(obj instanceof PreservesPerm))
+		if (!(obj instanceof PreservedGroupPerm))
 		    return false;
-		return this.refGroup.equals(((PreservesPerm) obj).refGroup);
+		return this.refGroup.equals(((PreservedGroupPerm) obj).refGroup);
 	    }
 	
 	    @Override public int hashCode() {
@@ -276,12 +282,12 @@ public abstract class Permission {
 	/**
 	 * Class representing a permission 'updates G'
 	 */
-	public static class UpdatesPerm extends EnvPerm {
+	public static class UpdatedGroupPerm extends EnvPerm {
 	
 	    /** The updated group */	
 	    public final RefGroup refGroup;
 	
-	    public UpdatesPerm(RefGroup refGroup) {
+	    public UpdatedGroupPerm(RefGroup refGroup) {
 		super(RefGroup.NO_GROUP, refGroup);
 		this.refGroup = refGroup;
 	    }
@@ -291,9 +297,9 @@ public abstract class Permission {
 	    }
 
 	    @Override public boolean equals(Object obj) {
-		if (!(obj instanceof UpdatesPerm))
+		if (!(obj instanceof UpdatedGroupPerm))
 		    return false;
-		return this.refGroup.equals(((UpdatesPerm) obj).refGroup);
+		return this.refGroup.equals(((UpdatedGroupPerm) obj).refGroup);
 	    }
 	
 	    @Override public int hashCode() {

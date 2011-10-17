@@ -1298,9 +1298,7 @@ public class Check {
 	}
 	
 	// Check compatibility of 'this' permission
-	if (m.thisPerm != null) {
-	    if (other.thisPerm == null)
-		other.thisPerm = RefPerm.SHARED;
+	if ((m.flags_field & STATIC) == 0) {
 	    RefPerm mThisPerm = m.thisPerm.asMemberOf(types, origin.type);
 	    RefPerm oThisPerm = other.thisPerm.asMemberOf(types, origin.type);
 	    if (permissions.split(mThisPerm, oThisPerm) == RefPerm.ERROR) {
@@ -1312,20 +1310,16 @@ public class Check {
 	
 	// Check compatibility of explicit param permissions	
 	List<VarSymbol> oParams = other.params;
-	try {
-	    for (VarSymbol mParam : m.params) {
-		RefPerm argPerm = mParam.refPerm;
-		if (permissions.split(mParam.refPerm, oParams.head.refPerm) 
-			== RefPerm.ERROR) {
-		    log.error(TreeInfo.diagnosticPositionFor(m, tree), 
-			    "override.param.perm", mParam.refPerm, mParam,
-			    oParams.head.refPerm, other.owner.type);
-		}
-		oParams = oParams.tail;
+	for (VarSymbol mParam : m.params) {
+	    if (oParams.isEmpty()) break;
+	    RefPerm argPerm = mParam.refPerm;
+	    if (permissions.split(mParam.refPerm, oParams.head.refPerm) 
+		    == RefPerm.ERROR) {
+		log.error(TreeInfo.diagnosticPositionFor(m, tree), 
+			"override.param.perm", mParam.refPerm, mParam,
+			oParams.head.refPerm, other.owner.type);
 	    }
-	}
-	catch (NullPointerException e) {
-	    // Various things are null in the bootstrap build...
+	    oParams = oParams.tail;
 	}
 	
 	// Error if overriding effects not a subeffect of overridden effects (DPJ)

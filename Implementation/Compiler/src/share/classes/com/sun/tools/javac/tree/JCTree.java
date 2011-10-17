@@ -101,16 +101,19 @@ import com.sun.tools.javac.code.BoundKind;
 import com.sun.tools.javac.code.Effects;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Permission.EnvPerm.CopyPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.EffectPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLElement;
+import com.sun.tools.javac.code.RefGroup;
 import com.sun.tools.javac.code.RefGroup.RefGroupName;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
-import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
 import com.sun.tools.javac.code.Symbol.RegionNameSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
@@ -2466,13 +2469,24 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     
     public static class JRGMethodPerms extends JCTree implements MethodPermsTree {
 
+	/** The permission of 'this'; null if the method is static */
 	public JRGRefPerm thisPerm;
+
+	/** The fresh group permissions available on method entry */
 	public List<JCIdent> freshGroups;
+
+	/** The copy permissions available on method entry */
 	public List<JRGCopyPerm> copyPerms;
+
+	/** The effect permissions available on method entry */
 	public boolean defaultEffectPerms;
 	public List<JRGEffectPerm> readEffectPerms;
 	public List<JRGEffectPerm> writeEffectPerms;
+
+	/** The preserved group permissions available on method entry */
 	public List<JCIdent> preservedGroups;
+
+	/** The updated group permissions available on method entry */
 	public List<JCIdent> updatedGroups;
 	
 	protected JRGMethodPerms(JRGRefPerm thisPerm, List<JCIdent> freshGroups,

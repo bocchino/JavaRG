@@ -80,9 +80,8 @@ import com.sun.tools.javac.code.Constraints;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
-import com.sun.tools.javac.code.Permission.EnvPerm.PreservesPerm;
-import com.sun.tools.javac.code.Permission.EnvPerm.UpdatesPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.Permission.RefPerm.LocallyUnique;
 import com.sun.tools.javac.code.Permissions;
@@ -105,7 +104,6 @@ import com.sun.tools.javac.code.Symbol.OperatorSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
-import com.sun.tools.javac.code.Symbol.RefGroupSymbol;
 import com.sun.tools.javac.code.Symbol.RegionNameSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
@@ -745,7 +743,8 @@ public class Attr extends JCTree.Visitor {
         return argtypes.toList();
     }
 
-    List<RPL> attribRPLs(List<DPJRegionPathList> trees) {
+    List<RPL> attribRPLs(List<DPJRegionPathList> trees,
+	    Env<AttrContext> env) {
 	ListBuffer<RPL> lb = ListBuffer.lb();
 	for (DPJRegionPathList tree : trees) {
 	    lb.append(attribRPL(tree, env));
@@ -753,7 +752,8 @@ public class Attr extends JCTree.Visitor {
         return lb.toList();
     }
     
-    List<RefGroup> attribRefGroups(List<JCIdent> trees) {
+    List<RefGroup> attribRefGroups(List<JCIdent> trees, 
+	    Env<AttrContext> env) {
 	ListBuffer<RefGroup> lb = ListBuffer.lb();
 	for (JCIdent tree : trees) {
 	    lb.append(attribRefGroup(tree, env));
@@ -1671,8 +1671,8 @@ public class Attr extends JCTree.Visitor {
                 // Attribute arguments, yielding list of argument types.
                 argtypes = attribArgs(tree.args, localEnv);
                 typeargtypes = attribTypes(tree.typeargs, localEnv);
-                regionargs = attribRPLs(tree.regionArgs);
-                refGroupArgs = attribRefGroups(tree.groupArgs);
+                regionargs = attribRPLs(tree.regionArgs, localEnv);
+                refGroupArgs = attribRefGroups(tree.groupArgs, localEnv);
                 
                 // Variable `site' points to the class in which the called
                 // constructor is defined.
@@ -1746,8 +1746,8 @@ public class Attr extends JCTree.Visitor {
             // Attribute the arguments, yielding list of argument types, ...
             argtypes = attribArgs(tree.args, localEnv);
             typeargtypes = attribTypes(tree.typeargs, localEnv);
-            regionargs = attribRPLs(tree.regionArgs);
-            refGroupArgs = attribRefGroups(tree.groupArgs);
+            regionargs = attribRPLs(tree.regionArgs, localEnv);
+            refGroupArgs = attribRefGroups(tree.groupArgs, localEnv);
             
             // ... and attribute the method using as a prototype a methodtype
             // whose formal argument types is exactly the list of actual
@@ -1811,21 +1811,19 @@ public class Attr extends JCTree.Visitor {
             // Check that there's enough permission for 'this' to call the method
             if (methSym != null && ((methSym.flags() & STATIC) == 0)) {
                 RefPerm thisPerm = methSym.thisPerm;
-                if (thisPerm != null) {
-                    if (tree.meth instanceof JCFieldAccess) {
-                	JCFieldAccess fa = (JCFieldAccess) tree.meth;
-                	assignRefPerm(thisPerm, fa.selected, localEnv);
+                if (tree.meth instanceof JCFieldAccess) {
+                    JCFieldAccess fa = (JCFieldAccess) tree.meth;
+                    assignRefPerm(thisPerm, fa.selected, localEnv);
+                }
+                else {
+                    VarSymbol thisSym = (VarSymbol) thisSym(tree.pos(), localEnv);
+                    RefPerm remainder = permissions.split(thisPerm, thisSym.refPerm);
+                    if (remainder == RefPerm.ERROR) {
+                	chk.refPermError(tree.pos(), JCDiagnostic.fragment("insufficient.ref.perm"), 
+                		thisSym.refPerm, thisPerm);
                     }
-                    else {
-                	VarSymbol thisSym = (VarSymbol) thisSym(tree.pos(), localEnv);
-                	RefPerm remainder = permissions.split(thisPerm, thisSym.refPerm);
-                	if (remainder == RefPerm.ERROR) {
-                	    chk.refPermError(tree.pos(), JCDiagnostic.fragment("insufficient.ref.perm"), 
-                		    thisSym.refPerm, thisPerm);
-                	}
-                	else if (remainder == RefPerm.SHARED){
-                	    thisSym.refPerm = RefPerm.SHARED;
-                	}
+                    else if (remainder == RefPerm.SHARED){
+                	thisSym.refPerm = RefPerm.SHARED;
                     }
                 }
             }
@@ -1958,8 +1956,8 @@ public class Attr extends JCTree.Visitor {
         // Attribute constructor arguments.
         List<Type> argtypes = attribArgs(tree.args, localEnv);
         List<Type> typeargtypes = attribTypes(tree.typeargs, localEnv);
-        List<RPL> regionargs = attribRPLs(tree.regionArgs);
-        List<RefGroup> refGroupArgs = null; // FIXME attribEffects(tree.refGroupArgs);
+        List<RPL> regionargs = attribRPLs(tree.regionArgs, localEnv);
+        List<RefGroup> refGroupArgs = attribRefGroups(tree.groupArgs, localEnv);
 
         // If we have made no mistakes in the class type...
         if (clazztype.tag == CLASS) {
@@ -2167,9 +2165,8 @@ public class Attr extends JCTree.Visitor {
 		    leftPerm instanceof LocallyUnique) {
 		LocallyUnique luPerm = (LocallyUnique) leftPerm;
 		RefGroup refGroup = luPerm.refGroup;
-		if (!requireUpdatesPermFor(refGroup, env)) {
-		    log.error(tree.lhs.pos(), "cant.update.group", refGroup);
-		}
+		requireUpdatedGroupPerm(tree.lhs.pos(), 
+			new UpdatedGroupPerm(refGroup), env);
 	    }
 	    assignRefPerm(leftPerm, tree.rhs, env);
 	}
@@ -2182,18 +2179,18 @@ public class Attr extends JCTree.Visitor {
 	return refPermAssigner.assign();
     }
  
-    private boolean requireUpdatesPermFor(RefGroup refGroup,
-	    Env<AttrContext> env) {
-	if (env.info.scope.hasUpdatesPermFor(refGroup)) {
-	    return true;
+    private void requireUpdatedGroupPerm(DiagnosticPosition pos,
+	    UpdatedGroupPerm perm, Env<AttrContext> env) {
+	if (!env.info.scope.addUpdatedGroupPerm(permissions, perm)) {
+	    log.error(pos, "cant.update.group", perm.refGroup);
 	}
-	RefGroupSymbol sym = refGroup.getSymbol();
-	if (sym instanceof RefGroupParameterSymbol ||
-		env.info.scope.isLocked((RefGroupNameSymbol) sym))
-	    return false;
-	env.info.scope.addUpdatesPerm(permissions, 
-		new UpdatesPerm(refGroup));
-	return true;
+    }
+    
+    private void requirePreservedGroupPerm(DiagnosticPosition pos,
+	    PreservedGroupPerm perm, Env<AttrContext> env) {
+	if (!env.info.scope.addPreservedGroupPerm(permissions, perm)) {
+	    log.error(pos, "cant.preserve.group", perm.refGroup);
+	}
     }
     
     private class RefPermAssigner extends JCTree.Visitor {
@@ -3416,7 +3413,7 @@ public class Attr extends JCTree.Visitor {
             }
 
             ClassType ct = (ClassType) functortype;
-            List<RPL> rplActuals = attribRPLs(tree.rplArgs);
+            List<RPL> rplActuals = attribRPLs(tree.rplArgs, env);
             
             // Check actual vs. expected # of RPL args
             counter = rplFormals.size() - rplActuals.size();
@@ -3455,7 +3452,8 @@ public class Attr extends JCTree.Visitor {
             
 
             // TODO: Attribute group args
-            List<RefGroup> refGroupActuals = attribRefGroups(tree.refGroupArgs);
+            List<RefGroup> refGroupActuals = 
+        	    attribRefGroups(tree.refGroupArgs, env);
             if (refGroupActuals.length() != refGroupFormals.length()) {
         	log.error(tree.pos(), "wrong.number.ref.group.args",
         		Integer.toString(refGroupFormals.length())); 
@@ -3838,9 +3836,8 @@ public class Attr extends JCTree.Visitor {
     public void visitRefGroupDecl(JRGRefGroupDecl tree) {
 	memberEnter.memberEnter(tree, env);
 	annotate.flush();
-	env.info.scope.addPreservesPerm(permissions, 
-		new PreservesPerm(tree.refGroup));
-	env.info.scope.addFreshGroupPerm(new FreshGroupPerm(tree.refGroup));
+	env.info.scope.addPreservedGroupPerm(permissions, 
+		new PreservedGroupPerm(tree.refGroup));
     }
 
     public void visitPardo(JRGPardo tree) {

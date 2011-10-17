@@ -30,9 +30,11 @@ import java.util.Iterator;
 
 import com.sun.tools.javac.code.Permission.EnvPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
-import com.sun.tools.javac.code.Permission.EnvPerm.PreservesPerm;
-import com.sun.tools.javac.code.Permission.EnvPerm.UpdatesPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
 import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
+import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
+import com.sun.tools.javac.code.Symbol.RefGroupSymbol;
 import com.sun.tools.javac.util.Name;
 
 /** A scope represents an area of visibility in a Java program. The
@@ -360,16 +362,31 @@ public class Scope {
     
     }
 
-    public void addPreservesPerm(Permissions permissions, PreservesPerm perm) {
+    public boolean addPreservedGroupPerm(Permissions permissions, 
+	    PreservedGroupPerm perm) {
+	if (envPerms.contains(perm)) return true;
+	if (isLocked(perm.refGroup)) return false;
 	envPerms = permissions.addPreservesPerm(envPerms, perm);
+	return true;
     }
     
-    public void addUpdatesPerm(Permissions permissions, UpdatesPerm perm) {
+    public boolean addUpdatedGroupPerm(Permissions permissions, 
+	    UpdatedGroupPerm perm) {
+	if (envPerms.contains(perm)) return true;
+	if (isLocked(perm.refGroup)) return false;
 	envPerms = permissions.addUpdatesPerm(envPerms, perm);
+	return true;
     }
     
-    public void addFreshGroupPerm(FreshGroupPerm perm) {
+    public boolean addFreshGroupPerm(Permissions permissions,
+	    FreshGroupPerm perm) {
+	PreservedGroupPerm preservedGroupPerm = 
+		new PreservedGroupPerm(perm.refGroup);
+	if (!addPreservedGroupPerm(permissions, preservedGroupPerm)) 
+	    return false;
 	envPerms.add(perm);
+	return true;
+	
     }
     
     public void lockAllGroupNames() {
@@ -380,12 +397,24 @@ public class Scope {
 	}
     }
     
+    public boolean isLocked(RefGroup refGroup) {
+	RefGroupSymbol sym = refGroup.getSymbol();
+	if (sym instanceof RefGroupParameterSymbol) {
+	    return true;
+	}
+	return isLocked((RefGroupNameSymbol) sym);	    
+    }
+    
     public boolean isLocked(RefGroupNameSymbol sym) {
 	return lockedGroupNames.contains(sym);
     }
     
     public boolean hasUpdatesPermFor(RefGroup refGroup) {
-	return envPerms.contains(new UpdatesPerm(refGroup));
+	return envPerms.contains(new UpdatedGroupPerm(refGroup));
+    }
+    
+    public boolean hasPreservedGroupPermFor(RefGroup refGroup) {
+	return envPerms.contains(new PreservedGroupPerm(refGroup));
     }
     
     public String toString() {

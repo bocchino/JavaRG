@@ -58,7 +58,11 @@ import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Effect.VariableEffect;
 import com.sun.tools.javac.code.Effects;
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
+import com.sun.tools.javac.code.Permissions;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLElement;
 import com.sun.tools.javac.code.RPLElement.RPLParameterElement;
@@ -90,7 +94,6 @@ import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.JRGParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
@@ -109,6 +112,7 @@ import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JRGMethodPerms;
+import com.sun.tools.javac.tree.JCTree.JRGParamInfo;
 import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
@@ -153,6 +157,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private final Types types;
     private final Target target;
     private final RPLs rpls;
+    private final Permissions permissions;
 
     private final boolean skipAnnotations;
 
@@ -178,6 +183,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         types = Types.instance(context);
         target = Target.instance(context);
         rpls = RPLs.instance(context);
+        permissions = Permissions.instance(context);
         skipAnnotations =
             Options.instance(context).get("skipAnnotations") != null;
     }
@@ -704,19 +710,11 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         
         // Attribute method permissions
         if (tree.perms != null) {
-            attribMethodPerms(tree.perms, localEnv);
-            if ((m.flags_field & STATIC) == 0) {
-        	m.thisPerm = (tree.perms.thisPerm == null) ? RefPerm.SHARED :
-        	    tree.perms.thisPerm.refPerm;
-            }
+            attribMethodPerms(tree.perms, m, localEnv);
         }
-        else {
-            if ((m.flags_field & STATIC) == 0) {
-        	m.thisPerm = RefPerm.SHARED;
-            }
+        else if ((m.flags_field & STATIC) == 0) {
+            m.thisPerm = RefPerm.SHARED;
         }
-        
-        // TODO: Set more perms in m
         
         // Set m.params
         ListBuffer<VarSymbol> params = new ListBuffer<VarSymbol>();
@@ -761,12 +759,55 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             annotateDefaultValueLater(tree.defaultValue, localEnv, m);
     }
 
-    public void attribMethodPerms(JRGMethodPerms tree, Env<AttrContext> env) {
+    public void attribMethodPerms(JRGMethodPerms tree, 
+	    MethodSymbol methodSymbol, Env<AttrContext> env) {
 
-	// Attribute thisPerm
+	// Attribute 'this' perm
 	attr.attribRefPerm(tree.thisPerm, env);
+        if ((methodSymbol.flags_field & STATIC) == 0) {
+            methodSymbol.thisPerm = (tree.thisPerm == null) ? RefPerm.SHARED :
+    	    	tree.thisPerm.refPerm;
+        }
 	
-	// TODO:  More
+	// Attribute fresh groups
+	{
+	    List<RefGroup> freshGroups =
+		    attr.attribRefGroups(tree.freshGroups, env);
+	    ListBuffer<FreshGroupPerm> lb = ListBuffer.lb();
+	    for (RefGroup refGroup : freshGroups) {
+		FreshGroupPerm newPerm = new FreshGroupPerm(refGroup);
+		lb.append(newPerm);
+		env.info.scope.addFreshGroupPerm(permissions,
+			newPerm);
+	    }
+	    methodSymbol.freshGroupPerms = lb.toList();
+	}
+
+	// Attribute copy perms	
+	// TODO
+	
+	// Attribute effect perms
+	// TODO
+	
+	// Attribute preserved groups
+	{
+	    List<RefGroup> preservedGroups =
+		    attr.attribRefGroups(tree.preservedGroups, env);
+	    ListBuffer<PreservedGroupPerm> lb = ListBuffer.lb();
+	    for (RefGroup refGroup : preservedGroups)
+		lb.append(new PreservedGroupPerm(refGroup));
+	    methodSymbol.preservedGroupPerms = lb.toList();
+	}
+	
+	// Attribute updated groups
+	{
+	    List<RefGroup> updatedGroups =
+		    attr.attribRefGroups(tree.updatedGroups, env);
+	    ListBuffer<UpdatedGroupPerm> lb = ListBuffer.lb();
+	    for (RefGroup refGroup : updatedGroups)
+		lb.append(new UpdatedGroupPerm(refGroup));
+	    methodSymbol.updatedGroupPerms = lb.toList();
+	}
     }
     
     /** Create a fresh environment for method bodies.

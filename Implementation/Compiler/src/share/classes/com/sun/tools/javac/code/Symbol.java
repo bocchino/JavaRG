@@ -67,6 +67,11 @@ import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.code.Permission.EnvPerm.CopyPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.EffectPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.Type.ErrorType;
@@ -1246,11 +1251,29 @@ public abstract class Symbol implements Element {
         /** The return permission of the method */
         public RefPerm resPerm = RefPerm.SHARED;
         
-        /** The permission associated with 'this'; null if the method is static */
-        public RefPerm thisPerm;
+        /** The permission associated with 'this' */
+        public RefPerm thisPerm = RefPerm.SHARED;
+
+        /** The fresh group permissions of the method */
+        public List<FreshGroupPerm> freshGroupPerms = List.nil();
+        
+        /** The copy permissions of the method */
+        public List<CopyPerm> copyPerms = List.nil();
+        
+        /** The effect permissions of the method */
+	public List<EffectPerm> effectPerms = List.nil();
+
+	/** The preserved group permissions of the method */
+	public List<PreservedGroupPerm> preservedGroupPerms = List.nil();
+	
+	/** The updated group permissions of the method */
+	public List<UpdatedGroupPerm> updatedGroupPerms = List.nil();
+	
+	
+        
         
         /** The parameters of the method. */
-        public List<VarSymbol> params = null;
+        public List<VarSymbol> params = List.nil();
 
         /** The names of the parameters */
         public List<Name> savedParameterNames;
