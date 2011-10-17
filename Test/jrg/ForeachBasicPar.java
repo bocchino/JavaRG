@@ -14,7 +14,8 @@ class ForeachBasicPar<refgroup G> extends Harness {
 	unique(G) Cell in Cells;
     }
 
-    unique(G) CellArray cellArray;
+    // unique(G)
+    CellArray cellArray;
     
     @Override
     public void initialize() {
@@ -26,7 +27,8 @@ class ForeachBasicPar<refgroup G> extends Harness {
 
     @Override
     public void runWork() {
-	unique(G) cellArray = !this.cellArray;
+	//unique(G) 
+	CellArray cellArray = !this.cellArray;
 	for each i in cellArray pardo {	     	
 	     cellArray[i].data = i;
 	}

@@ -33,7 +33,7 @@ public abstract class Permission {
 	
 	public static class LocallyUnique extends RefPerm {
 		
-	    RefGroup refGroup;
+	    public final RefGroup refGroup;
 
 	    public LocallyUnique(RefGroup refGroup) {
 		this.refGroup = refGroup;

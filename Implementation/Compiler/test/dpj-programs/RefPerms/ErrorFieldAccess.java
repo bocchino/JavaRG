@@ -9,6 +9,6 @@ class ErrorFieldAccess<refgroup G> {
     
     void m() {
 	// Should be ... = !this.data
-	unique(G) data = this.data;
+	unique(G) Data data = this.data;
     }
 }

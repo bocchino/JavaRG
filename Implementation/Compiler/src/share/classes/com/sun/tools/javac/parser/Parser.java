@@ -1923,6 +1923,9 @@ public class Parser {
                     storeEnd(stats.elems.last(), S.endPos());
                     accept(SEMI);
                 } else {
+                    if (!refPerm.isShared()) {
+                	log.error(refPerm.pos(), "spurious.ref.perm");
+                    }
                     // This Exec is an "ExpressionStatement"; it subsumes the terminating semicolon
                     stats.append(to(F.at(pos).Exec(checkExprStat(t))));
                     accept(SEMI);

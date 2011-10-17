@@ -32,7 +32,6 @@ import com.sun.tools.javac.code.Permission.EnvPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservesPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.UpdatesPerm;
-import com.sun.tools.javac.code.RefGroup.RefGroupName;
 import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
 import com.sun.tools.javac.util.Name;
 
@@ -383,6 +382,10 @@ public class Scope {
     
     public boolean isLocked(RefGroupNameSymbol sym) {
 	return lockedGroupNames.contains(sym);
+    }
+    
+    public boolean hasUpdatesPermFor(RefGroup refGroup) {
+	return envPerms.contains(new UpdatesPerm(refGroup));
     }
     
     public String toString() {
