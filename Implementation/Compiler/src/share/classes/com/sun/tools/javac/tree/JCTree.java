@@ -722,7 +722,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public static class JCClassDecl extends JCStatement implements ClassTree {
         public JCModifiers mods;
         public Name name;
-        public DPJParamInfo paramInfo;
+        public JRGParamInfo paramInfo;
         public List<JCTypeParameter> typarams;
         public JCTree extending;
         public List<JCExpression> implementing;
@@ -730,7 +730,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public ClassSymbol sym;
         protected JCClassDecl(JCModifiers mods,
 			   Name name,
-			   DPJParamInfo paramInfo,
+			   JRGParamInfo paramInfo,
 			   List<JCTypeParameter> typarams,
 			   JCTree extending,
 			   List<JCExpression> implementing,
@@ -789,7 +789,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public Name name;
         public JRGRefPerm resPerm;
         public JCExpression restype;
-        public DPJParamInfo paramInfo;
+        public JRGParamInfo paramInfo;
         public List<JCTypeParameter> typarams;
         public List<JCVariableDecl> params;
         public JRGMethodPerms perms;
@@ -803,7 +803,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                             Name name,
                             JRGRefPerm resPerm,
                             JCExpression restype,
-                            DPJParamInfo rgnParamInfo,
+                            JRGParamInfo rgnParamInfo,
                             List<JCTypeParameter> typarams,
                             List<JCVariableDecl> params,
                             JRGMethodPerms perms,
@@ -2314,11 +2314,11 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 	
     }
     
-    public static class DPJParamInfo extends JCTree implements ParamInfoTree {
+    public static class JRGParamInfo extends JCTree implements ParamInfoTree {
         public List<DPJRegionParameter> rplParams;
         public List<Pair<DPJRegionPathList,DPJRegionPathList>> rplConstraints;
         public List<JCIdent> refGroupParams;
-        protected DPJParamInfo(List<DPJRegionParameter> rplParams,
+        protected JRGParamInfo(List<DPJRegionParameter> rplParams,
         	List<Pair<DPJRegionPathList,DPJRegionPathList>> rplConstraints,
         	List<JCIdent> refGroupParams) {
             this.rplParams = rplParams;
@@ -2820,7 +2820,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         JCImport Import(JCTree qualid, boolean staticImport);
         JCClassDecl ClassDef(JCModifiers mods,
                           Name name,
-                          DPJParamInfo rgnparamInfo,
+                          JRGParamInfo rgnparamInfo,
                           List<JCTypeParameter> typarams,
                           JCTree extending,
                           List<JCExpression> implementing,
@@ -2829,7 +2829,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
                             Name name,
                             JRGRefPerm resperm,
                             JCExpression restype,
-                            DPJParamInfo rgnParamInfo,
+                            JRGParamInfo rgnParamInfo,
                             List<JCTypeParameter> typarams,
                             List<JCVariableDecl> params,
                             JRGMethodPerms perms,
@@ -2904,7 +2904,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         	JCStatement body, boolean isParallel);
         DPJRegionParameter RegionParameter(Name name, DPJRegionPathList bound,
         	boolean isAtomic);
-        DPJParamInfo ParamInfo(List<DPJRegionParameter> rplParams,
+        JRGParamInfo ParamInfo(List<DPJRegionParameter> rplParams,
         		List<Pair<DPJRegionPathList,DPJRegionPathList>> rplConstraints,
         		List<JCIdent> effectParams);
         DPJRegionPathListElt RegionPathListElt(JCExpression exp, int t);
@@ -2984,7 +2984,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitTypeApply(JCTypeApply that)         { visitTree(that); }
         public void visitTypeParameter(JCTypeParameter that) { visitTree(that); }
         public void visitRegionParameter(DPJRegionParameter that) {visitTree(that); }
-        public void visitParamInfo(DPJParamInfo that) {visitTree(that); }
+        public void visitParamInfo(JRGParamInfo that) {visitTree(that); }
         public void visitWildcard(JCWildcard that)           { visitTree(that); }
         public void visitTypeBoundKind(TypeBoundKind that)   { visitTree(that); }
         public void visitAnnotation(JCAnnotation that)       { visitTree(that); }

@@ -90,7 +90,7 @@ import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
+import com.sun.tools.javac.tree.JCTree.JRGParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
@@ -430,7 +430,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
      *  @param env             The method's (local) environment.
      */
     Type signature(List<JCTypeParameter> typarams,
-	           DPJParamInfo paramInfo,
+	           JRGParamInfo paramInfo,
                    List<JCVariableDecl> params,
                    JCTree resTypeTree,
                    JRGMethodPerms methodPerms,

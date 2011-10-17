@@ -25,8 +25,16 @@
 
 package com.sun.tools.javac.code;
 
-import com.sun.tools.javac.util.*;
+import java.util.HashSet;
 import java.util.Iterator;
+
+import com.sun.tools.javac.code.Permission.EnvPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.PreservesPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.UpdatesPerm;
+import com.sun.tools.javac.code.RefGroup.RefGroupName;
+import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
+import com.sun.tools.javac.util.Name;
 
 /** A scope represents an area of visibility in a Java program. The
  *  Scope class is a container for symbols which provides
@@ -80,16 +88,32 @@ public class Scope {
 
     /** A value for the empty scope.
      */
-    public static final Scope emptyScope = new Scope(null, null, new Entry[]{});
+    public static final Scope emptyScope = new Scope(null, null, new Entry[]{},
+	    new HashSet<EnvPerm>(), new HashSet<RefGroupNameSymbol>());
 
+    /** Permissions available in the environment
+     */
+    private HashSet<EnvPerm> envPerms = new HashSet<EnvPerm>();
+    
+    /** "Locked" ref groups names (i.e., group names we can't switch from preserving
+     *  to updating or vice versa)
+     *  NOTE:  Ref group params are always locked.
+     */
+    private HashSet<RefGroupNameSymbol> lockedGroupNames = 
+	    new HashSet<RefGroupNameSymbol>();
+    
     /** Construct a new scope, within scope next, with given owner, using
      *  given table. The table's length must be an exponent of 2.
      */
-    Scope(Scope next, Symbol owner, Entry[] table) {
+    Scope(Scope next, Symbol owner, Entry[] table,
+	    HashSet<EnvPerm> envPerms, 
+	    HashSet<RefGroupNameSymbol> lockedGroupNames) {
         this.next = next;
 	assert emptyScope == null || owner != null;
         this.owner = owner;
         this.table = table;
+        this.envPerms = envPerms;
+        this.lockedGroupNames = lockedGroupNames;
 	this.hashMask = table.length - 1;
         this.elems = null;
 	this.nelems = 0;
@@ -100,7 +124,8 @@ public class Scope {
      *  using a fresh table of length INITIAL_SIZE.
      */
     public Scope(Symbol owner) {
-        this(null, owner, new Entry[INITIAL_SIZE]);
+        this(null, owner, new Entry[INITIAL_SIZE], 
+        	new HashSet<EnvPerm>(), new HashSet<RefGroupNameSymbol>());
 	for (int i = 0; i < INITIAL_SIZE; i++) table[i] = sentinel;
     }
 
@@ -110,7 +135,8 @@ public class Scope {
      *  of fresh tables.
      */
     public Scope dup() {
-        Scope result = new Scope(this, this.owner, this.table);
+        Scope result = new Scope(this, this.owner, this.table,
+        	this.envPerms, this.lockedGroupNames);
 	shared++;
 	// System.out.println("====> duping scope " + this.hashCode() + " owned by " + this.owner + " to " + result.hashCode());
 	// new Error().printStackTrace(System.out);
@@ -123,7 +149,8 @@ public class Scope {
      *  of fresh tables.
      */
     public Scope dup(Symbol newOwner) {
-        Scope result = new Scope(this, newOwner, this.table);
+        Scope result = new Scope(this, newOwner, this.table,
+        	this.envPerms, this.lockedGroupNames);
 	shared++;
 	// System.out.println("====> duping scope " + this.hashCode() + " owned by " + newOwner + " to " + result.hashCode());
 	// new Error().printStackTrace(System.out);
@@ -135,7 +162,9 @@ public class Scope {
      *  the table of its outer scope.
      */
     public Scope dupUnshared() {
-	return new Scope(this, this.owner, this.table.clone());
+	return new Scope(this, this.owner, this.table.clone(),
+		(HashSet<EnvPerm>) this.envPerms.clone(), 
+		(HashSet<RefGroupNameSymbol>) this.lockedGroupNames.clone());
     }
 
     /** Remove all entries of this scope from its table, if shared
@@ -332,6 +361,30 @@ public class Scope {
     
     }
 
+    public void addPreservesPerm(Permissions permissions, PreservesPerm perm) {
+	envPerms = permissions.addPreservesPerm(envPerms, perm);
+    }
+    
+    public void addUpdatesPerm(Permissions permissions, UpdatesPerm perm) {
+	envPerms = permissions.addUpdatesPerm(envPerms, perm);
+    }
+    
+    public void addFreshGroupPerm(FreshGroupPerm perm) {
+	envPerms.add(perm);
+    }
+    
+    public void lockAllGroupNames() {
+	for (Symbol sym : this.getElements()) {
+	    if (sym instanceof RefGroupNameSymbol) {
+		this.lockedGroupNames.add((RefGroupNameSymbol) sym);
+	    }
+	}
+    }
+    
+    public boolean isLocked(RefGroupNameSymbol sym) {
+	return lockedGroupNames.contains(sym);
+    }
+    
     public String toString() {
         StringBuilder result = new StringBuilder();
         result.append("Scope[");
@@ -459,7 +512,7 @@ public class Scope {
 	public static final Entry[] emptyTable = new Entry[0];
 
 	public DelegatedScope(Scope outer) {
-	    super(outer, outer.owner, emptyTable);
+	    super(outer, outer.owner, emptyTable, null, null);
 	    delegatee = outer;
 	}
 	public Scope dup() {
@@ -488,7 +541,7 @@ public class Scope {
     /** An error scope, for which the owner should be an error symbol. */
     public static class ErrorScope extends Scope {
 	ErrorScope(Scope next, Symbol errSymbol, Entry[] table) {
-	    super(next, /*owner=*/errSymbol, table);
+	    super(next, /*owner=*/errSymbol, table, null, null);
 	}
 	public ErrorScope(Symbol errSymbol) {
 	    super(errSymbol);

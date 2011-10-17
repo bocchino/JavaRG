@@ -50,7 +50,7 @@ import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.TypeTags;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.tree.JCTree.DPJNegationExpression;
-import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
+import com.sun.tools.javac.tree.JCTree.JRGParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
@@ -456,7 +456,7 @@ public class Pretty extends JCTree.Visitor {
     /** If parameter list is non-empty, print it enclosed in "<...>" brackets.
      */
     public void printTypeRegionEffectParams(List<JCTypeParameter> typeParams,
-    	DPJParamInfo paramInfo) throws IOException {
+    	JRGParamInfo paramInfo) throws IOException {
         if (typeParams.nonEmpty()) {
             print("<");
             printExprs(typeParams);
@@ -466,7 +466,7 @@ public class Pretty extends JCTree.Visitor {
 
     /** If there are type or region parameters, print both
      */
-    public void printParams(List<JCTypeParameter> typarams, DPJParamInfo rgnparaminfo)
+    public void printParams(List<JCTypeParameter> typarams, JRGParamInfo rgnparaminfo)
     	throws IOException {
 	boolean printRegionParams = ((codeGenMode == NONE) && rgnparaminfo != null && 
 		rgnparaminfo.rplParams.nonEmpty()); 

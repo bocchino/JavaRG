@@ -103,7 +103,7 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.TypeTags;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
+import com.sun.tools.javac.tree.JCTree.JRGParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
@@ -2798,9 +2798,9 @@ public class Parser {
         accept(CLASS);
         Name name = name();
 
-        Pair<List<JCTypeParameter>,DPJParamInfo> params = 
+        Pair<List<JCTypeParameter>,JRGParamInfo> params = 
             parametersOpt();
-        DPJParamInfo dpjParamInfo = params.snd;
+        JRGParamInfo dpjParamInfo = params.snd;
         List<JCTypeParameter> typarams = params.fst;
 
         JCTree extending = null;
@@ -2831,9 +2831,9 @@ public class Parser {
         accept(INTERFACE);
         Name name = name();
 
-        Pair<List<JCTypeParameter>,DPJParamInfo> params = parametersOpt();
+        Pair<List<JCTypeParameter>,JRGParamInfo> params = parametersOpt();
         List<JCTypeParameter> typarams = params.fst;
-        DPJParamInfo dpjParamInfo = params.snd;
+        JRGParamInfo dpjParamInfo = params.snd;
 
         List<JCExpression> extending = List.nil();
         if (S.token() == EXTENDS) {
@@ -2856,9 +2856,9 @@ public class Parser {
         accept(ARRAYCLASS);
         Name name = name();
 
-        Pair<List<JCTypeParameter>,DPJParamInfo> params = parametersOpt();
+        Pair<List<JCTypeParameter>,JRGParamInfo> params = parametersOpt();
         List<JCTypeParameter> typarams = params.fst;
-        DPJParamInfo dpjParamInfo = params.snd;
+        JRGParamInfo dpjParamInfo = params.snd;
 
         List<JCTree> defs = arrayBody(name);
         JCModifiers newMods =
@@ -3097,9 +3097,9 @@ public class Parser {
                 return List.<JCTree>of(block(pos, mods.flags));
             } else {
                 pos = S.pos();
-                Pair<List<JCTypeParameter>,DPJParamInfo> params = parametersOpt();
+                Pair<List<JCTypeParameter>,JRGParamInfo> params = parametersOpt();
                 List<JCTypeParameter> typarams = params.fst;
-                DPJParamInfo dpjParamInfo = params.snd;
+                JRGParamInfo dpjParamInfo = params.snd;
                 // Hack alert:  if there are type arguments but no Modifiers, the start
                 // position will be lost unless we set the Modifiers position.  There
                 // should be an AST node for type parameters (BugId 5005090).
@@ -3229,7 +3229,7 @@ public class Parser {
                               JRGRefPerm resPerm,
                               JCExpression type,
                               Name name,
-                              JCTree.DPJParamInfo rgnParamInfo,
+                              JCTree.JRGParamInfo rgnParamInfo,
                               List<JCTypeParameter> typarams,
                               boolean isInterface, boolean isVoid,
                               String dc) {
@@ -3419,12 +3419,12 @@ public class Parser {
      *  RPLParams := REGION Ident { "," [ REGION ] Ident }
      *  GroupParams := REFGROUP Ident { "," [ REFGROUP ] Ident }
      */
-    Pair<List<JCTypeParameter>, DPJParamInfo> parametersOpt() {
+    Pair<List<JCTypeParameter>, JRGParamInfo> parametersOpt() {
 	if (S.token() == LT) {
             checkGenerics();
             S.nextToken();
             List<JCTypeParameter> typarams = null;
-            DPJParamInfo paramInfo = null;
+            JRGParamInfo paramInfo = null;
             List<DPJRegionParameter> rplParams = List.nil();
             List<Pair<DPJRegionPathList,DPJRegionPathList>> rplConstraints = List.nil();
             List<JCIdent> groupParams = List.nil();

@@ -91,7 +91,7 @@ import com.sun.source.tree.WhileLoopTree;
 import com.sun.source.tree.WildcardTree;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.tree.JCTree.JRGForLoop;
-import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
+import com.sun.tools.javac.tree.JCTree.JRGParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
@@ -266,7 +266,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitClass(ClassTree node, P p) {
         JCClassDecl t = (JCClassDecl) node;
         JCModifiers mods = copy(t.mods, p);
-        DPJParamInfo rgnparamInfo = copy(t.paramInfo, p);
+        JRGParamInfo rgnparamInfo = copy(t.paramInfo, p);
         List<JCTypeParameter> typarams = copy(t.typarams, p);
         JCTree extending = copy(t.extending, p);
         List<JCExpression> implementing = copy(t.implementing, p);
@@ -373,7 +373,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCModifiers mods = copy(t.mods, p);
         JRGRefPerm resperm = copy(t.resPerm, p);
         JCExpression restype = copy(t.restype, p);
-        DPJParamInfo rgnParamInfo = copy(t.paramInfo, p);
+        JRGParamInfo rgnParamInfo = copy(t.paramInfo, p);
         List<JCTypeParameter> typarams = copy(t.typarams, p);
         List<JCVariableDecl> params = copy(t.params, p);
         List<JCExpression> thrown = copy(t.thrown, p);
@@ -653,7 +653,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     }
     
     public JCTree visitParamInfo(ParamInfoTree node, P p) {
-	DPJParamInfo t = (DPJParamInfo) node;
+	JRGParamInfo t = (JRGParamInfo) node;
         List<DPJRegionParameter> params = copy(t.rplParams, p);
         ListBuffer<Pair<DPJRegionPathList,DPJRegionPathList>> rplConstraints = 
             ListBuffer.lb();

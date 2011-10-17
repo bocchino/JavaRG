@@ -80,10 +80,10 @@ import com.sun.tools.javac.code.Constraints;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Permission.FreshGroupPerm;
-import com.sun.tools.javac.code.Permission.LocallyUnique;
-import com.sun.tools.javac.code.Permission.PreservesPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.PreservesPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
+import com.sun.tools.javac.code.Permission.RefPerm.LocallyUnique;
 import com.sun.tools.javac.code.Permissions;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLElement;
@@ -122,7 +122,7 @@ import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.jvm.ByteCodes;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
+import com.sun.tools.javac.tree.JCTree.JRGParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
@@ -894,7 +894,7 @@ public class Attr extends JCTree.Visitor {
 	// Enter region and ref group parameter info
 	if (tree.paramInfo != null) {
             tree.sym.constraints = 
-        	enterRegionParamInfo(tree.paramInfo, localEnv);
+        	enterJRGParamInfo(tree.paramInfo, localEnv);
 	}
 
         // Enter all type parameters into the local method scope.
@@ -916,7 +916,7 @@ public class Attr extends JCTree.Visitor {
 	if (tree.paramInfo != null) {
 	    // TODO: Store all contraints
 	    tree.sym.constraints = 
-		enterRegionParamInfo(tree.paramInfo, localEnv);
+		enterJRGParamInfo(tree.paramInfo, localEnv);
         }
 
         // Enter all type parameters into the local method scope.
@@ -928,7 +928,7 @@ public class Attr extends JCTree.Visitor {
      * Enter region param info from a class or method into a local scope
      */
     public Constraints 
-    	enterRegionParamInfo(DPJParamInfo tree, Env<AttrContext> localEnv) {
+    	enterJRGParamInfo(JRGParamInfo tree, Env<AttrContext> localEnv) {
 	
 	// Enter all region params into the local method scope
 	for (DPJRegionParameter param : tree.rplParams) {
@@ -974,8 +974,6 @@ public class Attr extends JCTree.Visitor {
     
     public void visitMethodDef(JCMethodDecl tree) {
 	
-	//log.error(0, "abstract.meth.cant.have.body");
-	
 	MethodSymbol m = tree.sym;
 
         Lint lint = env.info.lint.augment(m.attributes_field, m.flags());
@@ -984,7 +982,6 @@ public class Attr extends JCTree.Visitor {
             chk.checkDeprecatedAnnotation(tree.pos(), m);
 
             attribBounds(tree.typarams);
-
 
             // Create a new environment with local scope
             // for attributing the method.
@@ -3816,12 +3813,18 @@ public class Attr extends JCTree.Visitor {
     public void visitRefGroupDecl(JRGRefGroupDecl tree) {
 	memberEnter.memberEnter(tree, env);
 	annotate.flush();
-	env.info.envPerms.add(new FreshGroupPerm(tree.refGroup));
-	env.info.envPerms.add(new PreservesPerm(tree.refGroup));
+	env.info.scope.addPreservesPerm(permissions, 
+		new PreservesPerm(tree.refGroup));
+	env.info.scope.addFreshGroupPerm(new FreshGroupPerm(tree.refGroup));
     }
 
     public void visitPardo(JRGPardo tree) {
-	attribStat(tree.body, env);
+        // Create a new local environment with a local scope.
+        Env<AttrContext> localEnv =
+            env.dup(tree.body, env.info.dup(env.info.scope.dup()));
+        localEnv.info.scope.lockAllGroupNames();
+        attribStats(tree.body.stats, localEnv);
+        localEnv.info.scope.leave();
 	result = null;
     }
     
@@ -3835,6 +3838,7 @@ public class Attr extends JCTree.Visitor {
             log.error(tree.pos(), "array.req.but.found", tree.array.type);
 	}
 	loopEnv.tree = tree; // before, we were not in loop!
+	if (tree.isParallel) loopEnv.info.scope.lockAllGroupNames();
 	attribStat(tree.body, loopEnv);
 	loopEnv.info.scope.leave();
 	result = null;	

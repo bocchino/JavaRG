@@ -25,7 +25,7 @@ import com.sun.tools.javac.tree.Pretty;
 import com.sun.tools.javac.tree.TreeCopier;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeTranslator;
-import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
+import com.sun.tools.javac.tree.JCTree.JRGParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathListElt;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
@@ -138,7 +138,7 @@ import com.sun.tools.javac.util.Name;
  * <li> Created {@link RPL} and {@link RPLElement} and created {@link RPLElement} hierarchy
  * <li> Changed {@link DPJRegionPathListElt} to store {@link JCIdent}s instead of {@link Name}s
  *      (to facilitate idiomatic usage of {@link Attr#attribTree(JCTree, Env, int, com.sun.tools.javac.code.Type)}
- * <li> Similarly changed {@link DPJParamInfo} to use {@link JCIdent} 
+ * <li> Similarly changed {@link JRGParamInfo} to use {@link JCIdent} 
  * <li> Implemented {@link Enter#visitRegionParameter(com.sun.tools.javac.tree.JCTree.DPJRegionParameter)}
  * <li> Augmented {@link Enter#visitClassDef(com.sun.tools.javac.tree.JCTree.JCClassDecl)} to enter region parameters
  * <li> Modified {@link Attr#check(JCTree, com.sun.tools.javac.code.Type, int, int, com.sun.tools.javac.code.Type)}

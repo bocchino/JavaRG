@@ -63,7 +63,7 @@ import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.code.Type.WildcardType;
 import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
+import com.sun.tools.javac.tree.JCTree.JRGParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
@@ -243,7 +243,7 @@ public class TreeMaker implements JCTree.Factory {
 
     public JCClassDecl ClassDef(JCModifiers mods,
 				Name name,
-				DPJParamInfo rgnparamInfo,
+				JRGParamInfo rgnparamInfo,
 				List<JCTypeParameter> typarams,
 				JCTree extending,
 				List<JCExpression> implementing,
@@ -265,7 +265,7 @@ public class TreeMaker implements JCTree.Factory {
                                Name name,
                                JRGRefPerm resperm,
                                JCExpression restype,
-                               DPJParamInfo rgnParamInfo,
+                               JRGParamInfo rgnParamInfo,
                                List<JCTypeParameter> typarams,
                                List<JCVariableDecl> params,
                                JRGMethodPerms perms,
@@ -670,10 +670,10 @@ public class TreeMaker implements JCTree.Factory {
 	return tree;
     }
     
-    public DPJParamInfo ParamInfo(List<DPJRegionParameter> params,
+    public JRGParamInfo ParamInfo(List<DPJRegionParameter> params,
 	    			  List<Pair<DPJRegionPathList,DPJRegionPathList>> rplConstraints,
 	    			  List<JCIdent> groupParams) {
-	DPJParamInfo tree = new DPJParamInfo(params, rplConstraints, groupParams);
+	JRGParamInfo tree = new JRGParamInfo(params, rplConstraints, groupParams);
 	tree.pos = pos;
 	return tree;
     }

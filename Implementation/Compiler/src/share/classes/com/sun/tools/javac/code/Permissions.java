@@ -1,5 +1,11 @@
 package com.sun.tools.javac.code;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import com.sun.tools.javac.code.Permission.EnvPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.PreservesPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.UpdatesPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.util.Context;
 
@@ -28,6 +34,28 @@ public class Permissions {
 	else if (left.equals(right))
 	    return RefPerm.SHARED;
 	return RefPerm.ERROR;
+    }
+    
+    public HashSet<EnvPerm> addPreservesPerm(HashSet<EnvPerm> oldSet, 
+	    PreservesPerm newPerm) {
+	HashSet<EnvPerm> newSet = new HashSet();
+	newSet.add(newPerm);
+	for (EnvPerm oldPerm : oldSet) {
+	    if (!oldPerm.updatesGroup(newPerm.refGroup))
+		newSet.add(oldPerm);
+	}
+	return newSet;
+    }
+    
+    public HashSet<EnvPerm> addUpdatesPerm(HashSet<EnvPerm> oldSet, 
+	    UpdatesPerm newPerm) {
+	HashSet<EnvPerm> newSet = new HashSet();
+	newSet.add(newPerm);
+	for (EnvPerm oldPerm : oldSet) {
+	    if (!oldPerm.preservesGroup(newPerm.refGroup))
+		newSet.add(oldPerm);
+	}
+	return newSet;
     }
     
 }

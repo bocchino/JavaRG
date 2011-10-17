@@ -6,7 +6,7 @@ import java.util.HashSet;
 import com.sun.tools.javac.parser.Parser;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
-import com.sun.tools.javac.tree.JCTree.DPJParamInfo;
+import com.sun.tools.javac.tree.JCTree.JRGParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
@@ -224,7 +224,7 @@ public class DPJAnnotationCounter extends TreeScanner {
     }
     
     @Override
-    public void visitParamInfo(DPJParamInfo tree) {
+    public void visitParamInfo(JRGParamInfo tree) {
 	scan(tree.rplParams);
 	for (Pair<DPJRegionPathList,DPJRegionPathList> pair : tree.rplConstraints) {
 	    addLineFor(pair.fst.pos);

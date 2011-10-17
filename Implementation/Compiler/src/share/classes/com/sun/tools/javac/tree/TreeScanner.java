@@ -327,7 +327,7 @@ public class TreeScanner extends Visitor {
 	scan(tree.body);
     }
     
-    public void visitParamInfo(DPJParamInfo tree) {
+    public void visitParamInfo(JRGParamInfo tree) {
 	scan(tree.rplParams);
     }
     

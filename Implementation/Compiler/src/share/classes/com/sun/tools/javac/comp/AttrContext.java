@@ -32,6 +32,7 @@ import com.sun.tools.javac.code.Constraints;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Permission.EnvPerm;
 import com.sun.tools.javac.code.RPL;
+import com.sun.tools.javac.code.RefGroup;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
@@ -90,10 +91,6 @@ public class AttrContext {
     List<Pair<RPL,RPL>> constraintsOld = List.nil();
     public Constraints constraints = new Constraints();
     
-    /** Permissions available in the environment
-     */
-    public Set<EnvPerm> envPerms = new HashSet<EnvPerm>();
-    
     /** A record of the lint/SuppressWarnings currently in effect
      */
     Lint lint;
@@ -110,7 +107,6 @@ public class AttrContext {
 	info.tvars = tvars;
 	info.rvars = rvars;
 	info.constraints = constraints;
-	info.envPerms = envPerms;
 	info.lint = lint;
 	return info;
     }
@@ -130,5 +126,10 @@ public class AttrContext {
     public String toString() {
         return "AttrContext[" + scope.toString() + "]";
     }
+    
+    /** Add a 'preserves G' permission to the context.
+     */
+    
+    
 }
 

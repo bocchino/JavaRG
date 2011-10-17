@@ -31,40 +31,39 @@ public abstract class Permission {
 	    }
 	};
 	
+	public static class LocallyUnique extends RefPerm {
+		
+	    RefGroup refGroup;
+
+	    public LocallyUnique(RefGroup refGroup) {
+		this.refGroup = refGroup;
+	    }
+
+	    @Override public RefPerm asMemberOf(Types types, Type t) {
+		RefGroup refGroup = this.refGroup.asMemberOf(types, t);
+		return (this.refGroup == refGroup) ?
+			this: new LocallyUnique(refGroup);
+	    }
+		
+	    @Override public RefPerm subst(List<RefGroup> from, List<RefGroup> to) {
+		RefGroup refGroup = this.refGroup.subst(from, to);
+		return (this.refGroup == refGroup) ?
+			this : new LocallyUnique(refGroup);
+	    }
+	    
+	    @Override public String toString() {
+		return "unique(" + refGroup + ")";
+	    }
+		
+	    @Override public boolean equals(Object obj) {
+		if (!(obj instanceof LocallyUnique)) return false;
+		return this.refGroup.equals(((LocallyUnique) obj).refGroup);
+	    }
+		
+	}
+	
     }
     
-    
-    public static class LocallyUnique extends RefPerm {
-	
-	RefGroup refGroup;
-
-	public LocallyUnique(RefGroup refGroup) {
-	    this.refGroup = refGroup;
-	}
-
-	@Override public RefPerm asMemberOf(Types types, Type t) {
-	    RefGroup refGroup = this.refGroup.asMemberOf(types, t);
-	    return (this.refGroup == refGroup) ?
-		    this: new LocallyUnique(refGroup);
-	}
-	
-	@Override public RefPerm subst(List<RefGroup> from, List<RefGroup> to) {
-	    RefGroup refGroup = this.refGroup.subst(from, to);
-	    return (this.refGroup == refGroup) ?
-		    this : new LocallyUnique(refGroup);
-	}
-	
-	@Override public String toString() {
-	    return "unique(" + refGroup + ")";
-	}
-	
-	@Override public boolean equals(Object obj) {
-	    if (!(obj instanceof LocallyUnique)) return false;
-	    return this.refGroup.equals(((LocallyUnique) obj).refGroup);
-	}
-	
-    }
-
     /**
      * Class representing a permission in the environment
      */
@@ -79,230 +78,230 @@ public abstract class Permission {
 	    this.preservedGroup = preservedGroup;
 	}
 	
-	public RefGroup updatedGroup() {
-	    return updatedGroup;
+	public boolean updatesGroup(RefGroup refGroup) {
+	    return refGroup.equals(updatedGroup);
 	}
 	
-	public RefGroup preservedGroup() {
-	    return preservedGroup;
+	public boolean preservesGroup(RefGroup refGroup) {
+	    return refGroup.equals(preservedGroup);
 	}
 	
-    }
-    
-    /**
-     * Class representing a permission 'fresh G'
-     */
-    public static class FreshGroupPerm extends EnvPerm {
+	/**
+	 * Class representing a permission 'fresh G'
+	 */
+	public static class FreshGroupPerm extends EnvPerm {
 	
-	/** The fresh group */	
-	public final RefGroup refGroup;
+	    /** The fresh group */	
+	    public final RefGroup refGroup;
 	
-	public FreshGroupPerm(RefGroup refGroup) {
-	    super(refGroup, RefGroup.NO_GROUP);
-	    this.refGroup = refGroup;
-	}
-	
-	@Override public String toString() {
-	    return "fresh " + refGroup;
-	}
-	
-	@Override public boolean equals(Object obj) {
-	    if (!(obj instanceof FreshGroupPerm))
-		return false;
-	    return this.refGroup.equals(((FreshGroupPerm) obj).refGroup);
-	}
-	
-	@Override public int hashCode() {
-	    return refGroup.hashCode() << 3;
-	}
-	
-    }
-    
-    /**
-     * Class representing 'copies v [ [ (.f | '[' i ']') ] ...G1 ] to G2'
-     */    
-    public static class CopyPerm extends EnvPerm {
-
-	/** 'v' in 'copies v [ [ (.f | '[' i ']') ] ...G1 ] to G2' */
-	public final VarSymbol var;
-
-	/** 'f' in 'copies v.f...G1 to G2'; may be null */
-	public final Name field;
-	
-	/** 'i' in 'copies v[i]...G1 to G2'; may be null */
-	public final VarSymbol indexVar;
-
-	/** 'G1' in 'copies v [ [ (.f | '[' i ']') ] ...G1 ] to G2'; may be null */
-	public final RefGroup sourceGroup;
-
-	/** 'G2' in 'copies v [ [ (.f | '[' i ']') ] ...G1 ] to G2' */
-	public final RefGroup targetGroup;
-	
-	private CopyPerm(VarSymbol var, Name field, VarSymbol indexVar,
-		RefGroup sourceGroup, RefGroup targetGroup) {
-	    super(sourceGroup, RefGroup.NO_GROUP);
-	    this.var = var;
-	    this.field = field;
-	    this.indexVar = indexVar;
-	    this.sourceGroup = sourceGroup;
-	    this.targetGroup = targetGroup;
-	}
-
-	/** 'copies v to G' */
-	public CopyPerm(VarSymbol var, RefGroup targetGroup) {
-	    this(var, null, null, null, targetGroup);
-	}
-	
-	/** 'copies v...G1 to G2' */
-	public CopyPerm(VarSymbol var, RefGroup sourceGroup, 
-		RefGroup targetGroup) {
-	    this(var, null, null, sourceGroup, targetGroup);
-	}
-	
-	/** 'copies v.f...G1 to G2' */
-	public CopyPerm(VarSymbol var, Name field, RefGroup sourceGroup,
-		RefGroup targetGroup) {
-	    this(var, field, null, sourceGroup, targetGroup);
-	}
-	
-	/** 'copies v[i]...G1 to G2' */
-	public CopyPerm(VarSymbol var, VarSymbol indexVar,
-		RefGroup sourceGroup, RefGroup targetGroup) {
-	    this(var, null, indexVar, sourceGroup, targetGroup);
-	}
-	
-	public boolean hasField() {
-	    return field != null;
-	}
-	
-	public boolean hasIndexVar() {
-	    return indexVar != null;
-	}
-	
-	public boolean hasSourceGroup() {
-	    return sourceGroup != null;
-	}
-	
-	@Override public String toString() {
-	    StringBuffer sb = new StringBuffer("copies ");
-	    sb.append(var);
-	    if (field != null) {
-		sb.append(".");
-		sb.append(field);
+	    public FreshGroupPerm(RefGroup refGroup) {
+		super(refGroup, RefGroup.NO_GROUP);
+		this.refGroup = refGroup;
 	    }
-	    if (indexVar != null) {
-		sb.append("[");
-		sb.append(indexVar);
-		sb.append("]");
-	    }
-	    if (sourceGroup != null) {
-		sb.append("...");
-		sb.append(sourceGroup);
-	    }
-	    sb.append(" to ");
-	    sb.append(targetGroup);
-	    return sb.toString();
-	}
 	
-	@Override public boolean equals(Object obj) {
-	    if (!(obj instanceof CopyPerm))
-		return false;
-	    CopyPerm copyPerm = (CopyPerm) obj;
-	    if (!this.var.equals(copyPerm.var)) return false;
-	    if (this.field == null) {
-		if (copyPerm.field != null) return false;
+	    @Override public String toString() {
+		return "fresh " + refGroup;
 	    }
-	    else {
-		if (!this.field.equals(copyPerm.field)) return false;
-	    }
-	    if (this.indexVar == null) {
-		if (copyPerm.indexVar != null) return false;
-	    }
-	    else {
-		if (!this.indexVar.equals(copyPerm.indexVar))
+	
+	    @Override public boolean equals(Object obj) {
+		if (!(obj instanceof FreshGroupPerm))
 		    return false;
+		return this.refGroup.equals(((FreshGroupPerm) obj).refGroup);
 	    }
-	    if (this.sourceGroup == null) {
-		if (copyPerm.sourceGroup != null) return false;
+	
+	    @Override public int hashCode() {
+		return refGroup.hashCode() << 3;
 	    }
-	    else {
-		if (!this.sourceGroup.equals(copyPerm.sourceGroup))
+	
+	}
+    
+	/**
+	 * Class representing 'copies v [ [ (.f | '[' i ']') ] ...G1 ] to G2'
+	 */ 
+	public static class CopyPerm extends EnvPerm {
+
+	    /** 'v' in 'copies v [ [ (.f | '[' i ']') ] ...G1 ] to G2' */
+	    public final VarSymbol var;
+
+	    /** 'f' in 'copies v.f...G1 to G2'; may be null */
+	    public final Name field;
+	
+	    /** 'i' in 'copies v[i]...G1 to G2'; may be null */
+	    public final VarSymbol indexVar;
+
+	    /** 'G1' in 'copies v [ [ (.f | '[' i ']') ] ...G1 ] to G2'; may be null */
+	    public final RefGroup sourceGroup;
+
+	    /** 'G2' in 'copies v [ [ (.f | '[' i ']') ] ...G1 ] to G2' */
+	    public final RefGroup targetGroup;
+	
+	    private CopyPerm(VarSymbol var, Name field, VarSymbol indexVar,
+		    RefGroup sourceGroup, RefGroup targetGroup) {
+		super(sourceGroup, RefGroup.NO_GROUP);
+		this.var = var;
+		this.field = field;
+		this.indexVar = indexVar;
+		this.sourceGroup = sourceGroup;
+		this.targetGroup = targetGroup;
+	    }
+
+	    /** 'copies v to G' */
+	    public CopyPerm(VarSymbol var, RefGroup targetGroup) {
+		this(var, null, null, null, targetGroup);
+	    }
+	
+	    /** 'copies v...G1 to G2' */
+	    public CopyPerm(VarSymbol var, RefGroup sourceGroup, 
+		    RefGroup targetGroup) {
+		this(var, null, null, sourceGroup, targetGroup);
+	    }
+	
+	    /** 'copies v.f...G1 to G2' */
+	    public CopyPerm(VarSymbol var, Name field, RefGroup sourceGroup,
+		    RefGroup targetGroup) {
+		this(var, field, null, sourceGroup, targetGroup);
+	    }
+	    
+	    /** 'copies v[i]...G1 to G2' */
+	    public CopyPerm(VarSymbol var, VarSymbol indexVar,
+		    RefGroup sourceGroup, RefGroup targetGroup) {
+		this(var, null, indexVar, sourceGroup, targetGroup);
+	    }
+	
+	    public boolean hasField() {
+		return field != null;
+	    }
+	
+	    public boolean hasIndexVar() {
+		return indexVar != null;
+	    }
+	
+	    public boolean hasSourceGroup() {
+		return sourceGroup != null;
+	    }
+	
+	    @Override public String toString() {
+		StringBuffer sb = new StringBuffer("copies ");
+		sb.append(var);
+		if (field != null) {
+		    sb.append(".");
+		    sb.append(field);
+		}
+		if (indexVar != null) {
+		    sb.append("[");
+		    sb.append(indexVar);
+		    sb.append("]");
+		}
+		if (sourceGroup != null) {
+		    sb.append("...");
+		    sb.append(sourceGroup);
+		}
+		sb.append(" to ");
+		sb.append(targetGroup);
+		return sb.toString();
+	    }
+	
+	    @Override public boolean equals(Object obj) {
+		if (!(obj instanceof CopyPerm))
 		    return false;
+		CopyPerm copyPerm = (CopyPerm) obj;
+		if (!this.var.equals(copyPerm.var)) return false;
+		if (this.field == null) {
+		    if (copyPerm.field != null) return false;
+		}
+		else {
+		    if (!this.field.equals(copyPerm.field)) return false;
+		}
+		if (this.indexVar == null) {
+		    if (copyPerm.indexVar != null) return false;
+		}
+		else {
+		    if (!this.indexVar.equals(copyPerm.indexVar))
+			return false;
+		}
+		if (this.sourceGroup == null) {
+		    if (copyPerm.sourceGroup != null) return false;
+		}
+		else {
+		    if (!this.sourceGroup.equals(copyPerm.sourceGroup))
+			return false;
+		}
+		if (!this.targetGroup.equals(copyPerm.targetGroup))
+		    return false;
+		return true;
 	    }
-	    if (!this.targetGroup.equals(copyPerm.targetGroup))
-		return false;
-	    return true;
-	}
 	
-	@Override public int hashCode() {
-	    return (var.hashCode() << 3) + 1;
-	}
+	    @Override public int hashCode() {
+		return (var.hashCode() << 3) + 1;
+	    }
 
+	}
+    
+	public static class EffectPerm extends EnvPerm {
+	
+	    public EffectPerm() {
+		super(RefGroup.NO_GROUP, RefGroup.NO_GROUP);
+	    }
     }
     
-    public static class EffectPerm extends EnvPerm {
+	/**
+	 * Class representing a permission 'preserves G'
+	 */
+	public static class PreservesPerm extends EnvPerm {
 	
-	public EffectPerm() {
-	    super(RefGroup.NO_GROUP, RefGroup.NO_GROUP);
+	    /** The preserved group */	
+	    public final RefGroup refGroup;
+	    	
+	    public PreservesPerm(RefGroup refGroup) {
+		super(refGroup, RefGroup.NO_GROUP);
+		this.refGroup = refGroup;
+	    }
+	
+	    @Override public String toString() {
+		return "preserves " + refGroup;
+	    }	
+	
+	    @Override public boolean equals(Object obj) {
+		if (!(obj instanceof PreservesPerm))
+		    return false;
+		return this.refGroup.equals(((PreservesPerm) obj).refGroup);
+	    }
+	
+	    @Override public int hashCode() {
+		return (refGroup.hashCode() << 3) + 3;
+	    }
+
 	}
-    }
     
-    /**
-     * Class representing a permission 'preserves G'
-     */
-    public static class PreservesPerm extends EnvPerm {
+	/**
+	 * Class representing a permission 'updates G'
+	 */
+	public static class UpdatesPerm extends EnvPerm {
 	
-	/** The preserved group */	
-	public final RefGroup refGroup;
+	    /** The updated group */	
+	    public final RefGroup refGroup;
 	
-	public PreservesPerm(RefGroup refGroup) {
-	    super(refGroup, RefGroup.NO_GROUP);
-	    this.refGroup = refGroup;
-	}
+	    public UpdatesPerm(RefGroup refGroup) {
+		super(RefGroup.NO_GROUP, refGroup);
+		this.refGroup = refGroup;
+	    }
 	
-	@Override public String toString() {
-	    return "preserves " + refGroup;
-	}
-	
-	@Override public boolean equals(Object obj) {
-	    if (!(obj instanceof PreservesPerm))
-		return false;
-	    return this.refGroup.equals(((PreservesPerm) obj).refGroup);
-	}
-	
-	@Override public int hashCode() {
-	    return (refGroup.hashCode() << 3) + 3;
-	}
+	    @Override public String toString() {
+		return "updates " + refGroup;
+	    }
 
-    }
+	    @Override public boolean equals(Object obj) {
+		if (!(obj instanceof UpdatesPerm))
+		    return false;
+		return this.refGroup.equals(((UpdatesPerm) obj).refGroup);
+	    }
+	
+	    @Override public int hashCode() {
+		return (refGroup.hashCode() << 3) + 4;
+	    }	
+
+	}
     
-    /**
-     * Class representing a permission 'updates G'
-     */
-    public static class UpdatesPerm extends EnvPerm {
-	
-	/** The updated group */	
-	public final RefGroup refGroup;
-	
-	public UpdatesPerm(RefGroup refGroup) {
-	    super(RefGroup.NO_GROUP, refGroup);
-	    this.refGroup = refGroup;
-	}
-	
-	@Override public String toString() {
-	    return "updates " + refGroup;
-	}
-
-	@Override public boolean equals(Object obj) {
-	    if (!(obj instanceof UpdatesPerm))
-		return false;
-	    return this.refGroup.equals(((UpdatesPerm) obj).refGroup);
-	}
-	
-	@Override public int hashCode() {
-	    return (refGroup.hashCode() << 3) + 4;
-	}
-
     }
     
 }
