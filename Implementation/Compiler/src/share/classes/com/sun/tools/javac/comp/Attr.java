@@ -696,7 +696,9 @@ public class Attr extends JCTree.Visitor {
 	attribTree(tree, env, REF_GROUP, Type.noType);
 	if (tree.sym instanceof RefGroupNameSymbol)
 	    return new RefGroupName((RefGroupNameSymbol) tree.sym);
-	return new RefGroupParameter((RefGroupParameterSymbol) tree.sym);
+	if (tree.sym instanceof RefGroupParameterSymbol)
+	    return new RefGroupParameter((RefGroupParameterSymbol) tree.sym);
+	return RefGroup.NO_GROUP;
     }
     
     RefPerm attribRefPerm(JRGRefPerm tree, Env<AttrContext> env) {
