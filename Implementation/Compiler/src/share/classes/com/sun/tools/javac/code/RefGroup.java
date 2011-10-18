@@ -1,7 +1,7 @@
 package com.sun.tools.javac.code;
 
-import com.sun.tools.javac.code.Mappings.AsMemberOf;
-import com.sun.tools.javac.code.Mappings.SubstRefGroups;
+import com.sun.tools.javac.code.Substitutions.AsMemberOf;
+import com.sun.tools.javac.code.Substitutions.SubstRefGroups;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;

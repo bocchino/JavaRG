@@ -1,7 +1,7 @@
 package com.sun.tools.javac.code;
 
-import com.sun.tools.javac.code.Mappings.AsMemberOf;
-import com.sun.tools.javac.code.Mappings.SubstRefGroups;
+import com.sun.tools.javac.code.Substitutions.AsMemberOf;
+import com.sun.tools.javac.code.Substitutions.SubstRefGroups;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;

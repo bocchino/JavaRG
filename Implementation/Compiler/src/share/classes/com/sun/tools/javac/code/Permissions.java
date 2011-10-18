@@ -2,7 +2,7 @@ package com.sun.tools.javac.code;
 
 import java.util.HashSet;
 
-import com.sun.tools.javac.code.Mappings.SubstRefGroups;
+import com.sun.tools.javac.code.Substitutions.SubstRefGroups;
 import com.sun.tools.javac.code.Permission.EnvPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;

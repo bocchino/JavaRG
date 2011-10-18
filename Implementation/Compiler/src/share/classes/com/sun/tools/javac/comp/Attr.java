@@ -80,7 +80,7 @@ import com.sun.tools.javac.code.Constraints;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Mappings;
+import com.sun.tools.javac.code.Substitutions;
 import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
@@ -1886,10 +1886,10 @@ public class Attr extends JCTree.Visitor {
             // Fresh group perms
             List<FreshGroupPerm> freshGroupPerms = methSym.freshGroupPerms;
             if (fa != null) {
-        	freshGroupPerms = Mappings.asMemberOf(freshGroupPerms, 
+        	freshGroupPerms = Substitutions.asMemberOf(freshGroupPerms, 
         		types, fa.selected.type);
             }
-            freshGroupPerms = Mappings.substRefGroups(freshGroupPerms, 
+            freshGroupPerms = Substitutions.substRefGroups(freshGroupPerms, 
         	    methSym.refGroupParams, methodType.refGroupActuals);
             chk.requireEnvPerms(tree.pos(), freshGroupPerms, 
         	    localEnv);

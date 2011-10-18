@@ -5,13 +5,13 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
 /**
- * Interfaces for mapping via type, region, and ref group substitution.
+ * Interfaces for type, region, and ref group substitution.
  * 
  * @author Rob Bocchino
  *
  * @param <T>
  */
-public class Mappings {
+public class Substitutions {
 
     /** Interface for representing 'as member of' transformations */
     public interface AsMemberOf<T extends AsMemberOf<T>> {
