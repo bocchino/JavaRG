@@ -1,5 +1,6 @@
 package com.sun.tools.javac.code;
 
+import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
@@ -27,24 +28,5 @@ public class RefGroups {
     protected RefGroups(Context context) {
 	syms = Symtab.instance(context);
     }
-    
-    public List<RefGroup> subst(List<RefGroup> refGroups, 
-	    List<RefGroup> from, List<RefGroup> to) {
-	ListBuffer<RefGroup> lb = ListBuffer.lb();
-	for (RefGroup refGroup : refGroups) {
-	    lb.append(refGroup.subst(from, to));
-	}
-	return lb.toList();
-    }
-        
-    boolean equalEffects(List<Effects> ts, List<Effects> ss) {
-	while (ts.nonEmpty() && ss.nonEmpty()
-		&& ss.head.equals(ts.head)) {
-	    ts = ts.tail;
-	    ss = ss.tail;
-	}
-	return ts.isEmpty() && ss.isEmpty();
-    }
-
     
 }

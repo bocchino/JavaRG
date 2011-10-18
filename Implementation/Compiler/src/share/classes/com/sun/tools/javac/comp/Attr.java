@@ -80,6 +80,7 @@ import com.sun.tools.javac.code.Constraints;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Mappings;
 import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
@@ -1866,7 +1867,7 @@ public class Attr extends JCTree.Visitor {
         	    JCFieldAccess fa = (JCFieldAccess) tree.meth;
         	    argPerm = argPerm.asMemberOf(types, fa.selected.type);
         	}
-        	argPerm = argPerm.subst(methSym.refGroupParams, 
+        	argPerm = argPerm.substRefGroups(methSym.refGroupParams, 
         		((MethodType) tree.meth.type).refGroupActuals);
         	if (args.head == null) {
         	    // Something weird with enum constructors going on here...
@@ -1885,12 +1886,12 @@ public class Attr extends JCTree.Visitor {
             // Fresh group perms
             List<FreshGroupPerm> freshGroupPerms = methSym.freshGroupPerms;
             if (fa != null) {
-        	freshGroupPerms = permissions.asMemberOf(freshGroupPerms, 
+        	freshGroupPerms = Mappings.asMemberOf(freshGroupPerms, 
         		types, fa.selected.type);
             }
-            freshGroupPerms = permissions.subst(freshGroupPerms, 
+            freshGroupPerms = Mappings.substRefGroups(freshGroupPerms, 
         	    methSym.refGroupParams, methodType.refGroupActuals);
-            chk.requireFreshGroupPerms(tree.pos(), freshGroupPerms, 
+            chk.requireEnvPerms(tree.pos(), freshGroupPerms, 
         	    localEnv);
             // TODO: Copy perms
             // TODO: Effect perms
@@ -2215,7 +2216,7 @@ public class Attr extends JCTree.Visitor {
 		    leftPerm instanceof LocallyUnique) {
 		LocallyUnique luPerm = (LocallyUnique) leftPerm;
 		RefGroup refGroup = luPerm.refGroup;
-		chk.requireUpdatedGroupPerm(tree.lhs.pos(), 
+		chk.requireEnvPerm(tree.lhs.pos(), 
 			new UpdatedGroupPerm(refGroup), env);
 	    }
 	    assignRefPerm(leftPerm, tree.rhs, env);
@@ -2300,7 +2301,7 @@ public class Attr extends JCTree.Visitor {
             MethodSymbol methSym = right.getMethodSymbol();
             if (methSym != null) {
         	rightPerm = methSym.resPerm;
-        	rightPerm = rightPerm.subst(methSym.refGroupParams, 
+        	rightPerm = rightPerm.substRefGroups(methSym.refGroupParams, 
         		right.mtype.refGroupActuals);
         	remainder = permissions.split(leftPerm, rightPerm);
             }

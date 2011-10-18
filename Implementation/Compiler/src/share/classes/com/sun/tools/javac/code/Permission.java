@@ -1,12 +1,16 @@
 package com.sun.tools.javac.code;
 
+import com.sun.tools.javac.code.Mappings.AsMemberOf;
+import com.sun.tools.javac.code.Mappings.SubstRefGroups;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
 
 public abstract class Permission {
     
-    public static abstract class RefPerm extends Permission {
+    public static abstract class RefPerm extends Permission 
+    	implements SubstRefGroups<RefPerm>, AsMemberOf<RefPerm>
+{
 	
 	/**
 	 * The reference permission 'this' as a member of type t
@@ -15,7 +19,7 @@ public abstract class Permission {
 	    return this;
 	}
 	
-	public RefPerm subst(List<RefGroup> from, List<RefGroup> to) {
+	public RefPerm substRefGroups(List<RefGroup> from, List<RefGroup> to) {
 	    return this;
 	}
 	
@@ -51,8 +55,9 @@ public abstract class Permission {
 			this: new LocallyUnique(refGroup);
 	    }
 		
-	    @Override public RefPerm subst(List<RefGroup> from, List<RefGroup> to) {
-		RefGroup refGroup = this.refGroup.subst(from, to);
+	    @Override public RefPerm substRefGroups(List<RefGroup> from, 
+		    List<RefGroup> to) {
+		RefGroup refGroup = this.refGroup.substRefGroups(from, to);
 		return (this.refGroup == refGroup) ?
 			this : new LocallyUnique(refGroup);
 	    }
@@ -91,11 +96,14 @@ public abstract class Permission {
 	public boolean preservesGroup(RefGroup refGroup) {
 	    return refGroup.equals(preservedGroup);
 	}
-	
+		
 	/**
 	 * Class representing a permission 'fresh G'
 	 */
-	public static class FreshGroupPerm extends EnvPerm {
+	public static class FreshGroupPerm extends EnvPerm 
+		implements SubstRefGroups<FreshGroupPerm>, 
+		AsMemberOf<FreshGroupPerm>
+	{
 	
 	    /** The fresh group */	
 	    public final RefGroup refGroup;
@@ -119,24 +127,27 @@ public abstract class Permission {
 		return refGroup.hashCode() << 3;
 	    }
 	    
+	    public FreshGroupPerm substRefGroups(List<RefGroup> from, 
+		    List<RefGroup> to) {
+		RefGroup refGroup = this.refGroup.substRefGroups(from, to);
+		return (this.refGroup == refGroup) ?
+			this : new FreshGroupPerm(refGroup);
+	    }
+
 	    public FreshGroupPerm asMemberOf(Types types, Type t) {
 		RefGroup refGroup = this.refGroup.asMemberOf(types, t);
 		return (this.refGroup == refGroup) ?
 			this: new FreshGroupPerm(refGroup);
 	    }
 	
-	    public FreshGroupPerm subst(List<RefGroup> from, List<RefGroup> to) {
-		RefGroup refGroup = this.refGroup.subst(from, to);
-		return (this.refGroup == refGroup) ?
-			this : new FreshGroupPerm(refGroup);
-	    }
-
 	}
     
 	/**
 	 * Class representing 'copies v [ [ (.f | '[' i ']') ] ...G1 ] to G2'
 	 */ 
-	public static class CopyPerm extends EnvPerm {
+	public static class CopyPerm extends EnvPerm 
+		implements SubstRefGroups<CopyPerm>,
+		AsMemberOf<CopyPerm> {
 
 	    /** 'v' in 'copies v [ [ (.f | '[' i ']') ] ...G1 ] to G2' */
 	    public final VarSymbol var;
@@ -198,6 +209,17 @@ public abstract class Permission {
 		return sourceGroup != null;
 	    }
 	
+	    public CopyPerm substRefGroups(List<RefGroup> from, List<RefGroup> to) {
+		// TODO
+		throw new UnsupportedOperationException();
+	    }
+	    
+	    public CopyPerm asMemberOf(Types types, Type t) {
+		// TODO
+		throw new UnsupportedOperationException();
+	    }
+
+	    
 	    @Override public String toString() {
 		StringBuffer sb = new StringBuffer("copies ");
 		sb.append(var);
@@ -255,17 +277,34 @@ public abstract class Permission {
 
 	}
     
-	public static class EffectPerm extends EnvPerm {
+	public static class EffectPerm extends EnvPerm 
+		implements SubstRefGroups<EffectPerm>,
+		AsMemberOf<EffectPerm>
+	{
 	
 	    public EffectPerm() {
 		super(RefGroup.NO_GROUP, RefGroup.NO_GROUP);
 	    }
-    }
+	    
+	    public EffectPerm substRefGroups(List<RefGroup> from, List<RefGroup> to) {
+		// TODO
+		throw new UnsupportedOperationException();
+	    }
+	    
+	    public EffectPerm asMemberOf(Types types, Type t) {
+		// TODO
+		throw new UnsupportedOperationException();
+	    }
+
+	}
     
 	/**
 	 * Class representing a permission 'preserves G'
 	 */
-	public static class PreservedGroupPerm extends EnvPerm {
+	public static class PreservedGroupPerm extends EnvPerm 
+		implements SubstRefGroups<PreservedGroupPerm>,
+		AsMemberOf<PreservedGroupPerm>
+	{
 	
 	    /** The preserved group */	
 	    public final RefGroup refGroup;
@@ -289,12 +328,28 @@ public abstract class Permission {
 		return (refGroup.hashCode() << 3) + 3;
 	    }
 
+	    public PreservedGroupPerm substRefGroups(List<RefGroup> from, 
+		    List<RefGroup> to) {
+		RefGroup refGroup = this.refGroup.substRefGroups(from, to);
+		return (refGroup == this.refGroup) ? this : 
+		    new PreservedGroupPerm(refGroup);
+	    }
+
+	    public PreservedGroupPerm asMemberOf(Types types, Type t) {
+		RefGroup refGroup = this.refGroup.asMemberOf(types, t);
+		return (refGroup == this.refGroup) ? this :
+		    new PreservedGroupPerm(refGroup);
+	    }
+	    
 	}
     
 	/**
 	 * Class representing a permission 'updates G'
 	 */
-	public static class UpdatedGroupPerm extends EnvPerm {
+	public static class UpdatedGroupPerm extends EnvPerm 
+		implements SubstRefGroups<UpdatedGroupPerm>,
+		AsMemberOf<UpdatedGroupPerm>
+	{
 	
 	    /** The updated group */	
 	    public final RefGroup refGroup;
@@ -303,7 +358,20 @@ public abstract class Permission {
 		super(RefGroup.NO_GROUP, refGroup);
 		this.refGroup = refGroup;
 	    }
+
+	    public UpdatedGroupPerm substRefGroups(List<RefGroup> from, 
+		    List<RefGroup> to) {
+		RefGroup refGroup = this.refGroup.substRefGroups(from, to);
+		return (refGroup == this.refGroup) ? this : 
+		    new UpdatedGroupPerm(refGroup);
+	    }
 	
+	    public UpdatedGroupPerm asMemberOf(Types types, Type t) {
+		RefGroup refGroup = this.refGroup.asMemberOf(types, t);
+		return (refGroup == this.refGroup) ? this :
+		    new UpdatedGroupPerm(refGroup);
+	    }
+
 	    @Override public String toString() {
 		return "updates " + refGroup;
 	    }

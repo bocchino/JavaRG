@@ -2665,7 +2665,7 @@ public class Types {
                 List<Type> typeArgsSubst = substRefGroups(typeArgs);
                 List<RefGroup> refGroupArgs = t.getRefGroupArguments();
                 List<RefGroup> refGroupArgsSubst = 
-                	refGroups.subst(refGroupArgs, from, to);
+                	Mappings.substRefGroups(refGroupArgs, from, to);
                 Type outer = t.getEnclosingType();
                 Type outerSubst = substRefGroups(outer);
                 return new ClassType(outerSubst, typeArgsSubst, t.getRegionParams(), 

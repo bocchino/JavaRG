@@ -1,29 +1,23 @@
 package com.sun.tools.javac.code;
 
-import com.sun.tools.javac.code.Permission.RefPerm;
+import com.sun.tools.javac.code.Mappings.AsMemberOf;
+import com.sun.tools.javac.code.Mappings.SubstRefGroups;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupSymbol;
-import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.util.List;
 
-public abstract class RefGroup {
+public abstract class RefGroup 
+	implements SubstRefGroups<RefGroup>, AsMemberOf<RefGroup> 
+{
     
     public RefGroupSymbol getSymbol() { return null; }
     
-    public RefGroup subst(List<RefGroup> from, List<RefGroup> to) {
-	while (from.nonEmpty() && to.nonEmpty()) {
-	    if (from.head.equals(this)) return to.head;
-	    from = from.tail;
-	    to = to.tail;
-	}
+    public RefGroup substRefGroups(List<RefGroup> from, List<RefGroup> to) {
 	return this;
     }
     
-    /**
-     * The reference group 'this' as a member of type t
-     */
     public RefGroup asMemberOf(Types types, Type t) {
 	return this;
     }
@@ -50,7 +44,8 @@ public abstract class RefGroup {
 	    return sym.toString();
 	}
 	
-	@Override public RefGroup subst(List<RefGroup> from, List<RefGroup> to) {
+	@Override public RefGroup substRefGroups(List<RefGroup> from, 
+		List<RefGroup> to) {
 	    while (from.nonEmpty()) {
 		if (from.head.equals(this))
 		    return to.head;
@@ -83,6 +78,16 @@ public abstract class RefGroup {
 	    return this.sym;
 	}
 
+	@Override public RefGroup substRefGroups(List<RefGroup> from, 
+		List<RefGroup> to) {
+	    while (from.nonEmpty() && to.nonEmpty()) {
+		if (from.head.equals(this)) return to.head;
+		from = from.tail;
+		to = to.tail;
+	    }
+	    return this;
+	}
+
 	@Override public RefGroup asMemberOf(Types types, Type t) {
 	    RefGroup result = this;
 	    Symbol enclosingClass = this.sym.owner;
@@ -94,7 +99,7 @@ public abstract class RefGroup {
 		if (baseClass != null) {
 		    List<RefGroup> from = enclosingClass.type.allRefGroups();
 		    List<RefGroup> to = baseClass.allRefGroups();
-		    result = result.subst(from, to);
+		    result = result.substRefGroups(from, to);
 		}
 	    }
 	    return result;
