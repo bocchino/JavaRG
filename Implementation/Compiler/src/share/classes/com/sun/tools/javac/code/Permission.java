@@ -146,7 +146,7 @@ public abstract class Permission {
 		RefGroup refGroup = this.refGroup.atCallSite(types, tree);
 		return (this.refGroup == refGroup) ?
 			this : new FreshGroupPerm(refGroup);
-		}
+	    }
 	    
 	}
     
@@ -155,7 +155,7 @@ public abstract class Permission {
 	 */ 
 	public static class CopyPerm extends EnvPerm 
 		implements SubstRefGroups<CopyPerm>,
-		AsMemberOf<CopyPerm> {
+		AsMemberOf<CopyPerm>, AtCallSite<CopyPerm> {
 
 	    /** 'v' in 'copies v [ [ (.f | '[' i ']') ] ...G1 ] to G2' */
 	    public final VarSymbol var;
@@ -226,6 +226,11 @@ public abstract class Permission {
 		// TODO
 		throw new UnsupportedOperationException();
 	    }
+	    
+	    public CopyPerm atCallSite(Types types, JCMethodInvocation tree) {
+		// TODO
+		throw new UnsupportedOperationException();
+	    }
 
 	    
 	    @Override public String toString() {
@@ -287,7 +292,7 @@ public abstract class Permission {
     
 	public static class EffectPerm extends EnvPerm 
 		implements SubstRefGroups<EffectPerm>,
-		AsMemberOf<EffectPerm>
+		AsMemberOf<EffectPerm>, AtCallSite<EffectPerm>
 	{
 	
 	    public EffectPerm() {
@@ -303,7 +308,12 @@ public abstract class Permission {
 		// TODO
 		throw new UnsupportedOperationException();
 	    }
-
+	    
+	    public EffectPerm atCallSite(Types types, JCMethodInvocation tree) {
+		// TODO
+		throw new UnsupportedOperationException();
+	    }
+	    
 	}
     
 	/**
@@ -311,7 +321,7 @@ public abstract class Permission {
 	 */
 	public static class PreservedGroupPerm extends EnvPerm 
 		implements SubstRefGroups<PreservedGroupPerm>,
-		AsMemberOf<PreservedGroupPerm>
+		AsMemberOf<PreservedGroupPerm>, AtCallSite<PreservedGroupPerm>
 	{
 	
 	    /** The preserved group */	
@@ -349,6 +359,14 @@ public abstract class Permission {
 		    new PreservedGroupPerm(refGroup);
 	    }
 	    
+	    public PreservedGroupPerm atCallSite(Types types, 
+		    JCMethodInvocation tree) {
+		RefGroup refGroup = this.refGroup.atCallSite(types, tree);
+		return (this.refGroup == refGroup) ?
+			this : new PreservedGroupPerm(refGroup);
+	    }
+
+	    
 	}
     
 	/**
@@ -356,7 +374,7 @@ public abstract class Permission {
 	 */
 	public static class UpdatedGroupPerm extends EnvPerm 
 		implements SubstRefGroups<UpdatedGroupPerm>,
-		AsMemberOf<UpdatedGroupPerm>
+		AsMemberOf<UpdatedGroupPerm>, AtCallSite<UpdatedGroupPerm>
 	{
 	
 	    /** The updated group */	
@@ -378,6 +396,13 @@ public abstract class Permission {
 		RefGroup refGroup = this.refGroup.asMemberOf(types, t);
 		return (refGroup == this.refGroup) ? this :
 		    new UpdatedGroupPerm(refGroup);
+	    }
+
+	    public UpdatedGroupPerm atCallSite(Types types, 
+		    JCMethodInvocation tree) {
+		RefGroup refGroup = this.refGroup.atCallSite(types, tree);
+		return (this.refGroup == refGroup) ?
+			this : new UpdatedGroupPerm(refGroup);
 	    }
 
 	    @Override public String toString() {

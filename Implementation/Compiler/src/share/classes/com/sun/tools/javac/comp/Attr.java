@@ -80,7 +80,6 @@ import com.sun.tools.javac.code.Constraints;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Substitutions;
 import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
@@ -98,6 +97,7 @@ import com.sun.tools.javac.code.RefGroup.RefGroupName;
 import com.sun.tools.javac.code.RefGroup.RefGroupParameter;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.code.Substitutions;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
@@ -1889,12 +1889,16 @@ public class Attr extends JCTree.Visitor {
             chk.requireEnvPerms(tree.pos(), freshGroupPerms, localEnv);
             // TODO: Copy perms
             // TODO: Effect perms
-            /*
-            chk.requirePreservedGroupPerms(tree.pos(), methSym.preservedGroupPerms,
-        	    localEnv);
-            chk.requireUpdatedGroupPerms(tree.pos(), methSym.updatedGroupPerms,
-        	    localEnv);
-        	    */
+            // Preserved group perms
+            List<PreservedGroupPerm> preservedGroupPerms =
+        	    Substitutions.atCallSite(methSym.preservedGroupPerms,
+        		    types, tree);
+            chk.requireEnvPerms(tree.pos(), preservedGroupPerms, localEnv);
+            // Updated group perms
+            List<UpdatedGroupPerm> updatedGroupPerms =
+        	    Substitutions.atCallSite(methSym.updatedGroupPerms,
+        		    types, tree);
+            chk.requireEnvPerms(tree.pos(), updatedGroupPerms, localEnv);
         }
         
         chk.validate(tree.typeargs);
