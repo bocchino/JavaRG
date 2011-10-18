@@ -1,15 +1,19 @@
 package com.sun.tools.javac.code;
 
 import com.sun.tools.javac.code.Substitutions.AsMemberOf;
+import com.sun.tools.javac.code.Substitutions.AtCallSite;
 import com.sun.tools.javac.code.Substitutions.SubstRefGroups;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupSymbol;
+import com.sun.tools.javac.code.Type.MethodType;
+import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.util.List;
 
 public abstract class RefGroup 
-	implements SubstRefGroups<RefGroup>, AsMemberOf<RefGroup> 
+	implements SubstRefGroups<RefGroup>, AsMemberOf<RefGroup>,
+	AtCallSite<RefGroup>
 {
     
     public RefGroupSymbol getSymbol() { return null; }
@@ -19,6 +23,10 @@ public abstract class RefGroup
     }
     
     public RefGroup asMemberOf(Types types, Type t) {
+	return this;
+    }
+    
+    public RefGroup atCallSite(Types types, JCMethodInvocation tree) {
 	return this;
     }
     
@@ -103,6 +111,19 @@ public abstract class RefGroup
 		}
 	    }
 	    return result;
+	}
+	
+	@Override public RefGroup atCallSite(Types types, JCMethodInvocation tree) {
+	    MethodSymbol methSym = tree.getMethodSymbol();
+	    if (methSym != null) {
+		MethodType methodType = (MethodType) tree.meth.type;
+		RefGroup refGroup = Substitutions.<RefGroup>selectElt(this, 
+			types, tree.meth);
+	            refGroup = refGroup.substRefGroups(methSym.refGroupParams, 
+	        	    methodType.refGroupActuals);
+	            return refGroup;
+	    }
+	    return this;
 	}
 	
 	@Override public String toString() {

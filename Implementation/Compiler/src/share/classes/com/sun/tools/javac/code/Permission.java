@@ -1,8 +1,10 @@
 package com.sun.tools.javac.code;
 
 import com.sun.tools.javac.code.Substitutions.AsMemberOf;
+import com.sun.tools.javac.code.Substitutions.AtCallSite;
 import com.sun.tools.javac.code.Substitutions.SubstRefGroups;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
 
@@ -102,7 +104,7 @@ public abstract class Permission {
 	 */
 	public static class FreshGroupPerm extends EnvPerm 
 		implements SubstRefGroups<FreshGroupPerm>, 
-		AsMemberOf<FreshGroupPerm>
+		AsMemberOf<FreshGroupPerm>, AtCallSite<FreshGroupPerm>
 	{
 	
 	    /** The fresh group */	
@@ -137,9 +139,15 @@ public abstract class Permission {
 	    public FreshGroupPerm asMemberOf(Types types, Type t) {
 		RefGroup refGroup = this.refGroup.asMemberOf(types, t);
 		return (this.refGroup == refGroup) ?
-			this: new FreshGroupPerm(refGroup);
+			this : new FreshGroupPerm(refGroup);
 	    }
-	
+
+	    public FreshGroupPerm atCallSite(Types types, JCMethodInvocation tree) {
+		RefGroup refGroup = this.refGroup.atCallSite(types, tree);
+		return (this.refGroup == refGroup) ?
+			this : new FreshGroupPerm(refGroup);
+		}
+	    
 	}
     
 	/**

@@ -1884,15 +1884,9 @@ public class Attr extends JCTree.Visitor {
         if (methSym != null) {
             MethodType methodType = (MethodType) tree.meth.type;
             // Fresh group perms
-            List<FreshGroupPerm> freshGroupPerms = methSym.freshGroupPerms;
-            if (fa != null) {
-        	freshGroupPerms = Substitutions.asMemberOf(freshGroupPerms, 
-        		types, fa.selected.type);
-            }
-            freshGroupPerms = Substitutions.substRefGroups(freshGroupPerms, 
-        	    methSym.refGroupParams, methodType.refGroupActuals);
-            chk.requireEnvPerms(tree.pos(), freshGroupPerms, 
-        	    localEnv);
+            List<FreshGroupPerm> freshGroupPerms = 
+        	    Substitutions.atCallSite(methSym.freshGroupPerms, types, tree);
+            chk.requireEnvPerms(tree.pos(), freshGroupPerms, localEnv);
             // TODO: Copy perms
             // TODO: Effect perms
             /*
