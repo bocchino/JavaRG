@@ -389,6 +389,10 @@ public class Scope {
 	
     }
     
+    public boolean containsPerm(EnvPerm perm) {
+	return envPerms.contains(perm);
+    }
+    
     public void lockAllGroups() {
 	for (Symbol sym : this.getElements()) {
 	    if (sym instanceof RefGroupSymbol) {

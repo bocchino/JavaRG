@@ -1,13 +1,15 @@
 package com.sun.tools.javac.code;
 
 import java.util.HashSet;
-import java.util.Set;
 
 import com.sun.tools.javac.code.Permission.EnvPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.ListBuffer;
 
 public class Permissions {
     protected static final Context.Key<Permissions> permissionsKey =
@@ -52,10 +54,27 @@ public class Permissions {
 	HashSet<EnvPerm> newSet = new HashSet();
 	newSet.add(newPerm);
 	for (EnvPerm oldPerm : oldSet) {
-	    if (!oldPerm.preservesGroup(newPerm.refGroup))
+	    if (!oldPerm.preservesGroup(newPerm.refGroup)) {
 		newSet.add(oldPerm);
+	    }
 	}
 	return newSet;
     }
     
+    public List<FreshGroupPerm> asMemberOf(List<FreshGroupPerm> perms, 
+	    Types types, Type t) {
+	ListBuffer<FreshGroupPerm> lb = ListBuffer.lb();
+	for (FreshGroupPerm perm : perms)
+	    lb.append(perm.asMemberOf(types, t));
+	return lb.toList();
+    }
+    
+    public List<FreshGroupPerm> subst(List<FreshGroupPerm> perms,
+	    List<RefGroup> from, List<RefGroup> to) {
+	ListBuffer<FreshGroupPerm> lb = ListBuffer.lb();
+	for (FreshGroupPerm perm :perms)
+	    lb.append(perm.subst(from, to));
+	return lb.toList();
+    }
+
 }

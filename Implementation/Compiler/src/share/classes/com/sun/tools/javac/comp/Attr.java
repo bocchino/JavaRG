@@ -1877,6 +1877,31 @@ public class Attr extends JCTree.Visitor {
             }
         }
         
+        // Check that the required environment permissions are available
+        JCFieldAccess fa = (tree.meth instanceof JCFieldAccess) ?
+        	(JCFieldAccess) tree.meth : null;
+        if (methSym != null) {
+            MethodType methodType = (MethodType) tree.meth.type;
+            // Fresh group perms
+            List<FreshGroupPerm> freshGroupPerms = methSym.freshGroupPerms;
+            if (fa != null) {
+        	freshGroupPerms = permissions.asMemberOf(freshGroupPerms, 
+        		types, fa.selected.type);
+            }
+            freshGroupPerms = permissions.subst(freshGroupPerms, 
+        	    methSym.refGroupParams, methodType.refGroupActuals);
+            chk.requireFreshGroupPerms(tree.pos(), freshGroupPerms, 
+        	    localEnv);
+            // TODO: Copy perms
+            // TODO: Effect perms
+            /*
+            chk.requirePreservedGroupPerms(tree.pos(), methSym.preservedGroupPerms,
+        	    localEnv);
+            chk.requireUpdatedGroupPerms(tree.pos(), methSym.updatedGroupPerms,
+        	    localEnv);
+        	    */
+        }
+        
         chk.validate(tree.typeargs);
     }
     //where
@@ -2190,7 +2215,7 @@ public class Attr extends JCTree.Visitor {
 		    leftPerm instanceof LocallyUnique) {
 		LocallyUnique luPerm = (LocallyUnique) leftPerm;
 		RefGroup refGroup = luPerm.refGroup;
-		requireUpdatedGroupPerm(tree.lhs.pos(), 
+		chk.requireUpdatedGroupPerm(tree.lhs.pos(), 
 			new UpdatedGroupPerm(refGroup), env);
 	    }
 	    assignRefPerm(leftPerm, tree.rhs, env);
@@ -2203,21 +2228,7 @@ public class Attr extends JCTree.Visitor {
 		new RefPermAssigner(leftPerm, right);
 	return refPermAssigner.assign();
     }
- 
-    void requireUpdatedGroupPerm(DiagnosticPosition pos,
-	    UpdatedGroupPerm perm, Env<AttrContext> env) {
-	if (!env.info.scope.addUpdatedGroupPerm(permissions, perm)) {
-	    log.error(pos, "cant.update.group", perm.refGroup);
-	}
-    }
-    
-    void requirePreservedGroupPerm(DiagnosticPosition pos,
-	    PreservedGroupPerm perm, Env<AttrContext> env) {
-	if (!env.info.scope.addPreservedGroupPerm(permissions, perm)) {
-	    log.error(pos, "cant.preserve.group", perm.refGroup);
-	}
-    }
-    
+
     private class RefPermAssigner extends JCTree.Visitor {
 	
 	RefPerm leftPerm;

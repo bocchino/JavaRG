@@ -78,10 +78,10 @@ public abstract class Permission {
 	private final RefGroup updatedGroup;
 	private final RefGroup preservedGroup;
 	
-	protected EnvPerm(RefGroup updatedGroup, 
-		RefGroup preservedGroup) {
-	    this.updatedGroup = updatedGroup;
+	protected EnvPerm(RefGroup preservedGroup, 
+		RefGroup updatedGroup) {
 	    this.preservedGroup = preservedGroup;
+	    this.updatedGroup = updatedGroup;
 	}
 	
 	public boolean updatesGroup(RefGroup refGroup) {
@@ -118,7 +118,19 @@ public abstract class Permission {
 	    @Override public int hashCode() {
 		return refGroup.hashCode() << 3;
 	    }
+	    
+	    public FreshGroupPerm asMemberOf(Types types, Type t) {
+		RefGroup refGroup = this.refGroup.asMemberOf(types, t);
+		return (this.refGroup == refGroup) ?
+			this: new FreshGroupPerm(refGroup);
+	    }
 	
+	    public FreshGroupPerm subst(List<RefGroup> from, List<RefGroup> to) {
+		RefGroup refGroup = this.refGroup.subst(from, to);
+		return (this.refGroup == refGroup) ?
+			this : new FreshGroupPerm(refGroup);
+	    }
+
 	}
     
 	/**

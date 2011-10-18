@@ -91,6 +91,9 @@ import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Permission.RefPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
 import com.sun.tools.javac.code.Permissions;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLs;
@@ -1842,6 +1845,47 @@ public class Check {
 	}
     }
 	
+    void requireFreshGroupPerm(DiagnosticPosition pos,
+	    FreshGroupPerm perm, Env<AttrContext> env) {
+	if (!env.info.scope.containsPerm(perm)) {
+	    log.error(pos, "missing.perm", perm);
+	}
+    }
+    
+    void requireFreshGroupPerms(DiagnosticPosition pos,
+	    List<FreshGroupPerm> perms, Env<AttrContext> env) {
+	for (FreshGroupPerm perm : perms)
+	    requireFreshGroupPerm(pos, perm, env);
+    }
+    
+    void requireUpdatedGroupPerm(DiagnosticPosition pos,
+	    UpdatedGroupPerm perm, Env<AttrContext> env) {
+	if (!env.info.scope.addUpdatedGroupPerm(permissions, perm)) {
+	    log.error(pos, "cant.update.group", perm.refGroup);
+	}
+    }
+    
+    void requireUpdatedGroupPerms(DiagnosticPosition pos,
+	    List<UpdatedGroupPerm> perms, Env<AttrContext> env) {
+	for (UpdatedGroupPerm perm : perms)
+	    requireUpdatedGroupPerm(pos, perm, env);
+    }
+    
+    void requirePreservedGroupPerm(DiagnosticPosition pos,
+	    PreservedGroupPerm perm, Env<AttrContext> env) {
+	if (!env.info.scope.addPreservedGroupPerm(permissions, perm)) {
+	    log.error(pos, "cant.preserve.group", perm.refGroup);
+	}
+    }
+
+    void requirePreservedGroupPerms(DiagnosticPosition pos,
+	    List<PreservedGroupPerm> perms, Env<AttrContext> env) {
+	for (PreservedGroupPerm perm : perms)
+	    requirePreservedGroupPerm(pos, perm, env);
+    }
+
+
+    
 /* *************************************************************************
  * Check annotations
  **************************************************************************/

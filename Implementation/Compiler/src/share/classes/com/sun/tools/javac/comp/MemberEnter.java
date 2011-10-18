@@ -798,7 +798,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 		PreservedGroupPerm newPerm = 
 			new PreservedGroupPerm(refGroup);
 		lb.append(newPerm);
-		attr.requirePreservedGroupPerm(tree.pos(), newPerm, env);
+		chk.requirePreservedGroupPerm(tree.pos(), newPerm, env);
 	    }
 	    methodSymbol.preservedGroupPerms = lb.toList();
 	}
@@ -812,7 +812,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 		UpdatedGroupPerm newPerm =
 			new UpdatedGroupPerm(refGroup);
 		lb.append(newPerm);
-		attr.requireUpdatedGroupPerm(tree.pos(), newPerm, env);
+		chk.requireUpdatedGroupPerm(tree.pos(), newPerm, env);
 	    }
 	    methodSymbol.updatedGroupPerms = lb.toList();
 	}
