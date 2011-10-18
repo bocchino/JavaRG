@@ -3,13 +3,8 @@
 */
 
 class DestructiveFieldAccess<refgroup G> extends Harness {
-    // TODO: Fix type system to put 'unique(G)' back in
-    // This requires attributing 'updates G' and entering into
-    // method env
-    //unique(G) 
-    Data data1;
-    //unique(G) 
-    Data data2;
+    unique(G) Data data1;
+    unique(G) Data data2;
 
     @Override
     public void initialize() updates G {

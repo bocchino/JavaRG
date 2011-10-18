@@ -443,9 +443,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                    List<JCExpression> thrown,
                    Env<AttrContext> env) {
 
-        // Enter and attribute region and effect parameters.
+        // Enter and attribute region and ref group parameters.
         ListBuffer<RPL> rplBuf = new ListBuffer<RPL>();
-        ListBuffer<Effects> effectsBuf = ListBuffer.lb();
+        ListBuffer<RefGroup> refGroupBuf = ListBuffer.lb();
         if (paramInfo != null) {
 	    for (DPJRegionParameter param : paramInfo.rplParams) {
 		enter.classEnter(param, env);
@@ -453,13 +453,12 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 	    }
 	    for (JCIdent param : paramInfo.refGroupParams) {
 		enter.classEnter(param, env);
-		effectsBuf.append(new Effects(new 
-			VariableEffect((RefGroupParameterSymbol) param.sym)));
+		refGroupBuf.append(new 
+			RefGroupParameter((RefGroupParameterSymbol) param.sym));
 	    }
         }
         List<RPL> rgnvars = rplBuf.toList();
-        List<RefGroup> effectvars = List.<RefGroup>nil(); // FIXME
-        //effectsBuf.toList();
+        List<RefGroup> effectvars = refGroupBuf.toList();
 
         // Enter and attribute type parameters.
         List<Type> tvars = enter.classEnter(typarams, env);
@@ -769,7 +768,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     	    	tree.thisPerm.refPerm;
         }
 	
-	// Attribute fresh groups
+	// Attribute fresh groups and add to env
 	{
 	    List<RefGroup> freshGroups =
 		    attr.attribRefGroups(tree.freshGroups, env);
@@ -777,37 +776,47 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 	    for (RefGroup refGroup : freshGroups) {
 		FreshGroupPerm newPerm = new FreshGroupPerm(refGroup);
 		lb.append(newPerm);
+		// We just created the group ==> no error checking
 		env.info.scope.addFreshGroupPerm(permissions,
 			newPerm);
 	    }
 	    methodSymbol.freshGroupPerms = lb.toList();
 	}
 
-	// Attribute copy perms	
+	// Attribute copy perms	and add to env
 	// TODO
 	
-	// Attribute effect perms
+	// Attribute effect perms and add to env
 	// TODO
 	
-	// Attribute preserved groups
+	// Attribute preserved groups and add to env
 	{
 	    List<RefGroup> preservedGroups =
 		    attr.attribRefGroups(tree.preservedGroups, env);
 	    ListBuffer<PreservedGroupPerm> lb = ListBuffer.lb();
-	    for (RefGroup refGroup : preservedGroups)
-		lb.append(new PreservedGroupPerm(refGroup));
+	    for (RefGroup refGroup : preservedGroups) {
+		PreservedGroupPerm newPerm = 
+			new PreservedGroupPerm(refGroup);
+		lb.append(newPerm);
+		attr.requirePreservedGroupPerm(tree.pos(), newPerm, env);
+	    }
 	    methodSymbol.preservedGroupPerms = lb.toList();
 	}
 	
-	// Attribute updated groups
+	// Attribute updated groups and add to env
 	{
 	    List<RefGroup> updatedGroups =
 		    attr.attribRefGroups(tree.updatedGroups, env);
 	    ListBuffer<UpdatedGroupPerm> lb = ListBuffer.lb();
-	    for (RefGroup refGroup : updatedGroups)
-		lb.append(new UpdatedGroupPerm(refGroup));
+	    for (RefGroup refGroup : updatedGroups) {
+		UpdatedGroupPerm newPerm =
+			new UpdatedGroupPerm(refGroup);
+		lb.append(newPerm);
+		attr.requireUpdatedGroupPerm(tree.pos(), newPerm, env);
+	    }
 	    methodSymbol.updatedGroupPerms = lb.toList();
 	}
+	
     }
     
     /** Create a fresh environment for method bodies.
@@ -903,6 +912,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
  *********************************************************************/
 
     public void visitVarDef(JCVariableDecl tree) {
+	
         Env<AttrContext> localEnv = env;
         if ((tree.mods.flags & STATIC) != 0 ||
             (env.info.scope.owner.flags() & INTERFACE) != 0) {
@@ -912,6 +922,19 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         attr.attribRefPerm(tree.refPerm, localEnv);
         attr.attribType(tree.vartype, localEnv);
         Scope enclScope = enter.enterScope(env);
+        /*
+	if (tree.name.toString().equals("cell")) {
+	    System.err.println("Processing cell field!");
+	    System.err.println("Cell type is " + tree.vartype);
+	    System.err.println("owner="+enclScope.owner);
+	    System.err.println("owner.type="+enclScope.owner.type);
+	    if (types.isArrayClass(enclScope.owner.type)) {
+		System.err.println("ARRAY");
+		((ClassType) enclScope.owner.type).cellType =
+			tree.vartype.type;
+	    }
+	}
+	*/
         VarSymbol v =
             new VarSymbol(0, tree.name, tree.vartype.type, enclScope.owner);
         v.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, v, tree);

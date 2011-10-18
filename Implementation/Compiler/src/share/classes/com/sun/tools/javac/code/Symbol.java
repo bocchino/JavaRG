@@ -794,7 +794,7 @@ public abstract class Symbol implements Element {
                                               List.<Type>nil(),
                                               List.<RegionParameterSymbol>nil(),
                                               List.<RefGroup>nil(),
-                                              this, null);
+                                              this, ((ClassType) type).cellType);
             return erasure_field;
         }
 
@@ -1105,7 +1105,7 @@ public abstract class Symbol implements Element {
         	    new ClassType(ownerType.outer_field, List.<Type>nil(), 
         		    List.<RegionParameterSymbol>nil(), 
         		    List.<RPL>nil(), List.<RefGroup>nil(), 
-        		    owner.type.tsym, null);
+        		    owner.type.tsym, ((ClassType) owner.type).cellType);
         	erasedType.DPJerased = true;
         	String result = erasedType.toString() + "." + name.toString();
         	return result;

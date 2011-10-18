@@ -90,7 +90,7 @@ public class Scope {
     /** A value for the empty scope.
      */
     public static final Scope emptyScope = new Scope(null, null, new Entry[]{},
-	    new HashSet<EnvPerm>(), new HashSet<RefGroupNameSymbol>());
+	    new HashSet<EnvPerm>(), new HashSet<RefGroupSymbol>());
 
     /** Permissions available in the environment
      */
@@ -100,21 +100,21 @@ public class Scope {
      *  to updating or vice versa)
      *  NOTE:  Ref group params are always locked.
      */
-    private HashSet<RefGroupNameSymbol> lockedGroupNames = 
-	    new HashSet<RefGroupNameSymbol>();
+    private HashSet<RefGroupSymbol> lockedGroups = 
+	    new HashSet<RefGroupSymbol>();
     
     /** Construct a new scope, within scope next, with given owner, using
      *  given table. The table's length must be an exponent of 2.
      */
     Scope(Scope next, Symbol owner, Entry[] table,
 	    HashSet<EnvPerm> envPerms, 
-	    HashSet<RefGroupNameSymbol> lockedGroupNames) {
+	    HashSet<RefGroupSymbol> lockedGroups) {
         this.next = next;
 	assert emptyScope == null || owner != null;
         this.owner = owner;
         this.table = table;
         this.envPerms = envPerms;
-        this.lockedGroupNames = lockedGroupNames;
+        this.lockedGroups = lockedGroups;
 	this.hashMask = table.length - 1;
         this.elems = null;
 	this.nelems = 0;
@@ -126,7 +126,7 @@ public class Scope {
      */
     public Scope(Symbol owner) {
         this(null, owner, new Entry[INITIAL_SIZE], 
-        	new HashSet<EnvPerm>(), new HashSet<RefGroupNameSymbol>());
+        	new HashSet<EnvPerm>(), new HashSet<RefGroupSymbol>());
 	for (int i = 0; i < INITIAL_SIZE; i++) table[i] = sentinel;
     }
 
@@ -137,7 +137,7 @@ public class Scope {
      */
     public Scope dup() {
         Scope result = new Scope(this, this.owner, this.table,
-        	this.envPerms, this.lockedGroupNames);
+        	this.envPerms, (HashSet<RefGroupSymbol>) this.lockedGroups.clone());
 	shared++;
 	// System.out.println("====> duping scope " + this.hashCode() + " owned by " + this.owner + " to " + result.hashCode());
 	// new Error().printStackTrace(System.out);
@@ -151,7 +151,7 @@ public class Scope {
      */
     public Scope dup(Symbol newOwner) {
         Scope result = new Scope(this, newOwner, this.table,
-        	this.envPerms, this.lockedGroupNames);
+        	this.envPerms, (HashSet<RefGroupSymbol>) this.lockedGroups.clone());
 	shared++;
 	// System.out.println("====> duping scope " + this.hashCode() + " owned by " + newOwner + " to " + result.hashCode());
 	// new Error().printStackTrace(System.out);
@@ -165,7 +165,7 @@ public class Scope {
     public Scope dupUnshared() {
 	return new Scope(this, this.owner, this.table.clone(),
 		(HashSet<EnvPerm>) this.envPerms.clone(), 
-		(HashSet<RefGroupNameSymbol>) this.lockedGroupNames.clone());
+		(HashSet<RefGroupSymbol>) this.lockedGroups.clone());
     }
 
     /** Remove all entries of this scope from its table, if shared
@@ -389,24 +389,21 @@ public class Scope {
 	
     }
     
-    public void lockAllGroupNames() {
+    public void lockAllGroups() {
 	for (Symbol sym : this.getElements()) {
-	    if (sym instanceof RefGroupNameSymbol) {
-		this.lockedGroupNames.add((RefGroupNameSymbol) sym);
+	    if (sym instanceof RefGroupSymbol) {
+		this.lockedGroups.add((RefGroupSymbol) sym);
 	    }
 	}
     }
     
     public boolean isLocked(RefGroup refGroup) {
-	RefGroupSymbol sym = refGroup.getSymbol();
-	if (sym instanceof RefGroupParameterSymbol) {
-	    return true;
-	}
-	return isLocked((RefGroupNameSymbol) sym);	    
+	RefGroupSymbol sym = refGroup.getSymbol();	
+	return isLocked(sym);	    
     }
     
-    public boolean isLocked(RefGroupNameSymbol sym) {
-	return lockedGroupNames.contains(sym);
+    public boolean isLocked(RefGroupSymbol sym) {
+	return lockedGroups.contains(sym);
     }
     
     public boolean hasUpdatesPermFor(RefGroup refGroup) {

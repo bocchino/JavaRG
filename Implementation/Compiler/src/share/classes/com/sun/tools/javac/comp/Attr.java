@@ -80,6 +80,7 @@ import com.sun.tools.javac.code.Constraints;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
@@ -261,6 +262,14 @@ public class Attr extends JCTree.Visitor {
 	    rpls = RPLs.instance(context);
 	}
 
+	@Override public void visitVarDef(JCVariableDecl tree) {
+	    Type varType = tree.vartype.type;
+	    if (varType != null) {
+		// Compute the cell types for all field types now.
+		attr.computeCellType(parentEnv, varType.tsym, varType);
+	    }
+	}
+	
 	@Override
 	public void visitMethodDef(JCMethodDecl tree) {
 	    MethodSymbol m = tree.sym;
@@ -1082,6 +1091,19 @@ public class Attr extends JCTree.Visitor {
                     thisSym.refPerm = m.thisPerm;
                 }
                 
+                // Add method permissions to localEnv
+                for (FreshGroupPerm perm : m.freshGroupPerms)
+                    localEnv.info.scope.addFreshGroupPerm(permissions, perm);
+                // TODO: Copy perms
+                // TODO: Effect perms
+                for (PreservedGroupPerm perm : m.preservedGroupPerms)
+                    localEnv.info.scope.addPreservedGroupPerm(permissions, perm);
+                for (UpdatedGroupPerm perm : m.updatedGroupPerms)
+                    localEnv.info.scope.addUpdatedGroupPerm(permissions, perm);
+                
+                // Lock all groups in localEnv
+                localEnv.info.scope.lockAllGroups();
+                
                 // Attribute method body.
                 attribStat(tree.body, localEnv);
 
@@ -1791,7 +1813,7 @@ public class Attr extends JCTree.Visitor {
                                                                syms.boundClass)),
                               List.<RegionParameterSymbol>nil(),
                               List.<RefGroup>nil(),
-                              restype.tsym, null);
+                              restype.tsym, ((ClassType) restype).cellType);
             }
 
             // Check that constraints on rpl args are satisfied
@@ -1819,7 +1841,8 @@ public class Attr extends JCTree.Visitor {
                     VarSymbol thisSym = (VarSymbol) thisSym(tree.pos(), localEnv);
                     RefPerm remainder = permissions.split(thisPerm, thisSym.refPerm);
                     if (remainder == RefPerm.ERROR) {
-                	chk.refPermError(tree.pos(), JCDiagnostic.fragment("insufficient.ref.perm"), 
+                	chk.refPermError(tree.pos(), 
+                		JCDiagnostic.fragment("insufficient.ref.perm"), 
                 		thisSym.refPerm, thisPerm);
                     }
                     else if (remainder == RefPerm.SHARED){
@@ -1878,7 +1901,7 @@ public class Attr extends JCTree.Visitor {
         Type newMethTemplate(List<Type> argtypes, List<Type> typeargtypes, 
         	List<RPL> regionargs, List<RefGroup> refGroupArgs) {
             MethodType mt = new MethodType(argtypes, null, null, syms.methodClass);
-            return ((typeargtypes == null) && (regionargs.isEmpty()) &&
+            return ((typeargtypes.isEmpty()) && (regionargs.isEmpty()) &&
         	    (refGroupArgs.isEmpty())) ? 
         	    mt : (Type) new ForAll(typeargtypes, regionargs, refGroupArgs, mt);
         }
@@ -2179,14 +2202,14 @@ public class Attr extends JCTree.Visitor {
 	return refPermAssigner.assign();
     }
  
-    private void requireUpdatedGroupPerm(DiagnosticPosition pos,
+    void requireUpdatedGroupPerm(DiagnosticPosition pos,
 	    UpdatedGroupPerm perm, Env<AttrContext> env) {
 	if (!env.info.scope.addUpdatedGroupPerm(permissions, perm)) {
 	    log.error(pos, "cant.update.group", perm.refGroup);
 	}
     }
     
-    private void requirePreservedGroupPerm(DiagnosticPosition pos,
+    void requirePreservedGroupPerm(DiagnosticPosition pos,
 	    PreservedGroupPerm perm, Env<AttrContext> env) {
 	if (!env.info.scope.addPreservedGroupPerm(permissions, perm)) {
 	    log.error(pos, "cant.preserve.group", perm.refGroup);
@@ -2606,6 +2629,7 @@ public class Attr extends JCTree.Visitor {
      * @param sym   The type or class symbol whose cell type we are computing
      * @param type  The instantiated type of the class
      */
+    boolean bidlika = false;
     private void computeCellType(Env<AttrContext> env, Symbol sym, Type type) {
         if ((sym.kind == TYP || sym.kind == CLASS) && 
         	types.isArrayClass(type)) {
@@ -2785,7 +2809,8 @@ public class Attr extends JCTree.Visitor {
                         : List.<Type>nil();
                     t = new ClassType(t.getEnclosingType(), typeargs, 
                 	    List.<RegionParameterSymbol>nil(), 
-                	    List.<RefGroup>nil(), t.tsym, null);
+                	    List.<RefGroup>nil(), t.tsym, 
+                	    ((ClassType) t).cellType);
                     return new VarSymbol(
                         STATIC | PUBLIC | FINAL, names._class, t, site.tsym);
                 } else {
@@ -2919,7 +2944,8 @@ public class Attr extends JCTree.Visitor {
                             owntype = new ClassType(
                                 normOuter, List.<Type>nil(), 
                                 List.<RegionParameterSymbol>nil(), 
-                                List.<RefGroup>nil(), owntype.tsym, null);
+                                List.<RefGroup>nil(), owntype.tsym, 
+                                ((ClassType) owntype).cellType);
                     }
                 }
                 break;
@@ -3480,10 +3506,13 @@ public class Attr extends JCTree.Visitor {
             // Construct the instantiated type with the type, RPL, and ref group args
             owntype = new ClassType(clazzOuter, typeActuals, 
         	    rplFormals, rplActuals, refGroupActuals,
-        	    functortype.tsym, null);
+        	    functortype.tsym, ((ClassType) functortype).cellType);
         }
         result = check(tree, owntype, TYP, pkind, pt);
         computeCellType(env, tree.functor.getSymbol(), result);
+        if (result instanceof ClassType && types.isArrayClass(result)) {
+            Type cellType = ((ClassType) result).cellType;
+        }
     }
 
     /** Helper function:  Make a list of expressions, some of which may have
@@ -3836,15 +3865,15 @@ public class Attr extends JCTree.Visitor {
     public void visitRefGroupDecl(JRGRefGroupDecl tree) {
 	memberEnter.memberEnter(tree, env);
 	annotate.flush();
-	env.info.scope.addPreservedGroupPerm(permissions, 
-		new PreservedGroupPerm(tree.refGroup));
+	env.info.scope.addFreshGroupPerm(permissions, 
+		new FreshGroupPerm(tree.refGroup));
     }
 
     public void visitPardo(JRGPardo tree) {
         // Create a new local environment with a local scope.
         Env<AttrContext> localEnv =
             env.dup(tree.body, env.info.dup(env.info.scope.dup()));
-        localEnv.info.scope.lockAllGroupNames();
+        localEnv.info.scope.lockAllGroups();
         attribStats(tree.body.stats, localEnv);
         localEnv.info.scope.leave();
 	result = null;
@@ -3860,7 +3889,7 @@ public class Attr extends JCTree.Visitor {
             log.error(tree.pos(), "array.req.but.found", tree.array.type);
 	}
 	loopEnv.tree = tree; // before, we were not in loop!
-	if (tree.isParallel) loopEnv.info.scope.lockAllGroupNames();
+	if (tree.isParallel) loopEnv.info.scope.lockAllGroups();
 	attribStat(tree.body, loopEnv);
 	loopEnv.info.scope.leave();
 	result = null;	

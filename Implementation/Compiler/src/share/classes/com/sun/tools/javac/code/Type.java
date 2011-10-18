@@ -666,7 +666,7 @@ public class Type implements PrimitiveType {
         /** Type of an array cell, if this is an array class
          */
         public Type cellType;
-        
+        public static int counter = 0;
         public ClassType(Type outer, List<Type> typarams, 
         		List<RegionParameterSymbol> rgnparams,
         		List<RPL> rgnactuals, List<RefGroup> refgroupparams,

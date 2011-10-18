@@ -1015,10 +1015,10 @@ public class Types {
             ClassType ct = (ClassType) t;
             s = new ClassType(cs.outer_field, cs.typarams_field, 
         	    List.<RegionParameterSymbol>nil(),
-        	    List.<RPL>nil(), List.<RefGroup>nil(), cs.tsym, null);
+        	    List.<RPL>nil(), List.<RefGroup>nil(), cs.tsym, ct.cellType);
             t = new ClassType(ct.outer_field, ct.typarams_field, 
         	    List.<RegionParameterSymbol>nil(),
-        	    List.<RPL>nil(), List.<RefGroup>nil(), ct.tsym, null);
+        	    List.<RPL>nil(), List.<RefGroup>nil(), ct.tsym, ct.cellType);
         }
 
         if (t.isPrimitive() != s.isPrimitive())
@@ -3108,7 +3108,7 @@ public class Types {
             assert(act1.isEmpty() && act2.isEmpty() && typarams.isEmpty());
             return new ClassType(class1.getEnclosingType(), merged.toList(), 
         	    List.<RegionParameterSymbol>nil() /* Incorrect // DPJ */, 
-        	    List.<RefGroup>nil(), class1.tsym, null);
+        	    List.<RefGroup>nil(), class1.tsym, class1.cellType);
         }
 
     /**

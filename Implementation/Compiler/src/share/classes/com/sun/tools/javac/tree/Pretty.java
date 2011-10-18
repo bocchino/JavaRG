@@ -171,8 +171,6 @@ public class Pretty extends JCTree.Visitor {
 	default:
 	    break;	
 	}
-	// Don't print out DPJ type annotations if we are generating code
-	Types.printDPJ = (codeGenMode == NONE);
     }
     
     /** We need to rewrite variable symbols during code generation
@@ -1790,7 +1788,7 @@ public class Pretty extends JCTree.Visitor {
         	align(); 
         	printType(fa.type);
         	print(" destructiveAccess(");
-        	print(fa.selected.type);
+        	printType(fa.selected.type);
         	print(" arg) {");
         	println();
         	indent();
@@ -1899,15 +1897,22 @@ public class Pretty extends JCTree.Visitor {
      * the regular Java type.
      */
     private void printType(Type type) throws IOException {
+	boolean oldPrintDPJ = Types.printDPJ;
+	// Don't print out DPJ type annotations if we are generating code
+	Types.printDPJ = (codeGenMode == NONE);
+	boolean printed = false;
 	if (type instanceof ClassType) {
 	    ClassType ct = (ClassType) type;
 	    if (ct.cellType != null) {
 		printType(ct.cellType);
 		print("[]");
-		return;
+		printed = true;
 	    }
 	}
-	print(type);
+	if (!printed) {
+	    print(type);
+	}
+	Types.printDPJ = oldPrintDPJ;
     }
     
     public void visitIdent(JCIdent tree) {
