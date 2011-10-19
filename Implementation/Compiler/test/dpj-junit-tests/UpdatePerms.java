@@ -16,5 +16,9 @@ public class UpdatePerms extends DPJTestCase {
     @Test public void testErrorCantUpdateField() throws Throwable {
 	compileExpectingErrors("ErrorCantUpdateField", 1);
     }
-    
+
+    @Test public void testErrorCantUpdateArray() throws Throwable {
+	compileExpectingErrors("ErrorCantUpdateArray", 1);
+    }
+
 }

@@ -1781,22 +1781,32 @@ public class Pretty extends JCTree.Visitor {
     public void visitUnary(JCUnary tree) {
         try {
             if (tree.isDestructiveAccess) {
-        	JCFieldAccess fa = (JCFieldAccess) tree.arg;
+        	JCFieldAccess fa = null;
+        	JCArrayAccess aa = null;
+        	if (tree.arg instanceof JCFieldAccess) 
+        	    fa = (JCFieldAccess) tree.arg;
+        	else
+        	    aa = (JCArrayAccess) tree.arg;
         	print("(new Object() {");
         	println();
         	indent();
         	align(); 
-        	printType(fa.type);
+        	printType(tree.arg.type);
         	print(" destructiveAccess(");
-        	printType(fa.selected.type);
+        	if (tree.arg instanceof JCFieldAccess) printType(fa.selected.type);
+        	else printType(aa.indexed.type);
         	print(" arg) {");
         	println();
         	indent();
         	align();
-        	printType(fa.type);
-        	print(" result = arg." + fa.name + ";");
+        	printType(tree.arg.type);
+        	String argAccess = (tree.arg instanceof JCFieldAccess) ?
+        		"." + fa.name : "[" + aa.index + "]";
+        	print(" result = arg");
+        	print(argAccess);
+        	print(";");
         	println();
-        	align(); print("arg." + fa.name + " = null;");
+        	align(); print("arg" + argAccess + " = null;");
         	println();
         	align(); print("return result;");
         	println();
@@ -1804,7 +1814,10 @@ public class Pretty extends JCTree.Visitor {
         	align(); print("}");
         	println();
         	undent(); 
-        	align(); print("}).destructiveAccess(" + fa.selected + ")");
+        	align(); print("}).destructiveAccess(");
+        	if (tree.arg instanceof JCFieldAccess) print(fa.selected);
+        	else print(aa.indexed); 
+        	print(")");
         	return;
             }
             int ownprec = TreeInfo.opPrec(tree.getTag());

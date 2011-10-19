@@ -19,8 +19,10 @@ test-all-seq :
 	${DPJ-SEQ-TEST} ArrayAccessInt         TEST ${SIZE}
 	${DPJ-SEQ-TEST} ArrayAccess            TEST ${SIZE}
 	${DPJ-SEQ-TEST} ArrayAccessGeneric     TEST ${SIZE}
+	${DPJ-SEQ-TEST} ArrayAccessGenericInner     TEST ${SIZE}
 	${DPJ-SEQ-TEST} ArrayOfArrayOfInt      TEST ${SIZE}
 	${DPJ-SEQ-TEST} DestructiveFieldAccess TEST ${SIZE}
+	${DPJ-SEQ-TEST} DestructiveArrayAccess TEST ${SIZE}
 	${DPJ-SEQ-TEST} InstanceofSwitch       TEST ${SIZE}
 	${DPJ-SEQ-TEST} PardoBasic             TEST ${SIZE}
 	${DPJ-SEQ-TEST} ForeachBasicSeq        TEST ${SIZE}

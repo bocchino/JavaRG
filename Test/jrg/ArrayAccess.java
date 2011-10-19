@@ -2,25 +2,30 @@
 * Test array class access with class cell type
 */
 
-class ArrayAccess<region R, refgroup G> extends Harness {
-    DataArray<R,G> array;
+class ArrayAccess extends Harness {
 
     @Override
     public void initialize() {
-	array = new DataArray<R,G>(size);
     }
 
     @Override
     public void runTest() {
-	for (int i = 0; i < size; ++i) {
-	    assert (array[i] instanceof Data);
-	}
     }
 
     @Override
     public void runWork() {
+	region r;
+	refgroup g;
+	this.<region r; refgroup g>localWork();
+    }
+
+    private <region R, refgroup G>void localWork() updates G {
+	DataArray<R,G> array = new DataArray<R,G>(size);
 	for (int i = 0; i < size; ++i) {
 	    array[i] = new Data();
+	}
+	for (int i = 0; i < size; ++i) {
+	    assert (array[i] instanceof Data);
 	}
     }
 
@@ -29,9 +34,7 @@ class ArrayAccess<region R, refgroup G> extends Harness {
     }
 
     public static void main(String[] args) {
-	region r;
-	refgroup g;
-	ArrayAccess<r,g> test = new ArrayAccess<r,g>(args);
+	ArrayAccess test = new ArrayAccess(args);
 	test.run();
     }
 }

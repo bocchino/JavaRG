@@ -3,30 +3,34 @@
  * and inner class
  */
 
-class ArrayAccessGenericInner<region R, refgroup G> extends Harness {
+class ArrayAccessGenericInner extends Harness {
 
     static arrayclass GenericArray<type T, region R, refgroup G> { 
 	unique(G) T in R; 
     }
 
-    GenericArray<Data,R,G> array;
-
     @Override
     public void initialize() {
-	array = new GenericArray<Data,R,G>(size);
     }
 
     @Override
     public void runTest() {
-	for (int i = 0; i < size; ++i) {
-	    assert (array[i] instanceof Data);
-	}
     }
 
     @Override
     public void runWork() {
+	region r;
+	refgroup g;
+	this.<region r; refgroup g>localWork();
+    }
+
+    private <region R, refgroup G>void localWork() updates G {
+	GenericArray<Data,R,G> array = new GenericArray<Data,R,G>(size);
 	for (int i = 0; i < size; ++i) {
 	    array[i] = new Data();
+	}
+	for (int i = 0; i < size; ++i) {
+	    assert (array[i] instanceof Data);
 	}
     }
 
@@ -35,10 +39,8 @@ class ArrayAccessGenericInner<region R, refgroup G> extends Harness {
     }
 
     public static void main(String[] args) {
-	region r;
-	refgroup g;
-	ArrayAccessGenericInner<r,g> test = 
-	    new ArrayAccessGenericInner<r,g>(args);
+	ArrayAccessGenericInner test = 
+	    new ArrayAccessGenericInner(args);
 	test.run();
     }
 }

@@ -48,7 +48,7 @@ public class Substitutions {
     }
         
     /** Perform 'as member of' implied by a selection */
-    public static <T extends AsMemberOf<T>> T selectElt(T elt, Types types, 
+    public static <T extends AsMemberOf<T>> T accessElt(T elt, Types types, 
 	    JCExpression tree) {
 	if (tree instanceof JCFieldAccess) {
 	    JCFieldAccess fa = (JCFieldAccess) tree;
@@ -58,11 +58,11 @@ public class Substitutions {
     }
     
     /** Perform 'selectElt' on a list of things */
-    public static <T extends AsMemberOf<T>> List<T>selectElts(List<T> elts,
+    public static <T extends AsMemberOf<T>> List<T>accessElts(List<T> elts,
 	    Types types, JCExpression tree) {
 	if (tree instanceof JCFieldAccess) {
 	    ListBuffer<T> lb = ListBuffer.lb();
-	    for (T elt : elts) lb.append(selectElt(elt, types, tree));
+	    for (T elt : elts) lb.append(accessElt(elt, types, tree));
 	    return lb.toList();
 	}
 	return elts;

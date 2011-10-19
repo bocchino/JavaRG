@@ -2203,13 +2203,26 @@ public class Attr extends JCTree.Visitor {
         result = check(tree, capturedType, VAL, pkind, pt);
         
 	Symbol leftSym = tree.lhs.getSymbol();
+	VarSymbol leftVarSym = null;
+	RefPerm leftPerm = null;
 	if (leftSym instanceof VarSymbol) {
-	    VarSymbol leftVarSym = (VarSymbol) leftSym;
-	    RefPerm leftPerm = leftVarSym.refPerm;
-	    if (tree.lhs instanceof JCFieldAccess) {
-		JCFieldAccess fa = (JCFieldAccess) tree.lhs;
-		leftPerm = leftPerm.asMemberOf(types, fa.selected.type);
+	    leftVarSym = (VarSymbol) leftSym;
+	    leftPerm = Substitutions.accessElt(leftVarSym.refPerm,
+		    types, tree.lhs);
+	    
+	} 
+	else if (tree.lhs instanceof JCArrayAccess) {
+	    JCArrayAccess aa = (JCArrayAccess) tree.lhs;
+	    Type atype = aa.indexed.type;
+	    if (types.isArrayClass(atype)) {
+		ClassType ct = (ClassType) atype;
+		Type site = capture(ct);
+		leftVarSym = (VarSymbol) 
+			rs.findIdentInType(env, site, names.fromString("cell"), VAR);
+		leftPerm = leftVarSym.refPerm.asMemberOf(types, atype);
 	    }
+	}
+	if (leftVarSym != null) {
 	    if (leftVarSym.owner.kind == TYP &&
 		    leftPerm instanceof LocallyUnique) {
 		LocallyUnique luPerm = (LocallyUnique) leftPerm;

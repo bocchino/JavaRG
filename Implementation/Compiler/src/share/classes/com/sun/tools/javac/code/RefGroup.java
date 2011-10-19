@@ -117,7 +117,7 @@ public abstract class RefGroup
 	    MethodSymbol methSym = tree.getMethodSymbol();
 	    if (methSym != null) {
 		MethodType methodType = (MethodType) tree.meth.type;
-		RefGroup refGroup = Substitutions.<RefGroup>selectElt(this, 
+		RefGroup refGroup = Substitutions.<RefGroup>accessElt(this, 
 			types, tree.meth);
 	            refGroup = refGroup.substRefGroups(methSym.refGroupParams, 
 	        	    methodType.refGroupActuals);
