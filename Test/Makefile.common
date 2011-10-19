@@ -19,7 +19,7 @@ SRCS= ${wildcard dpj/*.java}
 all :: ${ALL}
 
 sequential-classes : ${SRCS} sequential/java sequential/classes
-	${DPJC-SEQ} -d sequential/java jrg/*.java #${RUNTIME}/jrg/*.java
+	${DPJC-SEQ} -d sequential/java jrg/*.java ${RUNTIME}/jrg/*.java
 	${JAVAC} -d sequential/classes sequential/java/*.java
 instrument-classes : ${SRCS} instrument/java instrument/classes
 	${DPJC-INST} -d instrument/java jrg/*.java ${RUNTIME}/jrg/*.java

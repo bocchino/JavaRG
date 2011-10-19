@@ -11,16 +11,16 @@ class ArrayAccessInt<region R> extends Harness {
     }
 
     @Override
-    public void runTest() {
+    public void runWork() {
 	for (int i = 0; i < size; ++i) {
-	    assert (array[i] == i);
+	    array[i] = i;
 	}
     }
 
     @Override
-    public void runWork() {
+    public void runTest() {
 	for (int i = 0; i < size; ++i) {
-	    array[i] = i;
+	    assert (array[i] == i);
 	}
     }
 
