@@ -2203,17 +2203,29 @@ public class Attr extends JCTree.Visitor {
         attribExpr(tree.rhs, env, owntype);
         result = check(tree, capturedType, VAL, pkind, pt);
         
-	Symbol leftSym = tree.lhs.getSymbol();
+	RefPerm leftPerm = requireUpdatedGroupPermFor(tree.lhs);
+	if (leftPerm != null) {
+	    assignRefPerm(leftPerm, tree.rhs, env);
+	}
+    }
+    
+    /**
+     * Require updated group permission, if needed, for tree.
+     * Return the ref permission, if any, associated with the tree.
+     * @param tree
+     * @return
+     */
+    private RefPerm requireUpdatedGroupPermFor(JCExpression tree) {
+	Symbol leftSym = tree.getSymbol();
 	VarSymbol leftVarSym = null;
 	RefPerm leftPerm = null;
 	if (leftSym instanceof VarSymbol) {
 	    leftVarSym = (VarSymbol) leftSym;
 	    leftPerm = Substitutions.accessElt(leftVarSym.refPerm,
-		    types, tree.lhs);
-	    
+		    types, tree);	    
 	} 
-	else if (tree.lhs instanceof JCArrayAccess) {
-	    JCArrayAccess aa = (JCArrayAccess) tree.lhs;
+	else if (tree instanceof JCArrayAccess) {
+	    JCArrayAccess aa = (JCArrayAccess) tree;
 	    Type atype = aa.indexed.type;
 	    if (types.isArrayClass(atype)) {
 		ClassType ct = (ClassType) atype;
@@ -2228,11 +2240,11 @@ public class Attr extends JCTree.Visitor {
 		    leftPerm instanceof LocallyUnique) {
 		LocallyUnique luPerm = (LocallyUnique) leftPerm;
 		RefGroup refGroup = luPerm.refGroup;
-		chk.requireEnvPerm(tree.lhs.pos(), 
+		chk.requireEnvPerm(tree.pos(), 
 			new UpdatedGroupPerm(refGroup), env);
 	    }
-	    assignRefPerm(leftPerm, tree.rhs, env);
 	}
+	return leftPerm;
     }
     
     private RefPerm assignRefPerm(RefPerm leftPerm, JCExpression right,
@@ -2417,11 +2429,12 @@ public class Attr extends JCTree.Visitor {
         if (operator.kind == MTH) {
             if (tree.getTag() == JCTree.NOT && 
         	    !types.isAssignable(tree.arg.type, syms.booleanType)) {
-        	// Destructive field access
+        	// Destructive access
+        	owntype = tree.arg.type;
      		if (tree.arg instanceof JCFieldAccess ||
      			tree.arg instanceof JCArrayAccess) {
-     		    owntype = tree.arg.type;
      		    tree.isDestructiveAccess = true;
+     		    requireUpdatedGroupPermFor(tree.arg);
      		}
      		else {
      		    log.error(tree.arg.pos(), "expected.access");
