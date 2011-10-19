@@ -401,6 +401,21 @@ public class Scope {
 	}
     }
     
+    /**
+     * Add updated group perms for all groups that have no preserves permission;
+     * used at the start of method body checking.
+     */
+    public void addUpdatePerms() {
+	for (Symbol sym : this.getElements()) {
+	    if (sym instanceof RefGroupSymbol) {
+		RefGroup refGroup =  RefGroup.makeRefGroup((RefGroupSymbol) sym);
+		if (!envPerms.contains(new PreservedGroupPerm(refGroup))) { 
+		    envPerms.add(new UpdatedGroupPerm(refGroup));
+		}
+	    }
+	}
+    }
+    
     public boolean isLocked(RefGroup refGroup) {
 	RefGroupSymbol sym = refGroup.getSymbol();	
 	return isLocked(sym);	    

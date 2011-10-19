@@ -1101,8 +1101,10 @@ public class Attr extends JCTree.Visitor {
                 // TODO: Effect perms
                 for (PreservedGroupPerm perm : m.preservedGroupPerms)
                     localEnv.info.scope.addPreservedGroupPerm(permissions, perm);
-                for (UpdatedGroupPerm perm : m.updatedGroupPerms)
-                    localEnv.info.scope.addUpdatedGroupPerm(permissions, perm);
+                //for (UpdatedGroupPerm perm : m.updatedGroupPerms)
+                //    localEnv.info.scope.addUpdatedGroupPerm(permissions, perm);
+                // Default:  Update if no perm specified
+                localEnv.info.scope.addUpdatePerms();
                 
                 // Lock all groups in localEnv
                 localEnv.info.scope.lockAllGroups();

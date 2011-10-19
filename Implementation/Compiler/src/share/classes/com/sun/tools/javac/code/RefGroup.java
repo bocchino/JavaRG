@@ -16,6 +16,12 @@ public abstract class RefGroup
 	AtCallSite<RefGroup>
 {
     
+    public static RefGroup makeRefGroup(RefGroupSymbol sym) {
+	if (sym instanceof RefGroupNameSymbol)
+	    return new RefGroupName((RefGroupNameSymbol) sym);
+	return new RefGroupParameter((RefGroupParameterSymbol) sym);
+    }
+    
     public RefGroupSymbol getSymbol() { return null; }
     
     public RefGroup substRefGroups(List<RefGroup> from, List<RefGroup> to) {

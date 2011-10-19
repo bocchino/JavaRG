@@ -4,7 +4,7 @@
 class ErrorCantUpdateField<refgroup G> {
     class Data{}
     unique(G) Data field;
-    void m() {
+    void m() preserves G {
 	this.field = new Data();
     }
 }
