@@ -25,4 +25,11 @@ public class Overriding extends DPJTestCase {
 	compileExpectingErrors("ErrorThisPerm", 1);
     }
     
+    @Test public void testOverridePreserves() throws Throwable {
+	compile("OverridePreserves");
+    }
+    
+    @Test public void testErrorMissingPreserves() throws Throwable {
+	compileExpectingErrors("ErrorMissingPreserves", 1);
+    }
 }

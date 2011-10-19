@@ -102,6 +102,7 @@ import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLs;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Source;
+import com.sun.tools.javac.code.Substitutions;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
@@ -1325,6 +1326,18 @@ public class Check {
 			oParams.head.refPerm, other.owner.type);
 	    }
 	    oParams = oParams.tail;
+	}
+	
+	// Check consistency of env permissions
+	List<PreservedGroupPerm> mPreservedGroupPerms =
+		Substitutions.asMemberOf(m.preservedGroupPerms, types, origin.type);
+	List<PreservedGroupPerm> oPreservedGroupPerms =
+		Substitutions.asMemberOf(other.preservedGroupPerms, types, origin.type);
+	for (PreservedGroupPerm perm : oPreservedGroupPerms) {
+	    if (!mPreservedGroupPerms.contains(perm)) {
+		log.error(TreeInfo.diagnosticPositionFor(m, tree),
+			"override.preserve.perms", perm, other.owner.type);
+	    }
 	}
 	
 	// Error if overriding effects not a subeffect of overridden effects (DPJ)
