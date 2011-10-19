@@ -2486,14 +2486,11 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 	/** The preserved group permissions available on method entry */
 	public List<JCIdent> preservedGroups;
 
-	/** The updated group permissions available on method entry */
-	public List<JCIdent> updatedGroups;
-	
 	protected JRGMethodPerms(JRGRefPerm thisPerm, List<JCIdent> freshGroups,
 		List<JRGCopyPerm> copyPerms,boolean defaultEffectPerms,
 		List<JRGEffectPerm> readffectPerms, 
 		List<JRGEffectPerm> writeEffectPerms,
-		List<JCIdent> preservedGroups, List<JCIdent> updatedGroups) {
+		List<JCIdent> preservedGroups) {
 	    this.thisPerm = thisPerm;
 	    this.freshGroups = freshGroups;
 	    this.copyPerms = copyPerms;
@@ -2501,7 +2498,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 	    this.readEffectPerms = readEffectPerms;
 	    this.writeEffectPerms = writeEffectPerms;
 	    this.preservedGroups = preservedGroups;
-	    this.updatedGroups = updatedGroups;
 	}
 	
 	@Override
@@ -2932,7 +2928,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         	List<JRGCopyPerm> copyPerms, boolean defaultEffectPerms,
         	List<JRGEffectPerm> readEffectPerms, 
         	List<JRGEffectPerm> writeEffectPerms, 
-        	List<JCIdent> preservedGroups, List<JCIdent> updatedGroups);
+        	List<JCIdent> preservedGroups);
         JRGDerefSet DerefSet(JCExpression root, JCIdent group);
         JRGCopyPerm CopyPerm(JRGDerefSet derefSet, JCIdent group);
         TypeBoundKind TypeBoundKind(BoundKind kind);

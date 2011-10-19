@@ -19,7 +19,7 @@ class ArrayAccessGeneric extends Harness {
 	this.<region r; refgroup g>localWork();
     }
 
-    private <region R, refgroup G>void localWork() updates G {
+    private <region R, refgroup G>void localWork() {
 	GenericArray<Data,R,G> array;
 	array = new GenericArray<Data,R,G>(size);
 	for (int i = 0; i < size; ++i) {

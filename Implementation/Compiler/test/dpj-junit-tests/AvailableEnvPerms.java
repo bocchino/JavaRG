@@ -29,12 +29,4 @@ public class AvailableEnvPerms extends DPJTestCase {
 	compileExpectingErrors("PreservedGroupPermError", 1);
     }
     
-    @Test public void testUpdatedGroupPermOK() throws Throwable {
-	compile("UpdatedGroupPermOK");
-    }
-    
-    @Test public void testUpdatedGroupPermError() throws Throwable {
-	compileExpectingErrors("UpdatedGroupPermError", 1);
-    }
-
 }

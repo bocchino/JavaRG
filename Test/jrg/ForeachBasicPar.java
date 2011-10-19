@@ -41,9 +41,7 @@ class ForeachBasicPar extends Harness {
 	this.<refgroup g>test(cellArray);
     }
 
-    private <refgroup G>unique(G) CellArray<G> init() 
-	updates G 
-    {
+    private <refgroup G>unique(G) CellArray<G> init() {
 	unique(G) CellArray<G> cellArray = 
 	    new CellArray<G>(size);
 	for each i in cellArray {

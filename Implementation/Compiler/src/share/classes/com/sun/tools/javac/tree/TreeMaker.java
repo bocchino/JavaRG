@@ -644,10 +644,10 @@ public class TreeMaker implements JCTree.Factory {
     public JRGMethodPerms MethodPerms(JRGRefPerm refPerm, List<JCIdent> freshGroups,
 	    List<JRGCopyPerm> copyPerms, boolean defaultEffectPerms,
 	    List<JRGEffectPerm> readEffectPerms, List<JRGEffectPerm> writeEffectPerms,
-	    List<JCIdent> preservedGroups, List<JCIdent> updatedGroups) {
+	    List<JCIdent> preservedGroups) {
 	JRGMethodPerms tree = new JRGMethodPerms(refPerm, freshGroups, copyPerms, 
 		defaultEffectPerms, readEffectPerms, writeEffectPerms,
-		preservedGroups, updatedGroups);
+		preservedGroups);
 	tree.pos = pos;
 	return tree;
     }

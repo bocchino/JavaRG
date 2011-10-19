@@ -7,7 +7,7 @@ class DestructiveFieldAccess<refgroup G> extends Harness {
     unique(G) Data data2;
 
     @Override
-    public void initialize() updates G {
+    public void initialize() {
 	this.data1 = new Data();
     }
 
@@ -18,7 +18,7 @@ class DestructiveFieldAccess<refgroup G> extends Harness {
     }
 
     @Override
-    public void runWork() updates G {
+    public void runWork() {
 	// Should read data1 into data2, then null out data1
 	data2 = !this.data1;
     }

@@ -39,7 +39,7 @@ public class Permissions {
 	return RefPerm.ERROR;
     }
     
-    public HashSet<EnvPerm> addPreservesPerm(HashSet<EnvPerm> oldSet, 
+    public HashSet<EnvPerm> addPreservedGroupPerm(HashSet<EnvPerm> oldSet, 
 	    PreservedGroupPerm newPerm) {
 	HashSet<EnvPerm> newSet = new HashSet();
 	newSet.add(newPerm);
@@ -50,7 +50,7 @@ public class Permissions {
 	return newSet;
     }
     
-    public HashSet<EnvPerm> addUpdatesPerm(HashSet<EnvPerm> oldSet, 
+    public HashSet<EnvPerm> addUpdatedGroupPerm(HashSet<EnvPerm> oldSet, 
 	    UpdatedGroupPerm newPerm) {
 	HashSet<EnvPerm> newSet = new HashSet();
 	newSet.add(newPerm);

@@ -1101,13 +1101,12 @@ public class Attr extends JCTree.Visitor {
                 // TODO: Effect perms
                 for (PreservedGroupPerm perm : m.preservedGroupPerms)
                     localEnv.info.scope.addPreservedGroupPerm(permissions, perm);
-                //for (UpdatedGroupPerm perm : m.updatedGroupPerms)
-                //    localEnv.info.scope.addUpdatedGroupPerm(permissions, perm);
+                
                 // Default:  Update if no perm specified
                 localEnv.info.scope.addUpdatePerms();
                 
-                // Lock all groups in localEnv
-                localEnv.info.scope.lockAllGroups();
+                // Lock all preserved groups in localEnv
+                localEnv.info.scope.lockAllPreservedGroups();
                 
                 // Attribute method body.
                 attribStat(tree.body, localEnv);
@@ -2416,7 +2415,8 @@ public class Attr extends JCTree.Visitor {
 
         Type owntype = syms.errType;
         if (operator.kind == MTH) {
-            if (tree.getTag() == JCTree.NOT && !types.isAssignable(tree.arg.type, syms.booleanType)) {
+            if (tree.getTag() == JCTree.NOT && 
+        	    !types.isAssignable(tree.arg.type, syms.booleanType)) {
         	// Destructive field access
      		if (tree.arg instanceof JCFieldAccess ||
      			tree.arg instanceof JCArrayAccess) {
@@ -3900,7 +3900,7 @@ public class Attr extends JCTree.Visitor {
         // Create a new local environment with a local scope.
         Env<AttrContext> localEnv =
             env.dup(tree.body, env.info.dup(env.info.scope.dup()));
-        localEnv.info.scope.lockAllGroups();
+        localEnv.info.scope.inParallelBlock = true;
         attribStats(tree.body.stats, localEnv);
         localEnv.info.scope.leave();
 	result = null;
@@ -3916,7 +3916,7 @@ public class Attr extends JCTree.Visitor {
             log.error(tree.pos(), "array.req.but.found", tree.array.type);
 	}
 	loopEnv.tree = tree; // before, we were not in loop!
-	if (tree.isParallel) loopEnv.info.scope.lockAllGroups();
+	loopEnv.info.scope.inParallelBlock = tree.isParallel;
 	attribStat(tree.body, loopEnv);
 	loopEnv.info.scope.leave();
 	result = null;	

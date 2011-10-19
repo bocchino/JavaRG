@@ -803,19 +803,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 	    methodSymbol.preservedGroupPerms = lb.toList();
 	}
 	
-	// Attribute updated groups and add to env
-	{
-	    List<RefGroup> updatedGroups =
-		    attr.attribRefGroups(tree.updatedGroups, env);
-	    ListBuffer<UpdatedGroupPerm> lb = ListBuffer.lb();
-	    for (RefGroup refGroup : updatedGroups) {
-		UpdatedGroupPerm newPerm =
-			new UpdatedGroupPerm(refGroup);
-		lb.append(newPerm);
-		chk.requireEnvPerm(tree.pos(), newPerm, env);
-	    }
-	    methodSymbol.updatedGroupPerms = lb.toList();
-	}
+	// Give update permission to all non-preserved groups
+	methodSymbol.updatedGroupPerms = env.info.scope.addUpdatePerms();
 	
     }
     

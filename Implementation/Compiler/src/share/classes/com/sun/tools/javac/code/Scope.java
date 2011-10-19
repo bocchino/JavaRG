@@ -32,9 +32,9 @@ import com.sun.tools.javac.code.Permission.EnvPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
-import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
-import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupSymbol;
+import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 
 /** A scope represents an area of visibility in a Java program. The
@@ -50,6 +50,10 @@ import com.sun.tools.javac.util.Name;
  */
 public class Scope {
 
+    /** Whether we are in a parallel block
+     */
+    public boolean inParallelBlock;
+    
     /** The number of scopes that share this scope's hash table.
      */
     private int shared;
@@ -90,15 +94,15 @@ public class Scope {
     /** A value for the empty scope.
      */
     public static final Scope emptyScope = new Scope(null, null, new Entry[]{},
-	    new HashSet<EnvPerm>(), new HashSet<RefGroupSymbol>());
+	    new HashSet<EnvPerm>(), new HashSet<RefGroupSymbol>(),
+	    false);
 
     /** Permissions available in the environment
      */
     private HashSet<EnvPerm> envPerms = new HashSet<EnvPerm>();
     
-    /** "Locked" ref groups names (i.e., group names we can't switch from preserving
+    /** "Locked" ref groups  (i.e., groups we can't switch from preserving
      *  to updating or vice versa)
-     *  NOTE:  Ref group params are always locked.
      */
     private HashSet<RefGroupSymbol> lockedGroups = 
 	    new HashSet<RefGroupSymbol>();
@@ -108,7 +112,8 @@ public class Scope {
      */
     Scope(Scope next, Symbol owner, Entry[] table,
 	    HashSet<EnvPerm> envPerms, 
-	    HashSet<RefGroupSymbol> lockedGroups) {
+	    HashSet<RefGroupSymbol> lockedGroups,
+	    boolean inParallelBlock) {
         this.next = next;
 	assert emptyScope == null || owner != null;
         this.owner = owner;
@@ -119,6 +124,7 @@ public class Scope {
         this.elems = null;
 	this.nelems = 0;
 	this.shared = 0;
+	this.inParallelBlock = inParallelBlock;
     }
 
     /** Construct a new scope, within scope next, with given owner,
@@ -126,7 +132,7 @@ public class Scope {
      */
     public Scope(Symbol owner) {
         this(null, owner, new Entry[INITIAL_SIZE], 
-        	new HashSet<EnvPerm>(), new HashSet<RefGroupSymbol>());
+        	new HashSet<EnvPerm>(), new HashSet<RefGroupSymbol>(), false);
 	for (int i = 0; i < INITIAL_SIZE; i++) table[i] = sentinel;
     }
 
@@ -137,7 +143,8 @@ public class Scope {
      */
     public Scope dup() {
         Scope result = new Scope(this, this.owner, this.table,
-        	this.envPerms, (HashSet<RefGroupSymbol>) this.lockedGroups.clone());
+        	this.envPerms, (HashSet<RefGroupSymbol>) this.lockedGroups.clone(),
+        	this.inParallelBlock);
 	shared++;
 	// System.out.println("====> duping scope " + this.hashCode() + " owned by " + this.owner + " to " + result.hashCode());
 	// new Error().printStackTrace(System.out);
@@ -151,7 +158,8 @@ public class Scope {
      */
     public Scope dup(Symbol newOwner) {
         Scope result = new Scope(this, newOwner, this.table,
-        	this.envPerms, (HashSet<RefGroupSymbol>) this.lockedGroups.clone());
+        	this.envPerms, (HashSet<RefGroupSymbol>) this.lockedGroups.clone(),
+        	this.inParallelBlock);
 	shared++;
 	// System.out.println("====> duping scope " + this.hashCode() + " owned by " + newOwner + " to " + result.hashCode());
 	// new Error().printStackTrace(System.out);
@@ -165,7 +173,8 @@ public class Scope {
     public Scope dupUnshared() {
 	return new Scope(this, this.owner, this.table.clone(),
 		(HashSet<EnvPerm>) this.envPerms.clone(), 
-		(HashSet<RefGroupSymbol>) this.lockedGroups.clone());
+		(HashSet<RefGroupSymbol>) this.lockedGroups.clone(),
+		this.inParallelBlock);
     }
 
     /** Remove all entries of this scope from its table, if shared
@@ -364,17 +373,23 @@ public class Scope {
 
     public boolean addPreservedGroupPerm(Permissions permissions, 
 	    PreservedGroupPerm perm) {
+	if (this.inParallelBlock) {
+	    lockedGroups.add(perm.refGroup.getSymbol());
+	}
 	if (envPerms.contains(perm)) return true;
 	if (isLocked(perm.refGroup)) return false;
-	envPerms = permissions.addPreservesPerm(envPerms, perm);
+	envPerms = permissions.addPreservedGroupPerm(envPerms, perm);
 	return true;
     }
     
     public boolean addUpdatedGroupPerm(Permissions permissions, 
 	    UpdatedGroupPerm perm) {
+	if (this.inParallelBlock) {
+	    lockedGroups.add(perm.refGroup.getSymbol());
+	}
 	if (envPerms.contains(perm)) return true;
 	if (isLocked(perm.refGroup)) return false;
-	envPerms = permissions.addUpdatesPerm(envPerms, perm);
+	envPerms = permissions.addUpdatedGroupPerm(envPerms, perm);
 	return true;
     }
     
@@ -393,10 +408,12 @@ public class Scope {
 	return envPerms.contains(perm);
     }
     
-    public void lockAllGroups() {
+    public void lockAllPreservedGroups() {
 	for (Symbol sym : this.getElements()) {
 	    if (sym instanceof RefGroupSymbol) {
-		this.lockedGroups.add((RefGroupSymbol) sym);
+		RefGroup refGroup = RefGroup.makeRefGroup((RefGroupSymbol) sym);
+		if (this.hasPreservedGroupPermFor(refGroup))
+		    this.lockedGroups.add((RefGroupSymbol) sym);
 	    }
 	}
     }
@@ -405,15 +422,20 @@ public class Scope {
      * Add updated group perms for all groups that have no preserves permission;
      * used at the start of method body checking.
      */
-    public void addUpdatePerms() {
+    public List<UpdatedGroupPerm> addUpdatePerms() {
+	ListBuffer<UpdatedGroupPerm> lb = ListBuffer.lb();
 	for (Symbol sym : this.getElements()) {
 	    if (sym instanceof RefGroupSymbol) {
 		RefGroup refGroup =  RefGroup.makeRefGroup((RefGroupSymbol) sym);
 		if (!envPerms.contains(new PreservedGroupPerm(refGroup))) { 
-		    envPerms.add(new UpdatedGroupPerm(refGroup));
+		    UpdatedGroupPerm updatedGroupPerm = 
+			    new UpdatedGroupPerm(refGroup);
+		    envPerms.add(updatedGroupPerm);
+		    lb.append(updatedGroupPerm);
 		}
 	    }
 	}
+	return lb.toList();
     }
     
     public boolean isLocked(RefGroup refGroup) {
@@ -425,7 +447,7 @@ public class Scope {
 	return lockedGroups.contains(sym);
     }
     
-    public boolean hasUpdatesPermFor(RefGroup refGroup) {
+    public boolean hasUpdatedGroupPermFor(RefGroup refGroup) {
 	return envPerms.contains(new UpdatedGroupPerm(refGroup));
     }
     
@@ -560,7 +582,7 @@ public class Scope {
 	public static final Entry[] emptyTable = new Entry[0];
 
 	public DelegatedScope(Scope outer) {
-	    super(outer, outer.owner, emptyTable, null, null);
+	    super(outer, outer.owner, emptyTable, null, null, false);
 	    delegatee = outer;
 	}
 	public Scope dup() {
@@ -589,7 +611,7 @@ public class Scope {
     /** An error scope, for which the owner should be an error symbol. */
     public static class ErrorScope extends Scope {
 	ErrorScope(Scope next, Symbol errSymbol, Entry[] table) {
-	    super(next, /*owner=*/errSymbol, table, null, null);
+	    super(next, /*owner=*/errSymbol, table, null, null, false);
 	}
 	public ErrorScope(Symbol errSymbol) {
 	    super(errSymbol);

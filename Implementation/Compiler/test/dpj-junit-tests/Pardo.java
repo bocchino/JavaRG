@@ -17,4 +17,8 @@ public class Pardo extends DPJTestCase {
 	compile("Basic");
     }
     
+    @Test public void testErrorPreservesUpdates() throws Throwable {
+	compileExpectingErrors("ErrorPreservesUpdates", 1);
+    }
+    
 }

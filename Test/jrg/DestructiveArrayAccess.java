@@ -7,7 +7,7 @@ class DestructiveArrayAccess<refgroup G> extends Harness {
     DataArray<Root,G> array = new DataArray<Root,G>(2);
 
     @Override
-    public void initialize() updates G {
+    public void initialize() {
 	this.array[0] = new Data();
     }
 
@@ -18,7 +18,7 @@ class DestructiveArrayAccess<refgroup G> extends Harness {
     }
 
     @Override
-    public void runWork() updates G {
+    public void runWork() {
 	// Should read data1 into data2, then null out data1
 	array[1] = !array[0];
     }

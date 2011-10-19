@@ -3276,7 +3276,7 @@ public class Parser {
 
     /** MethodPermsOpt = RefPermOpt [FRESH IdentList] CopyPermsOpt
      *                   [READS EffectPermList] [WRITES EffectPermList]
-     *                   [PRESERVES IdentList] [UPDATES IdentList]
+     *                   [PRESERVES IdentList]
      */
     JRGMethodPerms methodPermsOpt() {
 	int pos = S.pos();
@@ -3305,14 +3305,9 @@ public class Parser {
 	    accept(PRESERVES);
 	    preservedGroups = identList();
 	}
-	List<JCIdent> updatedGroups = List.nil();
-	if (S.token() == UPDATES) {
-	    accept(UPDATES);
-	    updatedGroups = identList();
-	}
 	return toP(F.at(pos).MethodPerms(refPerm, freshGroups, copyPerms, 
 		defaultEffectPerms, readEffectPerms, writeEffectPerms,
-		preservedGroups, updatedGroups));
+		preservedGroups));
     }
     
     /** CopyPermsOpt = [COPIES DerefSet "to" Ident {"," DerefSet "to" Ident}]

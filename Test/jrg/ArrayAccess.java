@@ -19,7 +19,7 @@ class ArrayAccess extends Harness {
 	this.<region r; refgroup g>localWork();
     }
 
-    private <region R, refgroup G>void localWork() updates G {
+    private <region R, refgroup G>void localWork() {
 	DataArray<R,G> array = new DataArray<R,G>(size);
 	for (int i = 0; i < size; ++i) {
 	    array[i] = new Data();
