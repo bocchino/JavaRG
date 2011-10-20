@@ -2522,12 +2522,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     
     public static class JRGDerefSet extends JCTree implements DerefSetTree {
 
-	JCExpression root;
-	JCIdent group;
+	public final JCExpression root;
+	public final JCIdent refGroupID;
+	public RefGroup refGroup;
 	
-	protected JRGDerefSet(JCExpression root, JCIdent group) {
+	protected JRGDerefSet(JCExpression root, JCIdent refGroupID) {
 	    this.root = root;
-	    this.group = group;
+	    this.refGroupID = refGroupID;
 	}
 	
 	@Override
@@ -2554,15 +2555,18 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
 	/** The dereference set D in 'copies D to G'.
 	 */
-	JRGDerefSet derefSet;
+	public final JRGDerefSet derefSet;
 	
 	/** The group G in 'copies D to G'.
 	 */
-	JCIdent group;
+	public final JCIdent targetGroupID;
+	public CopyPerm copyPerm;
 	
-	protected JRGCopyPerm(JRGDerefSet derefSet, JCIdent group) {
+	protected JRGCopyPerm(JRGDerefSet derefSet, JCIdent targetGroupID,
+		CopyPerm copyPerm) {
 	    this.derefSet = derefSet;
-	    this.group = group;
+	    this.targetGroupID = targetGroupID;
+	    this.copyPerm = copyPerm;
 	}
 	
 	public boolean isFresh() {
@@ -2931,6 +2935,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         	List<JCIdent> preservedGroups);
         JRGDerefSet DerefSet(JCExpression root, JCIdent group);
         JRGCopyPerm CopyPerm(JRGDerefSet derefSet, JCIdent group);
+        JRGCopyPerm CopyPerm(JRGDerefSet derefSet, JCIdent group, CopyPerm copyPerm);
         TypeBoundKind TypeBoundKind(BoundKind kind);
         JCAnnotation Annotation(JCTree annotationType, List<JCExpression> args);
         JCModifiers Modifiers(long flags, List<JCAnnotation> annotations);

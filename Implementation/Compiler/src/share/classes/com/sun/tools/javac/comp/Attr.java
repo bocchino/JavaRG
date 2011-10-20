@@ -80,6 +80,7 @@ import com.sun.tools.javac.code.Constraints;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Permission.EnvPerm.CopyPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
@@ -176,8 +177,11 @@ import com.sun.tools.javac.tree.JCTree.JCUnary;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JCWhileLoop;
 import com.sun.tools.javac.tree.JCTree.JCWildcard;
+import com.sun.tools.javac.tree.JCTree.JRGCopyPerm;
+import com.sun.tools.javac.tree.JCTree.JRGDerefSet;
 import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
 import com.sun.tools.javac.tree.JCTree.JRGForLoop;
+import com.sun.tools.javac.tree.JCTree.JRGMethodPerms;
 import com.sun.tools.javac.tree.JCTree.JRGParamInfo;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
@@ -256,11 +260,15 @@ public class Attr extends JCTree.Visitor {
 
 	Attr attr;
 	RPLs rpls;
+	Permissions permissions;
+	Check chk;
 	
 	public DPJAttrPrePass(Context context) {
 	    super(context);
 	    attr = Attr.instance(context);
 	    rpls = RPLs.instance(context);
+	    permissions = Permissions.instance(context);
+	    chk = Check.instance(context);
 	}
 
 	@Override public void visitVarDef(JCVariableDecl tree) {
@@ -269,6 +277,7 @@ public class Attr extends JCTree.Visitor {
 		// Compute the cell types for all field types now.
 		attr.computeCellType(parentEnv, varType.tsym, varType);
 	    }
+	    super.visitVarDef(tree);
 	}
 	
 	@Override
@@ -283,23 +292,26 @@ public class Attr extends JCTree.Visitor {
 		
 	        // Enter type, region, and group parameters into the local scope.
 	        attr.enterMethodParams(tree, parentEnv);
-
+	        
 	        // Enter value parameters into the local method scope.
 	        for (List<JCVariableDecl> l = tree.params; l.nonEmpty(); l = l.tail) {
 	            scan(l.head);
 	        }
 	        attr.env = parentEnv;
-
-	        /*
-	        if (tree.effects != null) {
-	            // Attribute method effects now!
-	            attr.visitEffectPerms(tree.effects);
-
-	            // Store resolved effects in the method symbol
-	            //m.effects = tree.effects.effects;
-	        }
-	        */
 	        
+	        // Set m.resPerm
+	        m.resPerm = (tree.resPerm == null) ? RefPerm.SHARED : 
+	            attr.attribRefPerm(tree.resPerm, parentEnv);
+	        
+	        // Attribute method permissions
+	        if (tree.perms != null) {
+	            attr.attribMethodPerms(tree.perms, m, parentEnv);
+	        }
+	        else if ((m.flags_field & STATIC) == 0) {
+	            m.thisPerm = RefPerm.SHARED;
+	        }
+	        
+	        // Restore parent env
 		parentEnv = savedEnv;
 	    }
 	    // Finish scanning the tree
@@ -693,6 +705,11 @@ public class Attr extends JCTree.Visitor {
 	return tree.rpl;
     }
     
+    CopyPerm attribCopyPerm(JRGCopyPerm tree, Env<AttrContext> env) {
+	attribTree(tree, env, NIL, Type.noType);
+	return tree.copyPerm;
+    }
+    
     RefGroup attribRefGroup(JCIdent tree, Env<AttrContext> env) {
 	attribTree(tree, env, REF_GROUP, Type.noType);
 	if (tree.sym instanceof RefGroupNameSymbol)
@@ -773,6 +790,67 @@ public class Attr extends JCTree.Visitor {
 	return lb.toList();
     }
     
+    List<CopyPerm> attribCopyPerms(List<JRGCopyPerm> trees,
+	    Env<AttrContext> env) {
+	ListBuffer<CopyPerm> lb = ListBuffer.lb();
+	for (JRGCopyPerm tree : trees) {
+	    lb.append(attribCopyPerm(tree, env));
+	}
+	return lb.toList();
+    }
+    
+    public void attribMethodPerms(JRGMethodPerms tree, 
+	    MethodSymbol methodSymbol, Env<AttrContext> env) {
+
+	// Attribute 'this' perm
+	attribRefPerm(tree.thisPerm, env);
+        if ((methodSymbol.flags_field & STATIC) == 0) {
+            methodSymbol.thisPerm = (tree.thisPerm == null) ? RefPerm.SHARED :
+    	    	tree.thisPerm.refPerm;
+        }
+	
+	// Attribute fresh groups and add to env
+	{
+	    List<RefGroup> freshGroups =
+		    attribRefGroups(tree.freshGroups, env);
+	    ListBuffer<FreshGroupPerm> lb = ListBuffer.lb();
+	    for (RefGroup refGroup : freshGroups) {
+		FreshGroupPerm newPerm = new FreshGroupPerm(refGroup);
+		lb.append(newPerm);
+		env.info.scope.addFreshGroupPerm(permissions,
+			newPerm);
+	    }
+	    methodSymbol.freshGroupPerms = lb.toList();
+	}
+
+	// Attribute copy perms	and add to env
+	{
+	    methodSymbol.copyPerms = attribCopyPerms(tree.copyPerms, env);
+	    // TODO:  Add to perms to env
+	}
+	
+	// Attribute effect perms and add to env
+	// TODO
+	
+	// Attribute preserved groups and add to env
+	{
+	    List<RefGroup> preservedGroups =
+		    attribRefGroups(tree.preservedGroups, env);
+	    ListBuffer<PreservedGroupPerm> lb = ListBuffer.lb();
+	    for (RefGroup refGroup : preservedGroups) {
+		PreservedGroupPerm newPerm = 
+			new PreservedGroupPerm(refGroup);
+		lb.append(newPerm);
+		chk.requireEnvPerm(tree.pos(), newPerm, env);
+	    }
+	    methodSymbol.preservedGroupPerms = lb.toList();
+	}
+	
+	// Give update permission to all non-preserved groups
+	methodSymbol.updatedGroupPerms = env.info.scope.addUpdatePerms();
+	
+    }
+
     /**
      * Attribute type variables (of generic classes or methods).
      * Compound types are attributed later in attribBounds.
@@ -2216,25 +2294,9 @@ public class Attr extends JCTree.Visitor {
      * @return
      */
     private RefPerm requireUpdatedGroupPermFor(JCExpression tree) {
-	Symbol leftSym = tree.getSymbol();
-	VarSymbol leftVarSym = null;
-	RefPerm leftPerm = null;
-	if (leftSym instanceof VarSymbol) {
-	    leftVarSym = (VarSymbol) leftSym;
-	    leftPerm = Substitutions.accessElt(leftVarSym.refPerm,
-		    types, tree);	    
-	} 
-	else if (tree instanceof JCArrayAccess) {
-	    JCArrayAccess aa = (JCArrayAccess) tree;
-	    Type atype = aa.indexed.type;
-	    if (types.isArrayClass(atype)) {
-		ClassType ct = (ClassType) atype;
-		Type site = capture(ct);
-		leftVarSym = (VarSymbol) 
-			rs.findIdentInType(env, site, names.fromString("cell"), VAR);
-		leftPerm = leftVarSym.refPerm.asMemberOf(types, atype);
-	    }
-	}
+	Pair<VarSymbol,RefPerm> pair = getSymbolAndRefPermFor(tree, env);
+	Symbol leftVarSym = pair.fst;
+	RefPerm leftPerm = pair.snd;
 	if (leftVarSym != null) {
 	    if (leftVarSym.owner.kind == TYP &&
 		    leftPerm instanceof LocallyUnique) {
@@ -2245,6 +2307,30 @@ public class Attr extends JCTree.Visitor {
 	    }
 	}
 	return leftPerm;
+    }
+    
+    public Pair<VarSymbol,RefPerm> getSymbolAndRefPermFor(JCExpression tree,
+	    Env<AttrContext> env) {
+	Symbol sym = tree.getSymbol();
+	VarSymbol varSym = null;
+	RefPerm refPerm = null;
+	if (sym instanceof VarSymbol) {
+	    varSym = (VarSymbol) sym;
+	    refPerm = Substitutions.accessElt(varSym.refPerm,
+		    types, tree);	    
+	} 
+	else if (tree instanceof JCArrayAccess) {
+	    JCArrayAccess aa = (JCArrayAccess) tree;
+	    Type atype = aa.indexed.type;
+	    if (types.isArrayClass(atype)) {
+		ClassType ct = (ClassType) atype;
+		Type site = capture(ct);
+		varSym = (VarSymbol) 
+			rs.findIdentInType(env, site, names.fromString("cell"), VAR);
+		    refPerm = varSym.refPerm.asMemberOf(types, atype);
+	    }
+	}
+	return new Pair(varSym, refPerm);
     }
     
     private RefPerm assignRefPerm(RefPerm leftPerm, JCExpression right,
@@ -4045,6 +4131,28 @@ public class Attr extends JCTree.Visitor {
 	default:
 	    log.error(elt.pos(), "unknown.rpl.element");
 	}
+    }
+    
+    public void visitCopyPerm(JRGCopyPerm tree) {
+	attribTree(tree.derefSet, env, NIL, Type.noType);
+	RefGroup targetGroup = attribRefGroup(tree.targetGroupID, env);
+	if (tree.derefSet.refGroup == null) {
+	    tree.copyPerm = CopyPerm.simplePerm(tree.derefSet.root, 
+		    targetGroup);
+	}
+	else {
+	    tree.copyPerm = CopyPerm.singleTreePerm(tree.derefSet.root,
+		    tree.derefSet.refGroup, targetGroup);
+	}
+    }
+    
+    public void visitDerefSet(JRGDerefSet tree) {
+	attribTree(tree.root, env, VAR, Type.noType);
+	if (!permissions.isValidDerefExp(tree.root)) {
+	    log.error(tree.root.pos, "bad.exp.in.deref.set");
+	}
+	if (tree.refGroupID != null)
+	    tree.refGroup = attribRefGroup(tree.refGroupID, env);
     }
     
     public void visitEffectPerm(JRGEffectPerm tree) {

@@ -4,9 +4,17 @@ import com.sun.tools.javac.code.Substitutions.AsMemberOf;
 import com.sun.tools.javac.code.Substitutions.AtCallSite;
 import com.sun.tools.javac.code.Substitutions.SubstRefGroups;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.comp.Attr;
+import com.sun.tools.javac.comp.AttrContext;
+import com.sun.tools.javac.comp.Env;
+import com.sun.tools.javac.tree.JCTree.JCArrayAccess;
+import com.sun.tools.javac.tree.JCTree.JCExpression;
+import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
+import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
+import com.sun.tools.javac.util.Pair;
 
 public abstract class Permission {
     
@@ -42,6 +50,7 @@ public abstract class Permission {
 		return "error";
 	    }
 	};
+	
 	
 	public static class LocallyUnique extends RefPerm {
 		
@@ -151,141 +160,175 @@ public abstract class Permission {
 	}
     
 	/**
-	 * Class representing 'copies v [ [ (.f | '[' i ']') ] ...G1 ] to G2'
+	 * Class representing 'copies e [...G1] to G2'
 	 */ 
 	public static class CopyPerm extends EnvPerm 
 		implements SubstRefGroups<CopyPerm>,
 		AsMemberOf<CopyPerm>, AtCallSite<CopyPerm> {
 
-	    /** 'v' in 'copies v [ [ (.f | '[' i ']') ] ...G1 ] to G2' */
-	    public final VarSymbol var;
+	    /** 'e' in 'copies e [...G1] to G2 */
+	    public final JCExpression exp;
+	    
+	    /** If this field is non-null, then this instance represents
+	     *  all permissions 'copies e.f [...G1] to G2' such that 
+	     *  (1) f has permission unique(G1) and (2) f is NOT in
+	     *  consumedFields.
+	     */
+	    public final List<Name> consumedFields;
 
-	    /** 'f' in 'copies v.f...G1 to G2'; may be null */
-	    public final Name field;
-	
-	    /** 'i' in 'copies v[i]...G1 to G2'; may be null */
-	    public final VarSymbol indexVar;
-
-	    /** 'G1' in 'copies v [ [ (.f | '[' i ']') ] ...G1 ] to G2'; may be null */
+	    /** 'G1' in 'copies e [...G1] to G2.  If this field is null,
+	     *  then there is no source group.
+	     */
 	    public final RefGroup sourceGroup;
 
-	    /** 'G2' in 'copies v [ [ (.f | '[' i ']') ] ...G1 ] to G2' */
+	    /** 'G2' in 'copies e [...G1] to G2 */
 	    public final RefGroup targetGroup;
 	
-	    private CopyPerm(VarSymbol var, Name field, VarSymbol indexVar,
+	    private CopyPerm(JCExpression exp, List<Name> consumedFields,
 		    RefGroup sourceGroup, RefGroup targetGroup) {
 		super(sourceGroup, RefGroup.NO_GROUP);
-		this.var = var;
-		this.field = field;
-		this.indexVar = indexVar;
+		this.exp = exp;
+		this.consumedFields = consumedFields;
 		this.sourceGroup = sourceGroup;
 		this.targetGroup = targetGroup;
 	    }
 
-	    /** 'copies v to G' */
-	    public CopyPerm(VarSymbol var, RefGroup targetGroup) {
-		this(var, null, null, null, targetGroup);
-	    }
-	
-	    /** 'copies v...G1 to G2' */
-	    public CopyPerm(VarSymbol var, RefGroup sourceGroup, 
+	    /** Create a permission 'copies e to G' */
+	    public static CopyPerm simplePerm(JCExpression exp,
 		    RefGroup targetGroup) {
-		this(var, null, null, sourceGroup, targetGroup);
+		return new CopyPerm(exp, null, null, targetGroup);
 	    }
-	
-	    /** 'copies v.f...G1 to G2' */
-	    public CopyPerm(VarSymbol var, Name field, RefGroup sourceGroup,
-		    RefGroup targetGroup) {
-		this(var, field, null, sourceGroup, targetGroup);
+
+	    /** Create a permission 'copies e...G1 to G2' */
+	    public static CopyPerm singleTreePerm(JCExpression exp, 
+		    RefGroup sourceGroup, RefGroup targetGroup) {
+		return new CopyPerm(exp, null, sourceGroup, targetGroup);
 	    }
 	    
-	    /** 'copies v[i]...G1 to G2' */
-	    public CopyPerm(VarSymbol var, VarSymbol indexVar,
+	    /** Create a set of permissions 'copies e{.f}...G1 to G2 */
+	    public static CopyPerm multipleTreePerm(JCExpression exp,
 		    RefGroup sourceGroup, RefGroup targetGroup) {
-		this(var, null, indexVar, sourceGroup, targetGroup);
+		return new CopyPerm(exp, List.<Name>nil(), sourceGroup,
+			targetGroup);
 	    }
-	
-	    public boolean hasField() {
-		return field != null;
-	    }
-	
-	    public boolean hasIndexVar() {
-		return indexVar != null;
-	    }
-	
-	    public boolean hasSourceGroup() {
+	    
+	    public boolean isTreePerm() {
 		return sourceGroup != null;
+	    }
+	    
+	    public boolean representsMultiplePerms() {
+		return consumedFields != null;
 	    }
 	
 	    public CopyPerm substRefGroups(List<RefGroup> from, List<RefGroup> to) {
-		// TODO
-		throw new UnsupportedOperationException();
+		RefGroup sourceGroup = (this.sourceGroup == null) ?
+			null : this.sourceGroup.substRefGroups(from, to);
+		RefGroup targetGroup = this.targetGroup.substRefGroups(from, to);
+		if (this.sourceGroup != sourceGroup || this.targetGroup != targetGroup)
+		    return new CopyPerm(this.exp, this.consumedFields,
+			    sourceGroup, targetGroup);
+		return this;
 	    }
 	    
 	    public CopyPerm asMemberOf(Types types, Type t) {
-		// TODO
-		throw new UnsupportedOperationException();
+		RefGroup sourceGroup = (this.sourceGroup == null) ?
+			null : this.sourceGroup.asMemberOf(types, t);
+		RefGroup targetGroup = this.targetGroup.asMemberOf(types, t);
+		if (this.sourceGroup != sourceGroup || this.targetGroup != targetGroup)
+		    return new CopyPerm(this.exp, this.consumedFields,
+			    sourceGroup, targetGroup);
+		return this;
 	    }
 	    
 	    public CopyPerm atCallSite(Types types, JCMethodInvocation tree) {
-		// TODO
-		throw new UnsupportedOperationException();
+		RefGroup sourceGroup = (this.sourceGroup == null) ?
+			null : this.sourceGroup.atCallSite(types, tree);
+		RefGroup targetGroup = this.targetGroup.atCallSite(types, tree);
+		if (this.sourceGroup != sourceGroup || this.targetGroup != targetGroup)
+		    return new CopyPerm(this.exp, this.consumedFields,
+			    sourceGroup, targetGroup);
+		return this;
 	    }
-
 	    
 	    @Override public String toString() {
 		StringBuffer sb = new StringBuffer("copies ");
-		sb.append(var);
-		if (field != null) {
-		    sb.append(".");
-		    sb.append(field);
-		}
-		if (indexVar != null) {
-		    sb.append("[");
-		    sb.append(indexVar);
-		    sb.append("]");
-		}
+		sb.append(exp);
 		if (sourceGroup != null) {
 		    sb.append("...");
 		    sb.append(sourceGroup);
+		}
+		if (consumedFields != null) {
+		    for (Name field : consumedFields) {
+			sb.append("\\");
+			sb.append(field);
+		    }
 		}
 		sb.append(" to ");
 		sb.append(targetGroup);
 		return sb.toString();
 	    }
 	
+	    /**
+	     * Test copy perms for equality:
+	     * 1. The expressions, source groups, and target gruops must match.
+	     * 2. Both must represent multiple perms, or not.
+	     */
 	    @Override public boolean equals(Object obj) {
 		if (!(obj instanceof CopyPerm))
 		    return false;
 		CopyPerm copyPerm = (CopyPerm) obj;
-		if (!this.var.equals(copyPerm.var)) return false;
-		if (this.field == null) {
-		    if (copyPerm.field != null) return false;
-		}
-		else {
-		    if (!this.field.equals(copyPerm.field)) return false;
-		}
-		if (this.indexVar == null) {
-		    if (copyPerm.indexVar != null) return false;
-		}
-		else {
-		    if (!this.indexVar.equals(copyPerm.indexVar))
-			return false;
-		}
-		if (this.sourceGroup == null) {
-		    if (copyPerm.sourceGroup != null) return false;
-		}
-		else {
-		    if (!this.sourceGroup.equals(copyPerm.sourceGroup))
-			return false;
+		if (!matchingExps(this.exp, copyPerm.exp)) return false;
+		if (this.representsMultiplePerms() != 
+			copyPerm.representsMultiplePerms())
+		    return false;
+		if (this.isTreePerm() != copyPerm.isTreePerm())
+		    return false;
+		if (this.isTreePerm() &&	
+			!this.sourceGroup.equals(copyPerm.sourceGroup)) {
+		    return false;
 		}
 		if (!this.targetGroup.equals(copyPerm.targetGroup))
 		    return false;
 		return true;
 	    }
-	
+
+	    /**
+	     * Does this permission represent perm?
+	     * 
+	     * P1 represents P2 if 
+	     * (1) P1 is a single perm and P1 equals P2; or
+	     * (2) P1 is a multiple tree perm, P2's expression is a field 
+	     * access e.f, P1 is equal to P2 with its expression replaced by e, 
+	     * f is in the source group of P1, and f is not in the consumed perms
+	     * of P1.
+	     * 
+	     * For example:  
+	     * (1) copies x...G1 to G2 represents copies x.f...G1 to G2
+	     * if f is in group G1
+	     * (2) copies x...G1\f to G2 does not represent copies x.f...G1 to G2,
+	     * because f is in the consumed perms set of P1
+	     * (3) copies x...G1 to G2 does not represent copies x.f...G1 to G2 if
+	     * f is not in group G1.
+	     */
+	    public boolean representsPerm(CopyPerm perm, Attr attr,
+		    Env<AttrContext> env) {
+		if (!this.representsMultiplePerms())
+		    return this.equals(perm);
+		if (!(perm.exp instanceof JCFieldAccess))
+		    return false;
+		JCFieldAccess fa = (JCFieldAccess) perm.exp;
+		if (!this.equals(multipleTreePerm(fa.selected, perm.sourceGroup,
+			perm.targetGroup)))
+		    return false;
+		Pair<VarSymbol,RefPerm> pair = 
+			attr.getSymbolAndRefPermFor(exp, env);
+		if (!pair.snd.equals(this.sourceGroup)) return false;
+		if (this.consumedFields.contains(fa.name)) return false;
+		return true;
+	    }
+	    
 	    @Override public int hashCode() {
-		return (var.hashCode() << 3) + 1;
+		return targetGroup.toString().hashCode() << 3 + 1;
 	    }
 
 	}
@@ -423,4 +466,33 @@ public abstract class Permission {
     
     }
     
+    /**
+     * Compare access chains for equality
+     */
+    private static boolean matchingExps(JCExpression e1,
+	    JCExpression e2) {
+	if (e1 instanceof JCIdent) {
+	    if (!(e2 instanceof JCIdent))
+		return false;
+	    return e1.getSymbol().equals(e2.getSymbol());
+	}
+	if (e1 instanceof JCFieldAccess) {
+		    if (!(e2 instanceof JCFieldAccess))
+			return false;
+		    JCFieldAccess fa1 = (JCFieldAccess) e1;
+		    JCFieldAccess fa2 = (JCFieldAccess) e2;
+		    return matchingExps(fa1.selected, fa2.selected) &&
+			    fa1.name.equals(fa2.name);
+	}
+	if (e1 instanceof JCArrayAccess) {
+	    if (!(e2 instanceof JCArrayAccess))
+		return false;
+	    JCArrayAccess aa1 = (JCArrayAccess) e1;
+	    JCArrayAccess aa2 = (JCArrayAccess) e2;
+	    return matchingExps(aa1.index, aa2.index) &&
+		    matchingExps(aa1.indexed, aa2.indexed);
+	}
+	return false;
+    }
+     
 }

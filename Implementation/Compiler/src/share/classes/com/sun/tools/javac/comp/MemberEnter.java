@@ -55,12 +55,10 @@ import java.util.Set;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Attribute;
-import com.sun.tools.javac.code.Effect.VariableEffect;
-import com.sun.tools.javac.code.Effects;
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Permission.EnvPerm.CopyPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
-import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.Permissions;
 import com.sun.tools.javac.code.RPL;
@@ -702,7 +700,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             typarams.append(param.type);
         }
         m.typarams = typarams.toList();
-        
+
+        /*
         // Set m.resPerm
         m.resPerm = (tree.resPerm == null) ? RefPerm.SHARED : 
             attr.attribRefPerm(tree.resPerm, localEnv);
@@ -714,6 +713,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         else if ((m.flags_field & STATIC) == 0) {
             m.thisPerm = RefPerm.SHARED;
         }
+        */
         
         // Set m.params
         ListBuffer<VarSymbol> params = new ListBuffer<VarSymbol>();
@@ -758,55 +758,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             annotateDefaultValueLater(tree.defaultValue, localEnv, m);
     }
 
-    public void attribMethodPerms(JRGMethodPerms tree, 
-	    MethodSymbol methodSymbol, Env<AttrContext> env) {
-
-	// Attribute 'this' perm
-	attr.attribRefPerm(tree.thisPerm, env);
-        if ((methodSymbol.flags_field & STATIC) == 0) {
-            methodSymbol.thisPerm = (tree.thisPerm == null) ? RefPerm.SHARED :
-    	    	tree.thisPerm.refPerm;
-        }
-	
-	// Attribute fresh groups and add to env
-	{
-	    List<RefGroup> freshGroups =
-		    attr.attribRefGroups(tree.freshGroups, env);
-	    ListBuffer<FreshGroupPerm> lb = ListBuffer.lb();
-	    for (RefGroup refGroup : freshGroups) {
-		FreshGroupPerm newPerm = new FreshGroupPerm(refGroup);
-		lb.append(newPerm);
-		// We just created the group ==> no error checking
-		env.info.scope.addFreshGroupPerm(permissions,
-			newPerm);
-	    }
-	    methodSymbol.freshGroupPerms = lb.toList();
-	}
-
-	// Attribute copy perms	and add to env
-	// TODO
-	
-	// Attribute effect perms and add to env
-	// TODO
-	
-	// Attribute preserved groups and add to env
-	{
-	    List<RefGroup> preservedGroups =
-		    attr.attribRefGroups(tree.preservedGroups, env);
-	    ListBuffer<PreservedGroupPerm> lb = ListBuffer.lb();
-	    for (RefGroup refGroup : preservedGroups) {
-		PreservedGroupPerm newPerm = 
-			new PreservedGroupPerm(refGroup);
-		lb.append(newPerm);
-		chk.requireEnvPerm(tree.pos(), newPerm, env);
-	    }
-	    methodSymbol.preservedGroupPerms = lb.toList();
-	}
-	
-	// Give update permission to all non-preserved groups
-	methodSymbol.updatedGroupPerms = env.info.scope.addUpdatePerms();
-	
-    }
     
     /** Create a fresh environment for method bodies.
      *  @param tree     The method definition.

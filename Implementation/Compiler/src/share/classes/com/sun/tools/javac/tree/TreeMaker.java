@@ -49,7 +49,7 @@ import static com.sun.tools.javac.code.TypeTags.WILDCARD;
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.BoundKind;
 import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.RPL;
+import com.sun.tools.javac.code.Permission.EnvPerm.CopyPerm;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
@@ -63,7 +63,6 @@ import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.code.Type.WildcardType;
 import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.tree.JCTree.JRGParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
@@ -122,6 +121,7 @@ import com.sun.tools.javac.tree.JCTree.JRGDerefSet;
 import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
 import com.sun.tools.javac.tree.JCTree.JRGForLoop;
 import com.sun.tools.javac.tree.JCTree.JRGMethodPerms;
+import com.sun.tools.javac.tree.JCTree.JRGParamInfo;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
 import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
@@ -659,11 +659,18 @@ public class TreeMaker implements JCTree.Factory {
     }
 
     public JRGCopyPerm CopyPerm(JRGDerefSet derefSet, JCIdent group) {
-	JRGCopyPerm tree = new JRGCopyPerm(derefSet, group);
+	JRGCopyPerm tree = new JRGCopyPerm(derefSet, group, null);
 	tree.pos = pos;
 	return tree;
     }
-    
+
+    public JRGCopyPerm CopyPerm(JRGDerefSet derefSet, JCIdent group,
+	    CopyPerm copyPerm) {
+	JRGCopyPerm tree = new JRGCopyPerm(derefSet, group, copyPerm);
+	tree.pos = pos;
+	return tree;
+    }
+
     public JRGEffectPerm EffectPerm(DPJRegionPathList rpl, JRGDerefSet derefSet) {
 	JRGEffectPerm tree = new JRGEffectPerm(rpl, derefSet);
 	tree.pos = pos;
