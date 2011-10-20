@@ -91,8 +91,8 @@ public abstract class Permission {
      */
     public static abstract class EnvPerm extends Permission {
 	
-	private final RefGroup updatedGroup;
-	private final RefGroup preservedGroup;
+	public final RefGroup updatedGroup;
+	public final RefGroup preservedGroup;
 	
 	protected EnvPerm(RefGroup preservedGroup, 
 		RefGroup updatedGroup) {
@@ -196,7 +196,7 @@ public abstract class Permission {
 	    /** Create a permission 'copies e to G' */
 	    public static CopyPerm simplePerm(JCExpression exp,
 		    RefGroup targetGroup) {
-		return new CopyPerm(exp, null, null, targetGroup);
+		return new CopyPerm(exp, null, RefGroup.NO_GROUP, targetGroup);
 	    }
 
 	    /** Create a permission 'copies e...G1 to G2' */

@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 import com.sun.tools.javac.code.Permission.EnvPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.CopyPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
@@ -99,7 +100,7 @@ public class Scope {
 
     /** Permissions available in the environment
      */
-    private HashSet<EnvPerm> envPerms = new HashSet<EnvPerm>();
+    public HashSet<EnvPerm> envPerms = new HashSet<EnvPerm>();
     
     /** "Locked" ref groups  (i.e., groups we can't switch from preserving
      *  to updating or vice versa)
@@ -371,28 +372,6 @@ public class Scope {
     
     }
 
-    public boolean addPreservedGroupPerm(Permissions permissions, 
-	    PreservedGroupPerm perm) {
-	if (this.inParallelBlock) {
-	    lockedGroups.add(perm.refGroup.getSymbol());
-	}
-	if (envPerms.contains(perm)) return true;
-	if (isLocked(perm.refGroup)) return false;
-	envPerms = permissions.addPreservedGroupPerm(envPerms, perm);
-	return true;
-    }
-    
-    public boolean addUpdatedGroupPerm(Permissions permissions, 
-	    UpdatedGroupPerm perm) {
-	if (this.inParallelBlock) {
-	    lockedGroups.add(perm.refGroup.getSymbol());
-	}
-	if (envPerms.contains(perm)) return true;
-	if (isLocked(perm.refGroup)) return false;
-	envPerms = permissions.addUpdatedGroupPerm(envPerms, perm);
-	return true;
-    }
-    
     public boolean addFreshGroupPerm(Permissions permissions,
 	    FreshGroupPerm perm) {
 	PreservedGroupPerm preservedGroupPerm = 
@@ -404,6 +383,40 @@ public class Scope {
 	
     }
     
+    public boolean addCopyPerm(Permissions permissions, 
+	    CopyPerm perm) {
+	if (perm.sourceGroup != null) {
+	    PreservedGroupPerm preservedGroupPerm =
+		    new PreservedGroupPerm(perm.sourceGroup);
+	    if (!addPreservedGroupPerm(permissions, preservedGroupPerm))
+		return false;
+	}
+	envPerms.add(perm);	
+	return true;
+    }
+
+    public boolean addPreservedGroupPerm(Permissions permissions, 
+	    PreservedGroupPerm perm) {
+	if (this.inParallelBlock) {
+	    lockedGroups.add(perm.refGroup.getSymbol());
+	}
+	if (envPerms.contains(perm)) return true;
+	if (isLocked(perm.refGroup)) return false;
+	envPerms = permissions.addEnvPerm(envPerms, perm);
+	return true;
+    }
+    
+    public boolean addUpdatedGroupPerm(Permissions permissions, 
+	    UpdatedGroupPerm perm) {
+	if (this.inParallelBlock) {
+	    lockedGroups.add(perm.refGroup.getSymbol());
+	}
+	if (envPerms.contains(perm)) return true;
+	if (isLocked(perm.refGroup)) return false;
+	envPerms = permissions.addEnvPerm(envPerms, perm); //permissions.addUpdatedGroupPerm(envPerms, perm);
+	return true;
+    }
+    
     public boolean containsPerm(EnvPerm perm) {
 	return envPerms.contains(perm);
     }
@@ -412,8 +425,9 @@ public class Scope {
 	for (Symbol sym : this.getElements()) {
 	    if (sym instanceof RefGroupSymbol) {
 		RefGroup refGroup = RefGroup.makeRefGroup((RefGroupSymbol) sym);
-		if (this.hasPreservedGroupPermFor(refGroup))
+		if (this.hasPreservedGroupPermFor(refGroup)) {
 		    this.lockedGroups.add((RefGroupSymbol) sym);
+		}
 	    }
 	}
     }

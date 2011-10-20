@@ -1288,7 +1288,7 @@ public abstract class Symbol implements Element {
         public Constraints constraints = null;
         
         /** The reference group parameters of the method */
-        public List<RefGroup> refGroupParams = null;
+        public List<RefGroup> refGroupParams = List.nil();
         
         /** The declared effects of the method. //DPJ */
         //public Effects effects = Effects.UNKNOWN;

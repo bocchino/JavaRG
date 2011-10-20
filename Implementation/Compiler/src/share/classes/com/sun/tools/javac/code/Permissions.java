@@ -2,9 +2,8 @@ package com.sun.tools.javac.code;
 
 import java.util.HashSet;
 
-import com.sun.tools.javac.code.Substitutions.SubstRefGroups;
 import com.sun.tools.javac.code.Permission.EnvPerm;
-import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.CopyPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
@@ -13,8 +12,6 @@ import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.List;
-import com.sun.tools.javac.util.ListBuffer;
 
 public class Permissions {
     protected static final Context.Key<Permissions> permissionsKey =
@@ -43,24 +40,28 @@ public class Permissions {
 	return RefPerm.ERROR;
     }
     
-    public HashSet<EnvPerm> addPreservedGroupPerm(HashSet<EnvPerm> oldSet, 
-	    PreservedGroupPerm newPerm) {
+    /**
+     * Add an env perm to set of env perms, producing a new set.
+     * Omit any perms from the old set that are inconsistent with the 
+     * new perm.
+     */    
+    public HashSet<EnvPerm> addEnvPerm(HashSet<EnvPerm> oldSet,
+	    EnvPerm newPerm) {
 	HashSet<EnvPerm> newSet = new HashSet();
 	newSet.add(newPerm);
 	for (EnvPerm oldPerm : oldSet) {
-	    if (!oldPerm.updatesGroup(newPerm.refGroup))
-		newSet.add(oldPerm);
-	}
-	return newSet;
-    }
-    
-    public HashSet<EnvPerm> addUpdatedGroupPerm(HashSet<EnvPerm> oldSet, 
-	    UpdatedGroupPerm newPerm) {
-	HashSet<EnvPerm> newSet = new HashSet();
-	newSet.add(newPerm);
-	for (EnvPerm oldPerm : oldSet) {
-	    if (!oldPerm.preservesGroup(newPerm.refGroup)) {
-		newSet.add(oldPerm);
+	    // If the new perm requires perm 'updates G',
+	    // then kill all old perms requiring 'preserves G'
+	    if (newPerm.updatedGroup != RefGroup.NO_GROUP) {
+		if (!oldPerm.preservesGroup(newPerm.updatedGroup)) {
+		    newSet.add(newPerm);
+		}
+	    }  
+	    // If the new perm requires perm 'preserves G',
+	    // then kill all old perms requiring 'updates G'
+	    if (newPerm.preservedGroup != RefGroup.NO_GROUP){
+		if (!oldPerm.updatesGroup(newPerm.preservedGroup))
+		    newSet.add(newPerm);
 	    }
 	}
 	return newSet;

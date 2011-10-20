@@ -100,6 +100,7 @@ import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.Permissions;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLs;
+import com.sun.tools.javac.code.RefGroup;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Substitutions;
@@ -173,6 +174,7 @@ public class Check {
     private final TreeInfo treeinfo;
     private final RPLs rpls;
     private final Permissions permissions;
+    private final Attr attr;
 
     // The set of lint options currently in effect. It is initialized
     // from the context, and then is set/reset as needed by Attr as it 
@@ -201,6 +203,7 @@ public class Check {
         treeinfo = TreeInfo.instance(context);
         rpls = RPLs.instance(context);
         permissions = Permissions.instance(context);
+        attr = Attr.instance(context);
         
 	Source source = Source.instance(context);
 	allowGenerics = source.allowGenerics();
@@ -1328,16 +1331,20 @@ public class Check {
 	    oParams = oParams.tail;
 	}
 	
-	// Check consistency of env permissions
-	List<PreservedGroupPerm> mPreservedGroupPerms =
-		Substitutions.asMemberOf(m.preservedGroupPerms, types, origin.type);
-	List<PreservedGroupPerm> oPreservedGroupPerms =
-		Substitutions.asMemberOf(other.preservedGroupPerms, types, origin.type);
-	for (PreservedGroupPerm perm : oPreservedGroupPerms) {
-	    if (!mPreservedGroupPerms.contains(perm)) {
-		log.error(TreeInfo.diagnosticPositionFor(m, tree),
-			"override.preserve.perms", perm, other.owner.type);
-	    }
+	// Error if any permission in required in subclass method isn't available, 
+	// given all permissions available in superclass method.
+	Scope oScope = new Scope(other.owner);
+	attr.addRefGroupParamsToScope(other, oScope, origin.type);
+	attr.addMethodPermsToScope(other, oScope, origin.type);
+
+        Scope mScope = new Scope(m.owner);
+        attr.addRefGroupParamsToScope(m, mScope, origin.type);
+        attr.addMethodPermsToScope(m, mScope, origin.type);
+
+        DiagnosticPosition pos = TreeInfo.diagnosticPositionFor(m, tree);
+        if (!requireEnvPerms(pos, mScope.envPerms, oScope)) {
+	    System.err.print("Error(s) occurred overriding method in class " + 
+		    other.owner.type);
 	}
 	
 	// Error if overriding effects not a subeffect of overridden effects (DPJ)
@@ -1860,11 +1867,12 @@ public class Check {
 	}
     }
     
-    <T extends EnvPerm>void requireEnvPerm(DiagnosticPosition pos, 
-	    EnvPerm perm, Env<AttrContext> env) {
+    <T extends EnvPerm>boolean requireEnvPerm(DiagnosticPosition pos, 
+	    EnvPerm perm, Scope scope) {
 	if (perm instanceof FreshGroupPerm) {
-	    if (!env.info.scope.containsPerm(perm)) {
+	    if (!scope.containsPerm(perm)) {
 		log.error(pos, "missing.perm", perm);
+		return false;
 	    }
 	}
 	else if (perm instanceof CopyPerm) {
@@ -1876,27 +1884,32 @@ public class Check {
 	else if (perm instanceof PreservedGroupPerm) {
 	    PreservedGroupPerm preservedGroupPerm =
 		    (PreservedGroupPerm) perm;
-	    if (!env.info.scope.addPreservedGroupPerm(permissions, 
+	    if (!scope.addPreservedGroupPerm(permissions, 
 		    preservedGroupPerm)) {
 		log.error(pos, "cant.preserve.group", 
 			preservedGroupPerm.refGroup);
+		return false;
 	    }
 	}
 	else if (perm instanceof UpdatedGroupPerm) {
 	    UpdatedGroupPerm updatedGroupPerm =
 		    (UpdatedGroupPerm) perm;
-	    if (!env.info.scope.addUpdatedGroupPerm(permissions, 
+	    if (!scope.addUpdatedGroupPerm(permissions, 
 		    updatedGroupPerm)) {
 		log.error(pos, "cant.update.group", 
 			updatedGroupPerm.refGroup);
+		return false;
 	    }
 	}
+	return true;
     }
     
-    <T extends EnvPerm>void requireEnvPerms(DiagnosticPosition pos, 
-	    List<T> perms, Env<AttrContext> env) {
+    <T extends EnvPerm>boolean requireEnvPerms(DiagnosticPosition pos, 
+	    Iterable<T> perms, Scope scope) {
+	boolean success = true;
 	for (T perm : perms)
-	    requireEnvPerm(pos, perm, env);
+	    success &= requireEnvPerm(pos, perm, scope);
+	return success;
     }
 	
     

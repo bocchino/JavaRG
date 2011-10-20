@@ -826,7 +826,9 @@ public class Attr extends JCTree.Visitor {
 	// Attribute copy perms	and add to env
 	{
 	    methodSymbol.copyPerms = attribCopyPerms(tree.copyPerms, env);
-	    // TODO:  Add to perms to env
+	    for (CopyPerm copyPerm : methodSymbol.copyPerms) {
+		env.info.scope.addCopyPerm(permissions, copyPerm);
+	    }
 	}
 	
 	// Attribute effect perms and add to env
@@ -841,7 +843,7 @@ public class Attr extends JCTree.Visitor {
 		PreservedGroupPerm newPerm = 
 			new PreservedGroupPerm(refGroup);
 		lb.append(newPerm);
-		chk.requireEnvPerm(tree.pos(), newPerm, env);
+		chk.requireEnvPerm(tree.pos(), newPerm, env.info.scope);
 	    }
 	    methodSymbol.preservedGroupPerms = lb.toList();
 	}
@@ -1172,19 +1174,9 @@ public class Attr extends JCTree.Visitor {
                     thisSym.refPerm = m.thisPerm;
                 }
                 
-                // Add method permissions to localEnv
-                for (FreshGroupPerm perm : m.freshGroupPerms)
-                    localEnv.info.scope.addFreshGroupPerm(permissions, perm);
-                // TODO: Copy perms
-                // TODO: Effect perms
-                for (PreservedGroupPerm perm : m.preservedGroupPerms)
-                    localEnv.info.scope.addPreservedGroupPerm(permissions, perm);
-                
-                // Default:  Update if no perm specified
-                localEnv.info.scope.addUpdatePerms();
-                
-                // Lock all preserved groups in localEnv
-                localEnv.info.scope.lockAllPreservedGroups();
+                // Add method permissions to localEnv scope
+                addMethodPermsToScope(m, localEnv.info.scope, 
+                	m.owner.type);
                 
                 // Attribute method body.
                 attribStat(tree.body, localEnv);
@@ -1221,6 +1213,37 @@ public class Attr extends JCTree.Visitor {
         }
     }
 
+    public void addRefGroupParamsToScope(MethodSymbol m, Scope scope,
+	    Type ownerType) {
+	for (RefGroup refGroup : ownerType.getRefGroupArguments())
+	    scope.enter(refGroup.getSymbol());
+	for (RefGroup refGroup : 
+	    Substitutions.asMemberOf(m.refGroupParams, types, ownerType))
+	    scope.enter(refGroup.getSymbol());
+    }
+    
+    public void addMethodPermsToScope(MethodSymbol m, Scope scope,
+	    Type ownerType) {
+	
+	for (FreshGroupPerm perm : 
+	    Substitutions.asMemberOf(m.freshGroupPerms, types, ownerType))
+	    scope.addFreshGroupPerm(permissions, perm);
+	for (PreservedGroupPerm perm : 
+	    Substitutions.asMemberOf(m.preservedGroupPerms, types, ownerType))
+	    scope.addPreservedGroupPerm(permissions, perm);
+	List<CopyPerm> copyPerms = 
+		Substitutions.asMemberOf(m.copyPerms, types, ownerType);
+	// TODO: Var substitutions in copy perms
+	for (CopyPerm perm : copyPerms)
+	    scope.addCopyPerm(permissions, perm);
+
+        // Default:  Update if no perm specified
+        scope.addUpdatePerms();
+        
+        // Lock all preserved groups in scope
+        scope.lockAllPreservedGroups();
+    }
+    
     public void visitVarDef(JCVariableDecl tree) {
         // Local variables have not been entered yet, so we need to do it now:
         if (env.info.scope.owner.kind == MTH) {
@@ -1965,19 +1988,19 @@ public class Attr extends JCTree.Visitor {
             // Fresh group perms
             List<FreshGroupPerm> freshGroupPerms = 
         	    Substitutions.atCallSite(methSym.freshGroupPerms, types, tree);
-            chk.requireEnvPerms(tree.pos(), freshGroupPerms, localEnv);
+            chk.requireEnvPerms(tree.pos(), freshGroupPerms, localEnv.info.scope);
             // TODO: Copy perms
             // TODO: Effect perms
             // Preserved group perms
             List<PreservedGroupPerm> preservedGroupPerms =
         	    Substitutions.atCallSite(methSym.preservedGroupPerms,
         		    types, tree);
-            chk.requireEnvPerms(tree.pos(), preservedGroupPerms, localEnv);
+            chk.requireEnvPerms(tree.pos(), preservedGroupPerms, localEnv.info.scope);
             // Updated group perms
             List<UpdatedGroupPerm> updatedGroupPerms =
         	    Substitutions.atCallSite(methSym.updatedGroupPerms,
         		    types, tree);
-            chk.requireEnvPerms(tree.pos(), updatedGroupPerms, localEnv);
+            chk.requireEnvPerms(tree.pos(), updatedGroupPerms, localEnv.info.scope);
         }
         
         chk.validate(tree.typeargs);
@@ -2303,7 +2326,7 @@ public class Attr extends JCTree.Visitor {
 		LocallyUnique luPerm = (LocallyUnique) leftPerm;
 		RefGroup refGroup = luPerm.refGroup;
 		chk.requireEnvPerm(tree.pos(), 
-			new UpdatedGroupPerm(refGroup), env);
+			new UpdatedGroupPerm(refGroup), env.info.scope);
 	    }
 	}
 	return leftPerm;
