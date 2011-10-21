@@ -3010,9 +3010,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitJRGForLoop(JRGForLoop that)         { visitTree(that); }
         public void visitNegationExpression(DPJNegationExpression that) {visitTree(that); }
 
-        public void visitTree(JCTree that)                   { 
-            System.out.println("that="+that);
-            assert false; }
+        public void visitTree(JCTree that)                   { assert false; }
     }
 
 }
