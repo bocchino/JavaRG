@@ -34,6 +34,7 @@ import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
 import com.sun.tools.javac.code.Symbol.RefGroupSymbol;
+import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
@@ -413,8 +414,14 @@ public class Scope {
 	}
 	if (envPerms.contains(perm)) return true;
 	if (isLocked(perm.refGroup)) return false;
-	envPerms = permissions.addEnvPerm(envPerms, perm); //permissions.addUpdatedGroupPerm(envPerms, perm);
+	envPerms = permissions.addEnvPerm(envPerms, perm);
 	return true;
+    }
+    
+    public void killPermsByAssigningTo(Permissions permissions,
+	    VarSymbol var) {
+	envPerms = permissions.killPermsByAssigningTo(envPerms, 
+		var);
     }
     
     public boolean containsPerm(EnvPerm perm) {

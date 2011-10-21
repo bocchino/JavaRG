@@ -96,6 +96,7 @@ import com.sun.tools.javac.code.RPLs;
 import com.sun.tools.javac.code.RefGroup;
 import com.sun.tools.javac.code.RefGroup.RefGroupName;
 import com.sun.tools.javac.code.RefGroup.RefGroupParameter;
+import com.sun.tools.javac.code.RefGroups;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Substitutions;
@@ -235,6 +236,7 @@ public class Attr extends JCTree.Visitor {
     final Annotate annotate;
     final RPLs rpls;
     final Permissions permissions;
+    final RefGroups refGroups;
 
     /**
      * A small pass that happens after Enter and before Attr.  It scans the tree and
@@ -258,10 +260,12 @@ public class Attr extends JCTree.Visitor {
      */    
     public static class DPJAttrPrePass extends EnvScanner {
 
-	Attr attr;
-	RPLs rpls;
-	Permissions permissions;
-	Check chk;
+	final Attr attr;
+	final RPLs rpls;
+	final Permissions permissions;
+	final Check chk;
+	final RefGroups refGroups;
+
 	
 	public DPJAttrPrePass(Context context) {
 	    super(context);
@@ -269,6 +273,7 @@ public class Attr extends JCTree.Visitor {
 	    rpls = RPLs.instance(context);
 	    permissions = Permissions.instance(context);
 	    chk = Check.instance(context);
+	    refGroups = RefGroups.instance(context);
 	}
 
 	@Override public void visitVarDef(JCVariableDecl tree) {
@@ -344,6 +349,10 @@ public class Attr extends JCTree.Visitor {
         		enter.log.warning(tree, "rpl.constraints");
         	    }
         	}
+        	// Check that no two ref group args are equal
+        	List<RefGroup> refGroupArgs = ct.getRefGroupArguments();
+        	if (!refGroups.areDisjoint(refGroupArgs))
+        	    enter.log.error(tree.pos(), "duplicate.group.args");
 	    }
 	    super.visitTypeApply(tree);
 	}
@@ -374,6 +383,7 @@ public class Attr extends JCTree.Visitor {
         annotate = Annotate.instance(context);
         rpls = RPLs.instance(context);
         permissions = Permissions.instance(context);
+        refGroups = RefGroups.instance(context);
         
         Options options = Options.instance(context);
 
@@ -1176,7 +1186,7 @@ public class Attr extends JCTree.Visitor {
                 
                 // Add method permissions to localEnv scope
                 addMethodPermsToScope(m, localEnv.info.scope, 
-                	m.owner.type);
+                	m.owner.type, List.<VarSymbol>nil());
                 
                 // Attribute method body.
                 attribStat(tree.body, localEnv);
@@ -1222,22 +1232,36 @@ public class Attr extends JCTree.Visitor {
 	    scope.enter(refGroup.getSymbol());
     }
     
+    /**
+     * Add all the permissions declared in m to scope, after translation
+     * of m (1) as a member of ownerType and (2) by substituting 'newParams'
+     * for m's params.
+     */
     public void addMethodPermsToScope(MethodSymbol m, Scope scope,
-	    Type ownerType) {
+	    Type ownerType, List<VarSymbol> newParams) {
 	
+	// Add fresh group perms
 	for (FreshGroupPerm perm : 
 	    Substitutions.asMemberOf(m.freshGroupPerms, types, ownerType))
 	    scope.addFreshGroupPerm(permissions, perm);
-	for (PreservedGroupPerm perm : 
-	    Substitutions.asMemberOf(m.preservedGroupPerms, types, ownerType))
-	    scope.addPreservedGroupPerm(permissions, perm);
+
+	// Add copy perms
 	List<CopyPerm> copyPerms = 
 		Substitutions.asMemberOf(m.copyPerms, types, ownerType);
-	// TODO: Var substitutions in copy perms
+	copyPerms = Substitutions.substVarSymbols(copyPerms, permissions,
+		m.params, newParams);
 	for (CopyPerm perm : copyPerms)
 	    scope.addCopyPerm(permissions, perm);
 
-        // Default:  Update if no perm specified
+	// Add effect perms
+	// TODO
+	
+	// Add preserved group perms
+	for (PreservedGroupPerm perm : 
+	    Substitutions.asMemberOf(m.preservedGroupPerms, types, ownerType))
+	    scope.addPreservedGroupPerm(permissions, perm);
+
+	// Default:  Update if no perm specified
         scope.addUpdatePerms();
         
         // Lock all preserved groups in scope
@@ -1929,6 +1953,10 @@ public class Attr extends JCTree.Visitor {
         		methSym.rgnParams, regionargs, env.info.constraints.disjointRPLs)) {
         	    log.warning(tree, "rpl.constraints");        	    
         	}
+        	// Check that no two ref group args are equal
+        	if (!refGroups.areDisjoint(refGroupArgs))
+        	    log.error(tree.pos(), "duplicate.group.args");
+
             }
                      
             // Check that value of resulting type is admissible in the
@@ -2308,6 +2336,9 @@ public class Attr extends JCTree.Visitor {
 	if (leftPerm != null) {
 	    assignRefPerm(leftPerm, tree.rhs, env);
 	}
+	if (tree.lhs.getSymbol() instanceof VarSymbol)
+	    env.info.scope.killPermsByAssigningTo(permissions, 
+		    (VarSymbol) tree.lhs.getSymbol());	    
     }
     
     /**
@@ -3626,13 +3657,16 @@ public class Attr extends JCTree.Visitor {
             }
             
 
-            // TODO: Attribute group args
+            // Attribute group args
             List<RefGroup> refGroupActuals = 
         	    attribRefGroups(tree.refGroupArgs, env);
             if (refGroupActuals.length() != refGroupFormals.length()) {
         	log.error(tree.pos(), "wrong.number.ref.group.args",
         		Integer.toString(refGroupFormals.length())); 
             }
+            // Check that no two ref group args are equal
+            if (!refGroups.areDisjoint(refGroupActuals))
+    	    	enter.log.error(tree.pos(), "duplicate.group.args");
             
             // Compute the proper generic outer
             Type clazzOuter = functortype.getEnclosingType();

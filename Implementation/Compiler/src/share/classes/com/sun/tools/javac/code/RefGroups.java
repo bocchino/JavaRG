@@ -29,4 +29,15 @@ public class RefGroups {
 	syms = Symtab.instance(context);
     }
     
+    public boolean areDisjoint(List<RefGroup> groups) {
+	while (groups.nonEmpty()) {
+	    if (groups.tail.contains(groups.head)) {
+		return false;
+	    }
+	    groups = groups.tail;
+	}
+	return true;
+    }
+
+    
 }

@@ -52,5 +52,9 @@ public class ClassParams extends DPJTestCase {
     @Test public void testErrorClassParamArg() throws Throwable {
 	compileExpectingErrors("ErrorClassParamArg", 1);
     }
+    
+    @Test public void testErrorDuplicateArgs() throws Throwable {
+	compileExpectingErrors("ErrorDuplicateArgs", 2);
+    }
 
 }

@@ -1,5 +1,6 @@
 package com.sun.tools.javac.code;
 
+import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
@@ -112,6 +113,36 @@ public class Substitutions {
 	    List<RefGroup> from, List<RefGroup> to) {
 	ListBuffer<T> lb = ListBuffer.lb();
 	for (T elt : list) lb.append(elt.substRefGroups(from, to));
+	return lb.toList();
+    }
+    
+    /** Interface for representing variable substitutions */
+    public interface SubstVars<T extends SubstVars<T>> {
+	
+	/** 'this' after substituting 'to' expressions for 'from' vars */
+	public T substVarExprs(Permissions permissions, 
+		List<VarSymbol> from, List<JCExpression> to);
+	
+	/** 'this' after substituting 'to' vars for 'from' vars */
+	public T substVarSymbols(Permissions permissions,
+		List<VarSymbol> from, List<VarSymbol> to);
+	
+    }
+    
+    /** Apply var-expr substitution to a list of things */
+    public static <T extends SubstVars<T>> List<T>substVarExprs(List<T> list,
+	    Permissions permissions, List<VarSymbol> from,
+	    List<JCExpression> to) {
+	ListBuffer<T> lb = ListBuffer.lb();
+	for (T elt : list) lb.append(elt.substVarExprs(permissions, from, to));
+	return lb.toList();
+    }
+    
+    public static <T extends SubstVars<T>> List<T>substVarSymbols(List<T> list,
+	    Permissions permissions, List<VarSymbol> from,
+	    List<VarSymbol> to) {
+	ListBuffer<T> lb = ListBuffer.lb();
+	for (T elt : list) lb.append(elt.substVarSymbols(permissions, from, to));
 	return lb.toList();
     }
     

@@ -3,6 +3,7 @@ package com.sun.tools.javac.code;
 import com.sun.tools.javac.code.Substitutions.AsMemberOf;
 import com.sun.tools.javac.code.Substitutions.AtCallSite;
 import com.sun.tools.javac.code.Substitutions.SubstRefGroups;
+import com.sun.tools.javac.code.Substitutions.SubstVars;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
@@ -13,6 +14,7 @@ import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Pair;
 
@@ -109,6 +111,32 @@ public abstract class Permission {
 	}
 		
 	/**
+	 * Is this permission killed by assigning to var?
+	 */
+	public boolean isKilledByAssigningTo(VarSymbol var) {
+	    return false;
+	}
+	
+	/**
+	 * An env permission that refers to an expression is killed
+	 * by assigning to the var in the leftmost position.
+	 */
+	protected boolean recursiveIsKilled(VarSymbol var, JCExpression e) {
+	    if (e instanceof JCIdent) {
+		return e.getSymbol().equals(var);
+	    }
+	    else if (e instanceof JCFieldAccess) {
+		JCFieldAccess fa = (JCFieldAccess) e;
+		return recursiveIsKilled(var, fa.selected);
+	    }
+	    else if (e instanceof JCArrayAccess) {
+		JCArrayAccess aa = (JCArrayAccess) e;
+		return recursiveIsKilled(var, aa.indexed);
+	    }
+	    return false;
+	}
+	
+	/**
 	 * Class representing a permission 'fresh G'
 	 */
 	public static class FreshGroupPerm extends EnvPerm 
@@ -163,8 +191,12 @@ public abstract class Permission {
 	 * Class representing 'copies e [...G1] to G2'
 	 */ 
 	public static class CopyPerm extends EnvPerm 
-		implements SubstRefGroups<CopyPerm>,
-		AsMemberOf<CopyPerm>, AtCallSite<CopyPerm> {
+		implements 
+		SubstRefGroups<CopyPerm>,
+		AsMemberOf<CopyPerm>, 
+		AtCallSite<CopyPerm>,
+		SubstVars<CopyPerm> 
+	{
 
 	    /** 'e' in 'copies e [...G1] to G2 */
 	    public final JCExpression exp;
@@ -220,6 +252,10 @@ public abstract class Permission {
 		return consumedFields != null;
 	    }
 	
+	    @Override public boolean isKilledByAssigningTo(VarSymbol var) {
+		return recursiveIsKilled(var, exp);
+	    }
+	    
 	    public CopyPerm substRefGroups(List<RefGroup> from, List<RefGroup> to) {
 		RefGroup sourceGroup = (this.sourceGroup == null) ?
 			null : this.sourceGroup.substRefGroups(from, to);
@@ -250,6 +286,25 @@ public abstract class Permission {
 		return this;
 	    }
 	    
+	    public CopyPerm substVarExprs(Permissions permissions, 
+		    List<VarSymbol> from, List<JCExpression> to) {
+		JCExpression newExp = permissions.substVars(exp, from, to);
+		if (newExp != exp) {
+		    return new CopyPerm(newExp, consumedFields,
+			    sourceGroup, targetGroup);
+		}
+		return this;
+	    }
+	    
+	    public CopyPerm substVarSymbols(Permissions permissions,
+		    List<VarSymbol> from, List<VarSymbol> to) {
+		ListBuffer<JCExpression> lb = ListBuffer.lb();
+		for (VarSymbol var : to) {
+		    lb.append(permissions.maker.Ident(var));
+		}
+		return substVarExprs(permissions, from, lb.toList());
+	    }
+	    
 	    @Override public String toString() {
 		StringBuffer sb = new StringBuffer("copies ");
 		sb.append(exp);
@@ -270,14 +325,15 @@ public abstract class Permission {
 	
 	    /**
 	     * Test copy perms for equality:
-	     * 1. The expressions, source groups, and target gruops must match.
+	     * 1. The expressions, source groups, and target groups must match.
 	     * 2. Both must represent multiple perms, or not.
 	     */
 	    @Override public boolean equals(Object obj) {
 		if (!(obj instanceof CopyPerm))
 		    return false;
 		CopyPerm copyPerm = (CopyPerm) obj;
-		if (!matchingExps(this.exp, copyPerm.exp)) return false;
+		if (!Permissions.matchingExprs(this.exp, 
+			copyPerm.exp)) return false;
 		if (this.representsMultiplePerms() != 
 			copyPerm.representsMultiplePerms())
 		    return false;
@@ -466,33 +522,5 @@ public abstract class Permission {
     
     }
     
-    /**
-     * Compare access chains for equality
-     */
-    private static boolean matchingExps(JCExpression e1,
-	    JCExpression e2) {
-	if (e1 instanceof JCIdent) {
-	    if (!(e2 instanceof JCIdent))
-		return false;
-	    return e1.getSymbol().equals(e2.getSymbol());
-	}
-	if (e1 instanceof JCFieldAccess) {
-		    if (!(e2 instanceof JCFieldAccess))
-			return false;
-		    JCFieldAccess fa1 = (JCFieldAccess) e1;
-		    JCFieldAccess fa2 = (JCFieldAccess) e2;
-		    return matchingExps(fa1.selected, fa2.selected) &&
-			    fa1.name.equals(fa2.name);
-	}
-	if (e1 instanceof JCArrayAccess) {
-	    if (!(e2 instanceof JCArrayAccess))
-		return false;
-	    JCArrayAccess aa1 = (JCArrayAccess) e1;
-	    JCArrayAccess aa2 = (JCArrayAccess) e2;
-	    return matchingExps(aa1.index, aa2.index) &&
-		    matchingExps(aa1.indexed, aa2.indexed);
-	}
-	return false;
-    }
      
 }

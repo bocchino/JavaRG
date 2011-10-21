@@ -32,4 +32,10 @@ public class Overriding extends DPJTestCase {
     @Test public void testErrorMissingPreserves() throws Throwable {
 	compileExpectingErrors("ErrorMissingPreserves", 1);
     }
+    
+    @Test public void testCopyPerm() throws Throwable {
+	compile("CopyPerm");
+    }
+    
+
 }

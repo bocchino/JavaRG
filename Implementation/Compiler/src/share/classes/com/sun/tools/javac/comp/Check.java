@@ -1335,11 +1335,12 @@ public class Check {
 	// given all permissions available in superclass method.
 	Scope oScope = new Scope(other.owner);
 	attr.addRefGroupParamsToScope(other, oScope, origin.type);
-	attr.addMethodPermsToScope(other, oScope, origin.type);
+	attr.addMethodPermsToScope(other, oScope, origin.type, m.params);
 
         Scope mScope = new Scope(m.owner);
         attr.addRefGroupParamsToScope(m, mScope, origin.type);
-        attr.addMethodPermsToScope(m, mScope, origin.type);
+        attr.addMethodPermsToScope(m, mScope, origin.type, 
+        	List.<VarSymbol>nil());
 
         DiagnosticPosition pos = TreeInfo.diagnosticPositionFor(m, tree);
         if (!requireEnvPerms(pos, mScope.envPerms, oScope)) {
@@ -1876,6 +1877,7 @@ public class Check {
 	    }
 	}
 	else if (perm instanceof CopyPerm) {
+	    System.out.println("Requiring " + perm);
 	    // TODO
 	}
 	else if (perm instanceof EffectPerm) {
