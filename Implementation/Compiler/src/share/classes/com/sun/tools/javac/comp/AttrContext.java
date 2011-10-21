@@ -94,7 +94,7 @@ public class AttrContext {
     /** A record of the lint/SuppressWarnings currently in effect
      */
     Lint lint;
-
+    
     /** Duplicate this context, replacing scope field and copying all others.
      */
     AttrContext dup(Scope scope) {

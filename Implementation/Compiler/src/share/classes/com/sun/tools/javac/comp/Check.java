@@ -103,7 +103,6 @@ import com.sun.tools.javac.code.RPLs;
 import com.sun.tools.javac.code.RefGroup;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Source;
-import com.sun.tools.javac.code.Substitutions;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
@@ -125,6 +124,7 @@ import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCAnnotation;
+import com.sun.tools.javac.tree.JCTree.JCArrayAccess;
 import com.sun.tools.javac.tree.JCTree.JCArrayTypeTree;
 import com.sun.tools.javac.tree.JCTree.JCAssign;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
@@ -1321,60 +1321,33 @@ public class Check {
 	List<VarSymbol> oParams = other.params;
 	for (VarSymbol mParam : m.params) {
 	    if (oParams.isEmpty()) break;
-	    RefPerm argPerm = mParam.refPerm;
-	    if (permissions.split(mParam.refPerm, oParams.head.refPerm) 
-		    == RefPerm.ERROR) {
+	    RefPerm mPerm = mParam.refPerm;
+	    RefPerm oPerm = oParams.head.refPerm.asMemberOf(types, origin.type);
+	    if (permissions.split(mPerm, oPerm) == RefPerm.ERROR) {
 		log.error(TreeInfo.diagnosticPositionFor(m, tree), 
-			"override.param.perm", mParam.refPerm, mParam,
-			oParams.head.refPerm, other.owner.type);
+			"override.param.perm", mPerm, mParam,
+			oPerm, other.owner.type);
 	    }
 	    oParams = oParams.tail;
 	}
 	
-	// Error if any permission in required in subclass method isn't available, 
-	// given all permissions available in superclass method.
-	Scope oScope = new Scope(other.owner);
-	attr.addRefGroupParamsToScope(other, oScope, origin.type);
-	attr.addMethodPermsToScope(other, oScope, origin.type, m.params);
-
-        Scope mScope = new Scope(m.owner);
-        attr.addRefGroupParamsToScope(m, mScope, origin.type);
-        attr.addMethodPermsToScope(m, mScope, origin.type, 
+	// Error if any permission required in subclass method isn't available, 
+	// given all permissions available in superclass method.	
+	Env<AttrContext> oEnv = attr.enter.typeEnvs.get(other.owner);
+	Env<AttrContext> mEnv = attr.enter.typeEnvs.get(m.owner);
+	if (oEnv != null && mEnv != null) {
+	    attr.addRefGroupParamsToScope(other, oEnv.info.scope, origin.type);
+	    attr.addMethodPermsToScope(other, oEnv.info.scope, origin.type, m.params);
+	    attr.addRefGroupParamsToScope(m, mEnv.info.scope, origin.type);
+	    attr.addMethodPermsToScope(m, mEnv.info.scope, origin.type, 
         	List.<VarSymbol>nil());
 
-        DiagnosticPosition pos = TreeInfo.diagnosticPositionFor(m, tree);
-        if (!requireEnvPerms(pos, mScope.envPerms, oScope)) {
-	    System.err.print("Error(s) occurred overriding method in class " + 
-		    other.owner.type);
-	}
-	
-	// Error if overriding effects not a subeffect of overridden effects (DPJ)
-	/*
-	if (other.effects != Effects.UNKNOWN) {
-	    Effects me = m.effects.asMemberOf(types, origin.type, m.owner);
-	    Effects oe = other.effects.asMemberOf(types, origin.type, other.owner);
-	    List<RegionParameterSymbol> m_rpl_params = m.rgnParams;
-	    List<RegionParameterSymbol> o_rpl_params = other.rgnParams;
-	    if (m_rpl_params != null && o_rpl_params != null) {
-		ListBuffer<RPL> buf = ListBuffer.lb();
-		for (RegionParameterSymbol rps : m_rpl_params) {
-		    buf.append(new RPL(new RPLParameterElement(rps)));
-		}
-		List<RPL> rpls = buf.toList();
-		me = me.substForRegionParams(m_rpl_params, rpls);
-		oe = oe.substForRegionParams(o_rpl_params, rpls);
-	    }
-	    me = me.substForVars(m.params, other.params);
-	    me = me.substForEffectVars(m.refGroupParams, other.refGroupParams);
-	    if (!me.areSubeffectsOf(oe)) {
-		System.err.println("Effects are not covered by overridden effects in class " + other.owner.type);
-		System.err.println("Missing " + me.missingFrom(oe));
-		//System.out.println("me="+me);
-		//System.out.println("oe="+oe);
-		log.error(TreeInfo.diagnosticPositionFor(m, tree), "bad.subclass.effects");
+	    DiagnosticPosition pos = TreeInfo.diagnosticPositionFor(m, tree);
+	    if (!consumeEnvPerms(pos, mEnv.info.scope.envPerms, oEnv)) {
+		System.err.print("Error(s) occurred overriding method in class " + 
+			other.owner.type);
 	    }
 	}
-	*/
 	
 	// Error if overriding method throws an exception not reported
 	// by overridden method.
@@ -1868,8 +1841,33 @@ public class Check {
 	}
     }
     
-    <T extends EnvPerm>boolean requireEnvPerm(DiagnosticPosition pos, 
-	    EnvPerm perm, Scope scope) {
+    <T extends EnvPerm>boolean requireEnvPerms(DiagnosticPosition pos, 
+	    Iterable<T> perms, Env<AttrContext> env) {
+	boolean success = true;
+	for (T perm : perms)
+	    success &= requireEnvPerm(pos, perm, env);
+	return success;
+    }
+
+    <T extends EnvPerm>boolean consumeEnvPerms(DiagnosticPosition pos,
+	    Iterable<T> perms, Env<AttrContext> env) {
+	boolean success = true;
+	for (T perm : perms) {
+	    boolean result = requireEnvPerm(pos, perm, env);
+	    success &= result;
+	    if (perm.isLinear()) {
+		env.info.scope.removePerm(perm);
+	    }
+	}
+	return success;
+	
+    }
+    
+    
+    boolean requireEnvPerm(DiagnosticPosition pos, 
+	    EnvPerm perm, Env<AttrContext> env) 
+    {
+	Scope scope = env.info.scope;
 	if (perm instanceof FreshGroupPerm) {
 	    if (!scope.containsPerm(perm)) {
 		log.error(pos, "missing.perm", perm);
@@ -1877,8 +1875,8 @@ public class Check {
 	    }
 	}
 	else if (perm instanceof CopyPerm) {
-	    System.out.println("Requiring " + perm);
-	    // TODO
+	    CopyPerm copyPerm = (CopyPerm) perm;
+	    return requireCopyPerm(pos, copyPerm, env);
 	}
 	else if (perm instanceof EffectPerm) {
 	    // TODO
@@ -1906,13 +1904,103 @@ public class Check {
 	return true;
     }
     
-    <T extends EnvPerm>boolean requireEnvPerms(DiagnosticPosition pos, 
-	    Iterable<T> perms, Scope scope) {
-	boolean success = true;
-	for (T perm : perms)
-	    success &= requireEnvPerm(pos, perm, scope);
-	return success;
+    boolean requireCopyPerm(DiagnosticPosition pos,
+	    CopyPerm neededPerm, Env<AttrContext> env) {
+	Scope scope = env.info.scope;
+	// If needed perm is already there, we're done
+	if (scope.containsPerm(neededPerm))
+	    return true;
+	// Otherwise, we require something that can be split into
+	// needed perm and other stuff
+	if (neededPerm.canBeSplitFromFreshGroup()) {
+	    // The needed perm is 'copies v...G1 to G2', where v
+	    // is a unique(G1) local variable.
+	    FreshGroupPerm generatorPerm = 
+		    new FreshGroupPerm(neededPerm.targetGroup);
+	    if (!requireEnvPerm(pos, generatorPerm, env)) {
+		// Whoops, we can't get the fresh group we need!
+		// Bail out.
+		return false;
+	    }
+	    // Now we have 'fresh G2'; split it to what we need
+	    scope.removePerm(generatorPerm);
+	    scope.addCopyPerm(permissions, neededPerm);
+	    scope.addCopyPerm(permissions, CopyPerm.multipleTreePerm(neededPerm.exp, 
+		    neededPerm.sourceGroup, neededPerm.targetGroup));
+	    return true;
+	}
+	else if (!neededPerm.isTreePerm()) {
+	    // The needed perm is 'copies e to G2'
+	    RefGroup sourceGroup = 
+		    attr.getRefPermFor(neededPerm.exp, env).getRefGroup();
+	    // This won't work unless e is locally unique
+	    if (sourceGroup == RefGroup.NO_GROUP) return false;
+	    // Require 'copies e...G1 to G2' where e is in G1
+	    CopyPerm generatorPerm = CopyPerm.singleTreePerm(neededPerm.exp, 
+		    sourceGroup, neededPerm.targetGroup);
+	    if (!requireEnvPerm(pos, generatorPerm, env)) return false;
+	    // Now split it into 'copies e to G2' and ...
+	    env.info.scope.removePerm(generatorPerm);
+	    env.info.scope.addCopyPerm(permissions, neededPerm);
+	    if (types.isArrayClass(neededPerm.exp.type)) {
+		// ...copies e[i]...G1 to G2, if e is an array class
+		// with unique(G) cells and we are inside a JRG loop with 
+		// index variable i
+		// TODO	
+		return false; // For now
+	    }
+	    else if (types.isArray(neededPerm.exp.type)) {
+		// ...nothing else if e is a regular Java array
+		return false;
+	    }
+	    else {
+		// ...copies e{.f}...G1 to G2 otherwise
+		CopyPerm newPerm = CopyPerm.multipleTreePerm(neededPerm.exp, 
+			sourceGroup, neededPerm.targetGroup);
+		env.info.scope.addCopyPerm(permissions, newPerm);
+	    }	
+	    return true;
+	}
+	else if (neededPerm.exp instanceof JCFieldAccess &&
+		neededPerm.isTreePerm()) {
+	    // The needed perm is 'copies e.f...G1 to G2'
+	    JCFieldAccess fa = (JCFieldAccess) neededPerm.exp;
+	    // Look for the multiple tree permission 
+	    // 'copies e{.f}...G1 to G2'
+	    CopyPerm key = CopyPerm.multipleTreePerm(fa.selected,
+		    neededPerm.sourceGroup, neededPerm.targetGroup);
+	    CopyPerm found = (CopyPerm) env.info.scope.getPermFor(key);
+	    if (found == null) {
+		// It's not there; ask for 'copies e...G1 to G2', which
+		// also generates it
+		CopyPerm generatorPerm = CopyPerm.singleTreePerm(fa.selected,
+			neededPerm.sourceGroup, neededPerm.targetGroup);
+		if (!requireEnvPerm(pos, generatorPerm, env)) {
+		    // We couldn't get it, so bail out
+		    return false;
+		}
+	    }
+	    // Now 'found' should contain 'copies e{.f}...G1 to G2'
+	    // Next, ask if the perm we want is in {.f} or has already
+	    // been consumed.
+	    if (found.consumedFields.contains(fa.name))
+		return false;
+	    // If so, consume the name in 'found' and add the perm we want
+	    // to the environment
+	    found.consumedFields.add(fa.name);
+	    env.info.scope.addCopyPerm(permissions, neededPerm);		
+	    return true;
+	}
+	else if (neededPerm.exp instanceof JCArrayAccess &&
+		neededPerm.isTreePerm()){
+	    // needed perm is 'copies e[i]...G1 to G2'
+	    // TODO
+	    return false; // For now
+	}
+	// This shouldn't happen...
+	return false;
     }
+
 	
     
 /* *************************************************************************

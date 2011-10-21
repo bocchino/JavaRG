@@ -1,5 +1,6 @@
 package com.sun.tools.javac.code;
 
+import com.sun.tools.javac.code.Permission.RefPerm.LocallyUnique;
 import com.sun.tools.javac.code.Substitutions.AsMemberOf;
 import com.sun.tools.javac.code.Substitutions.AtCallSite;
 import com.sun.tools.javac.code.Substitutions.SubstRefGroups;
@@ -21,8 +22,13 @@ import com.sun.tools.javac.util.Pair;
 public abstract class Permission {
     
     public static abstract class RefPerm extends Permission 
-    	implements SubstRefGroups<RefPerm>, AsMemberOf<RefPerm>
+    	implements com.sun.tools.javac.code.Substitutions.SubstRefGroups<RefPerm>, 
+    	com.sun.tools.javac.code.Substitutions.AsMemberOf<RefPerm>
 {
+	
+	public RefGroup getRefGroup() {
+	    return RefGroup.NO_GROUP;
+	}
 	
 	/**
 	 * The reference permission 'this' as a member of type t
@@ -62,6 +68,10 @@ public abstract class Permission {
 		this.refGroup = refGroup;
 	    }
 
+	    @Override public RefGroup getRefGroup() {
+		return refGroup;
+	    }
+	    
 	    @Override public RefPerm asMemberOf(Types types, Type t) {
 		RefGroup refGroup = this.refGroup.asMemberOf(types, t);
 		return (this.refGroup == refGroup) ?
@@ -95,6 +105,9 @@ public abstract class Permission {
 	
 	public final RefGroup updatedGroup;
 	public final RefGroup preservedGroup;
+	
+	/** Is this perm consumed on use? */
+	public boolean isLinear() { return false; }
 	
 	protected EnvPerm(RefGroup preservedGroup, 
 		RefGroup updatedGroup) {
@@ -152,6 +165,8 @@ public abstract class Permission {
 		this.refGroup = refGroup;
 	    }
 	
+	    @Override public boolean isLinear() { return true; }
+	    
 	    @Override public String toString() {
 		return "fresh " + refGroup;
 	    }
@@ -244,6 +259,9 @@ public abstract class Permission {
 			targetGroup);
 	    }
 	    
+	    @Override
+	    public boolean isLinear() { return true; }
+	    
 	    public boolean isTreePerm() {
 		return sourceGroup != null;
 	    }
@@ -252,6 +270,23 @@ public abstract class Permission {
 		return consumedFields != null;
 	    }
 	
+	    public boolean canBeSplitFromFreshGroup() {
+		// exp must be local variable
+		if (!(exp instanceof JCIdent)) return false;
+		JCIdent id = (JCIdent) exp;
+		if (!(id.sym instanceof VarSymbol) || 
+			(id.sym.owner.kind != Kinds.MTH)) 
+		    return false;
+		// perm of exp must match source group
+		RefPerm refPerm = ((VarSymbol) id.sym).refPerm;
+		if (!(refPerm instanceof LocallyUnique))
+		    return false;
+		LocallyUnique lu = (LocallyUnique) refPerm;
+		RefGroup refGroup = lu.refGroup;
+		if (!refGroup.equals(sourceGroup)) return false;		
+		return true;
+	    }
+	    
 	    @Override public boolean isKilledByAssigningTo(VarSymbol var) {
 		return recursiveIsKilled(var, exp);
 	    }
@@ -376,9 +411,8 @@ public abstract class Permission {
 		if (!this.equals(multipleTreePerm(fa.selected, perm.sourceGroup,
 			perm.targetGroup)))
 		    return false;
-		Pair<VarSymbol,RefPerm> pair = 
-			attr.getSymbolAndRefPermFor(exp, env);
-		if (!pair.snd.equals(this.sourceGroup)) return false;
+		RefPerm refPerm = attr.getRefPermFor(exp, env);
+		if (!refPerm.equals(this.sourceGroup)) return false;
 		if (this.consumedFields.contains(fa.name)) return false;
 		return true;
 	    }

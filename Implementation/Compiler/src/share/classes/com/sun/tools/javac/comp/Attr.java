@@ -853,7 +853,7 @@ public class Attr extends JCTree.Visitor {
 		PreservedGroupPerm newPerm = 
 			new PreservedGroupPerm(refGroup);
 		lb.append(newPerm);
-		chk.requireEnvPerm(tree.pos(), newPerm, env.info.scope);
+		chk.requireEnvPerm(tree.pos(), newPerm, env);
 	    }
 	    methodSymbol.preservedGroupPerms = lb.toList();
 	}
@@ -2016,19 +2016,19 @@ public class Attr extends JCTree.Visitor {
             // Fresh group perms
             List<FreshGroupPerm> freshGroupPerms = 
         	    Substitutions.atCallSite(methSym.freshGroupPerms, types, tree);
-            chk.requireEnvPerms(tree.pos(), freshGroupPerms, localEnv.info.scope);
+            chk.requireEnvPerms(tree.pos(), freshGroupPerms, localEnv);
             // TODO: Copy perms
             // TODO: Effect perms
             // Preserved group perms
             List<PreservedGroupPerm> preservedGroupPerms =
         	    Substitutions.atCallSite(methSym.preservedGroupPerms,
         		    types, tree);
-            chk.requireEnvPerms(tree.pos(), preservedGroupPerms, localEnv.info.scope);
+            chk.requireEnvPerms(tree.pos(), preservedGroupPerms, localEnv);
             // Updated group perms
             List<UpdatedGroupPerm> updatedGroupPerms =
         	    Substitutions.atCallSite(methSym.updatedGroupPerms,
         		    types, tree);
-            chk.requireEnvPerms(tree.pos(), updatedGroupPerms, localEnv.info.scope);
+            chk.requireEnvPerms(tree.pos(), updatedGroupPerms, localEnv);
         }
         
         chk.validate(tree.typeargs);
@@ -2357,10 +2357,18 @@ public class Attr extends JCTree.Visitor {
 		LocallyUnique luPerm = (LocallyUnique) leftPerm;
 		RefGroup refGroup = luPerm.refGroup;
 		chk.requireEnvPerm(tree.pos(), 
-			new UpdatedGroupPerm(refGroup), env.info.scope);
+			new UpdatedGroupPerm(refGroup), env);
 	    }
 	}
 	return leftPerm;
+    }
+    
+    public VarSymbol getSymbolFor(JCExpression tree, Env<AttrContext> env) {
+	return getSymbolAndRefPermFor(tree, env).fst;
+    }
+    
+    public RefPerm getRefPermFor(JCExpression tree, Env<AttrContext> env) {
+	return getSymbolAndRefPermFor(tree, env).snd;
     }
     
     public Pair<VarSymbol,RefPerm> getSymbolAndRefPermFor(JCExpression tree,

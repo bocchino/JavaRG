@@ -428,11 +428,27 @@ public class Scope {
 	return envPerms.contains(perm);
     }
     
+    /**
+     * Get the perm in the set that's equal to 'perm',
+     * if it exists; otherwise return null
+     */
+    public EnvPerm getPermFor(EnvPerm key) {
+	for (EnvPerm setPerm : envPerms) {
+	    if (key.equals(setPerm)) return setPerm;
+	}
+	return null;
+    }
+    
+    public void removePerm(EnvPerm perm) {
+	envPerms.remove(perm);
+    }
+    
     public void lockAllPreservedGroups() {
 	for (Symbol sym : this.getElements()) {
 	    if (sym instanceof RefGroupSymbol) {
 		RefGroup refGroup = RefGroup.makeRefGroup((RefGroupSymbol) sym);
-		if (this.hasPreservedGroupPermFor(refGroup)) {
+		if (this.hasPreservedGroupPermFor(refGroup) &&
+			!this.hasFreshGroupPermFor(refGroup)) {
 		    this.lockedGroups.add((RefGroupSymbol) sym);
 		}
 	    }
@@ -474,6 +490,10 @@ public class Scope {
     
     public boolean hasPreservedGroupPermFor(RefGroup refGroup) {
 	return envPerms.contains(new PreservedGroupPerm(refGroup));
+    }
+    
+    public boolean hasFreshGroupPermFor(RefGroup refGroup) {
+	return envPerms.contains(new FreshGroupPerm(refGroup));
     }
     
     public String toString() {

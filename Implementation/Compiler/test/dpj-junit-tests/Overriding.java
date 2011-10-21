@@ -37,5 +37,13 @@ public class Overriding extends DPJTestCase {
 	compile("CopyPerm");
     }
     
+    @Test public void testCopyPermFromFresh() throws Throwable {
+	compile("CopyPermFromFresh");
+    }
+    
+    @Test public void testErrorCopyPermFromNothing() throws Throwable {
+	compileExpectingErrors("ErrorCopyPermFromNothing", 1);
+    }
+    
 
 }
