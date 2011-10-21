@@ -99,7 +99,7 @@ import com.sun.tools.javac.code.RefGroup.RefGroupParameter;
 import com.sun.tools.javac.code.RefGroups;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Source;
-import com.sun.tools.javac.code.Substitutions;
+import com.sun.tools.javac.code.Translation;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
@@ -1262,7 +1262,7 @@ public class Attr extends JCTree.Visitor {
 	for (RefGroup refGroup : ownerType.getRefGroupArguments())
 	    scope.enter(refGroup.getSymbol());
 	for (RefGroup refGroup : 
-	    Substitutions.asMemberOf(m.refGroupParams, types, ownerType))
+	    Translation.asMemberOf(m.refGroupParams, types, ownerType))
 	    scope.enter(refGroup.getSymbol());
     }
     
@@ -1276,13 +1276,13 @@ public class Attr extends JCTree.Visitor {
 	
 	// Add fresh group perms
 	for (FreshGroupPerm perm : 
-	    Substitutions.asMemberOf(m.freshGroupPerms, types, ownerType))
+	    Translation.asMemberOf(m.freshGroupPerms, types, ownerType))
 	    scope.addFreshGroupPerm(permissions, perm);
 
 	// Add copy perms
 	List<CopyPerm> copyPerms = 
-		Substitutions.asMemberOf(m.copyPerms, types, ownerType);
-	copyPerms = Substitutions.substVarSymbols(copyPerms, permissions,
+		Translation.asMemberOf(m.copyPerms, types, ownerType);
+	copyPerms = Translation.substVarSymbols(copyPerms, permissions,
 		m.params, newParams);
 	for (CopyPerm perm : copyPerms)
 	    scope.addCopyPerm(permissions, perm);
@@ -1292,7 +1292,7 @@ public class Attr extends JCTree.Visitor {
 	
 	// Add preserved group perms
 	for (PreservedGroupPerm perm : 
-	    Substitutions.asMemberOf(m.preservedGroupPerms, types, ownerType))
+	    Translation.asMemberOf(m.preservedGroupPerms, types, ownerType))
 	    scope.addPreservedGroupPerm(permissions, perm);
 
 	// Default:  Update if no perm specified
@@ -2006,7 +2006,8 @@ public class Attr extends JCTree.Visitor {
                 }
                 else {
                     VarSymbol thisSym = (VarSymbol) thisSym(tree.pos(), localEnv);
-                    RefPerm remainder = permissions.split(thisPerm, thisSym.refPerm);
+                    RefPerm remainder = permissions.split(thisPerm, 
+                	    thisSym.refPerm);
                     if (remainder == RefPerm.ERROR) {
                 	chk.refPermError(tree.pos(), 
                 		JCDiagnostic.fragment("insufficient.ref.perm"), 
@@ -2043,24 +2044,28 @@ public class Attr extends JCTree.Visitor {
         }
         
         // Check that the required environment permissions are available
-        JCFieldAccess fa = (tree.meth instanceof JCFieldAccess) ?
-        	(JCFieldAccess) tree.meth : null;
         if (methSym != null) {
             MethodType methodType = (MethodType) tree.meth.type;
             // Fresh group perms
             List<FreshGroupPerm> freshGroupPerms = 
-        	    Substitutions.atCallSite(methSym.freshGroupPerms, types, tree);
-            chk.requireEnvPerms(tree.pos(), freshGroupPerms, localEnv);
-            // TODO: Copy perms
-            // TODO: Effect perms
+        	    Translation.atCallSite(methSym.freshGroupPerms, types, tree);
+            chk.consumeEnvPerms(tree.pos(), freshGroupPerms, localEnv);
+            // Copy perms
+            List<CopyPerm> copyPerms =
+        	    Translation.atCallSite(methSym.copyPerms, types, tree);
+            copyPerms = Translation.substVarExprs(copyPerms, permissions, 
+        	    methSym.params(), tree.args);
+            chk.consumeEnvPerms(tree.pos(), copyPerms, localEnv);
+            // Effect perms
+            // TODO
             // Preserved group perms
             List<PreservedGroupPerm> preservedGroupPerms =
-        	    Substitutions.atCallSite(methSym.preservedGroupPerms,
+        	    Translation.atCallSite(methSym.preservedGroupPerms,
         		    types, tree);
             chk.requireEnvPerms(tree.pos(), preservedGroupPerms, localEnv);
             // Updated group perms
             List<UpdatedGroupPerm> updatedGroupPerms =
-        	    Substitutions.atCallSite(methSym.updatedGroupPerms,
+        	    Translation.atCallSite(methSym.updatedGroupPerms,
         		    types, tree);
             chk.requireEnvPerms(tree.pos(), updatedGroupPerms, localEnv);
         }
@@ -2412,7 +2417,7 @@ public class Attr extends JCTree.Visitor {
 	RefPerm refPerm = null;
 	if (sym instanceof VarSymbol) {
 	    varSym = (VarSymbol) sym;
-	    refPerm = Substitutions.accessElt(varSym.refPerm,
+	    refPerm = Translation.accessElt(varSym.refPerm,
 		    types, tree);	    
 	} 
 	else if (tree instanceof JCArrayAccess) {
@@ -2432,74 +2437,64 @@ public class Attr extends JCTree.Visitor {
     private RefPerm assignRefPerm(RefPerm leftPerm, JCExpression right,
 	    Env<AttrContext> env) {
 	RefPermAssigner refPermAssigner = 
-		new RefPermAssigner(leftPerm, right);
+		new RefPermAssigner(leftPerm, right, env);
 	return refPermAssigner.assign();
     }
 
     private class RefPermAssigner extends JCTree.Visitor {
 	
-	RefPerm leftPerm;
+	final RefPerm leftPerm;
+	final JCExpression right;
+	final Env<AttrContext> env;
 	RefPerm rightPerm;
-	JCExpression right;
 	RefPerm remainder;
 	
-	RefPermAssigner(RefPerm leftPerm, JCExpression right) {
+	RefPermAssigner(RefPerm leftPerm, JCExpression right,
+		Env<AttrContext> env) {
 	    this.leftPerm = leftPerm;
 	    this.right = right;
+	    this.env = env;
 	}
 
 	RefPerm assign() {
 	    right.accept(this);
 	    if (remainder == RefPerm.ERROR) {
-    	    chk.refPermError(right.pos(), JCDiagnostic.fragment("insufficient.ref.perm"), 
+    	    chk.refPermError(right.pos(), 
+    		    JCDiagnostic.fragment("insufficient.ref.perm"), 
 		    rightPerm, leftPerm);
 	    }
 	    return remainder;
 	}
 
         @Override
-        public void visitIdent(JCIdent right) {
-            if (right.sym instanceof VarSymbol) {
-        	VarSymbol rightVarSym = (VarSymbol) right.sym;
-    	    	rightPerm = rightVarSym.refPerm;
-    	    	remainder = permissions.split(leftPerm, rightPerm);
+        public void visitIdent(JCIdent rightExpr) {
+            Pair<VarSymbol,RefPerm> pair =
+        	    getSymbolAndRefPermFor(rightExpr, env);
+            VarSymbol rightVarSym = pair.fst;
+            if (rightVarSym != null) {
+        	rightPerm = pair.snd;
+    	    	remainder = permissions.splitOrCopy(leftPerm, 
+    	    		rightPerm, rightExpr, env);
     	    	if (remainder == RefPerm.SHARED) {
     	    	    rightVarSym.refPerm = RefPerm.SHARED;
-    	    	}
+    	    	}        	
             }
-    	}
+     	}
         
         @Override
         public void visitSelect(JCFieldAccess right) {
             rightPerm = RefPerm.SHARED;
-            remainder = (leftPerm == RefPerm.SHARED) ? 
-        	    RefPerm.SHARED : RefPerm.ERROR;
+            remainder = permissions.splitOrCopy(leftPerm, 
+        	    rightPerm, right, env);
         }
         
-        @Override public void visitUnary(JCUnary right) {
-            if (right.isDestructiveAccess) {
-        	VarSymbol rightVarSym = null;
-        	if (right.arg instanceof JCFieldAccess) {
-        	    JCFieldAccess fa = (JCFieldAccess) right.arg;
-        	    rightVarSym = (VarSymbol) fa.sym;
-        	    rightPerm = rightVarSym.refPerm;
-        	    rightPerm = rightPerm.asMemberOf(types, fa.selected.type);
-        	    remainder = permissions.split(leftPerm, rightPerm);
-        	}
-        	else {
-        	    JCArrayAccess aa = (JCArrayAccess) right.arg;
-        	    Type atype = aa.indexed.type;
-        	    if (types.isArrayClass(atype)) {
-        		ClassType ct = (ClassType) atype;
-        		Type site = capture(ct);
-        		rightVarSym = (VarSymbol)
-        			rs.findIdentInType(env, site, 
-        				names.fromString("cell"), VAR);
-        		rightPerm = rightVarSym.refPerm;
-        		rightPerm = rightPerm.asMemberOf(types, atype);
-        		remainder = permissions.split(leftPerm, rightPerm);
-        	    }
-        	}
+        @Override public void visitUnary(JCUnary rightExpr) {
+            if (rightExpr.isDestructiveAccess) {
+                Pair<VarSymbol,RefPerm> pair =
+            	    getSymbolAndRefPermFor(rightExpr.arg,env);
+                VarSymbol rightVarSym = pair.fst;
+        	rightPerm = pair.snd;
+    	    	remainder = permissions.split(leftPerm, rightPerm);
             }
         }
         
@@ -2560,8 +2555,8 @@ public class Attr extends JCTree.Visitor {
         
         @Override public void visitIndexed(JCArrayAccess right) {
             rightPerm = RefPerm.SHARED;
-            remainder = (leftPerm == RefPerm.SHARED) ? 
-        	    RefPerm.SHARED : RefPerm.ERROR;
+            remainder = permissions.splitOrCopy(leftPerm, 
+        	    rightPerm, right, env);
         }
     }
     

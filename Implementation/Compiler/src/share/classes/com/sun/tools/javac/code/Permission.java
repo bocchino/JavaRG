@@ -1,10 +1,10 @@
 package com.sun.tools.javac.code;
 
 import com.sun.tools.javac.code.Permission.RefPerm.LocallyUnique;
-import com.sun.tools.javac.code.Substitutions.AsMemberOf;
-import com.sun.tools.javac.code.Substitutions.AtCallSite;
-import com.sun.tools.javac.code.Substitutions.SubstRefGroups;
-import com.sun.tools.javac.code.Substitutions.SubstVars;
+import com.sun.tools.javac.code.Translation.AsMemberOf;
+import com.sun.tools.javac.code.Translation.AtCallSite;
+import com.sun.tools.javac.code.Translation.SubstRefGroups;
+import com.sun.tools.javac.code.Translation.SubstVars;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
@@ -22,8 +22,8 @@ import com.sun.tools.javac.util.Pair;
 public abstract class Permission {
     
     public static abstract class RefPerm extends Permission 
-    	implements com.sun.tools.javac.code.Substitutions.SubstRefGroups<RefPerm>, 
-    	com.sun.tools.javac.code.Substitutions.AsMemberOf<RefPerm>
+    	implements com.sun.tools.javac.code.Translation.SubstRefGroups<RefPerm>, 
+    	com.sun.tools.javac.code.Translation.AsMemberOf<RefPerm>
 {
 	
 	public RefGroup getRefGroup() {

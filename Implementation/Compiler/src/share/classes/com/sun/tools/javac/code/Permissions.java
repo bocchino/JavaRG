@@ -3,13 +3,16 @@ package com.sun.tools.javac.code;
 import java.util.HashSet;
 
 import com.sun.tools.javac.code.Permission.EnvPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.CopyPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.comp.AttrContext;
+import com.sun.tools.javac.comp.Check;
+import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.tree.JCTree.JCArrayAccess;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
-import com.sun.tools.javac.tree.TreeCopier;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
@@ -26,9 +29,11 @@ public class Permissions {
     }
 
     public TreeMaker maker;
+    public Check chk;
     
     protected Permissions(Context context) {
 	maker = TreeMaker.instance(context);
+	chk   = Check.instance(context);
     }
     
     /**
@@ -38,8 +43,32 @@ public class Permissions {
     public RefPerm split(RefPerm left, RefPerm right) {
 	if (left.equals(RefPerm.SHARED))
 	    return right;
-	else if (left.equals(right))
+	if (left.equals(right))
 	    return RefPerm.SHARED;
+	return RefPerm.ERROR;
+    }
+    
+    /**
+     * Try to split a permission.  If that doesn't work, try 
+     * to use a copy permission from env.  Return RefPerm.ERROR
+     * if both attempts fail.
+     */
+    public RefPerm splitOrCopy(RefPerm leftPerm, RefPerm rightPerm,
+	    JCExpression rightExpr, Env<AttrContext> env) {
+	RefPerm remainder = split(leftPerm, rightPerm);
+	if (remainder != RefPerm.ERROR) {
+	    // OK, we got what we wanted by splitting
+	    return remainder;
+	}
+	// We didn't get it, so create a copy permission for what we want
+	RefGroup targetGroup = leftPerm.getRefGroup();
+	CopyPerm copyPerm = CopyPerm.simplePerm(rightExpr, targetGroup);
+	if (chk.consumeEnvPerms(rightExpr.pos(),
+		List.<EnvPerm>of(copyPerm), env)) {
+	    // OK, we got the copy permission
+	    return rightPerm;
+	}	
+	// We didn't get it
 	return RefPerm.ERROR;
     }
     

@@ -8,15 +8,14 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
 /**
- * Interfaces for type, region, and ref group substitution.
+ * Interfaces for translation via type, region, and ref group 
+ * substitution.
  * 
  * @author Rob Bocchino
- *
- * @param <T>
  */
-public class Substitutions {
+public class Translation {
 
-    /** Interface for representing 'as member of' transformations */
+    /** Interface for representing 'as member of' translation */
     public interface AsMemberOf<T extends AsMemberOf<T>> {
 	
 	/** 'this' as a member of type t */
@@ -32,7 +31,7 @@ public class Substitutions {
 	return lb.toList();
     }
 
-    /** Interface for resolving things at method call sites */
+    /** Interface for translating things at method call sites */
     public interface AtCallSite<T extends AtCallSite<T>> {
 	
 	/** 'this' at the call site */

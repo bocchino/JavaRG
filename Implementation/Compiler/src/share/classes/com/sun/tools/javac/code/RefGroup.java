@@ -1,8 +1,8 @@
 package com.sun.tools.javac.code;
 
-import com.sun.tools.javac.code.Substitutions.AsMemberOf;
-import com.sun.tools.javac.code.Substitutions.AtCallSite;
-import com.sun.tools.javac.code.Substitutions.SubstRefGroups;
+import com.sun.tools.javac.code.Translation.AsMemberOf;
+import com.sun.tools.javac.code.Translation.AtCallSite;
+import com.sun.tools.javac.code.Translation.SubstRefGroups;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
@@ -123,7 +123,7 @@ public abstract class RefGroup
 	    MethodSymbol methSym = tree.getMethodSymbol();
 	    if (methSym != null) {
 		MethodType methodType = (MethodType) tree.meth.type;
-		RefGroup refGroup = Substitutions.<RefGroup>accessElt(this, 
+		RefGroup refGroup = Translation.<RefGroup>accessElt(this, 
 			types, tree.meth);
 	            refGroup = refGroup.substRefGroups(methSym.refGroupParams, 
 	        	    methodType.refGroupActuals);

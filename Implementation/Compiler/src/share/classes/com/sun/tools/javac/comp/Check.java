@@ -1856,7 +1856,7 @@ public class Check {
 	return success;
     }
 
-    <T extends EnvPerm>boolean consumeEnvPerms(DiagnosticPosition pos,
+    public <T extends EnvPerm>boolean consumeEnvPerms(DiagnosticPosition pos,
 	    Iterable<T> perms, Env<AttrContext> env) {
 	boolean success = true;
 	ListBuffer<EnvPerm> updatedGroupPerms = ListBuffer.lb();
