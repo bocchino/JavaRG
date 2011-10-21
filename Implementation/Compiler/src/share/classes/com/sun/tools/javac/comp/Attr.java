@@ -330,7 +330,10 @@ public class Attr extends JCTree.Visitor {
 	    Env<AttrContext> env = enter.typeEnvs.get(tree.sym);
 	    // Ignore local inner classes
 	    if (env == null) return;
-	    attr.enterClassParams(tree, env);
+	    if (tree.paramInfo != null) {
+		tree.sym.constraints = 
+			attr.enterConstraints(tree.paramInfo, env);
+	    }
 	    
 	    // Finish scanning the tree
 	    super.visitClassDef(tree);
@@ -1031,6 +1034,34 @@ public class Attr extends JCTree.Visitor {
     /**
      * Enter region param info from a class or method into a local scope
      */
+    public Constraints enterConstraints(JRGParamInfo tree, Env<AttrContext> env) {
+	// Attribute RPL constraints and check for validity
+	for (Pair<DPJRegionPathList,DPJRegionPathList> constraint : tree.rplConstraints) {
+	    attribTree(constraint.fst, env, NIL, Type.noType);
+	    attribTree(constraint.snd, env, NIL, Type.noType);	    
+	    if (constraint.fst.rpl.isIncludedIn(constraint.snd.rpl) ||
+		    constraint.snd.rpl.isIncludedIn(constraint.fst.rpl)) {
+		log.error(constraint.fst.pos(), "rpls.not.disjoint");
+	    }
+	}
+ 
+        // Enter RPL constraints
+	ListBuffer<Pair<RPL,RPL>> rplBuf = ListBuffer.lb();
+	for (Pair<DPJRegionPathList,DPJRegionPathList> treeConstraint : 
+	    tree.rplConstraints) {
+	    Pair<RPL,RPL> constraint = 
+		new Pair<RPL,RPL>(treeConstraint.fst.rpl,
+				  treeConstraint.snd.rpl);
+	    rplBuf.append(constraint);
+	}
+	List<Pair<RPL,RPL>> rplConstraints = rplBuf.toList();
+	env.info.constraints.disjointRPLs =
+	    env.info.constraints.disjointRPLs.appendList(rplConstraints);
+
+	// Return constraints
+	return new Constraints(rplConstraints);
+    }
+    
     public Constraints 
     	enterJRGParamInfo(JRGParamInfo tree, Env<AttrContext> localEnv) {
 	
@@ -1050,6 +1081,8 @@ public class Attr extends JCTree.Visitor {
 	    }
 	}
 	
+	return enterConstraints(tree, localEnv);
+	/*
 	// Attribute RPL constraints and check for validity
 	for (Pair<DPJRegionPathList,DPJRegionPathList> constraint : tree.rplConstraints) {
 	    attribTree(constraint.fst, localEnv, NIL, Type.noType);
@@ -1074,6 +1107,7 @@ public class Attr extends JCTree.Visitor {
 
 	// Return constraints
 	return new Constraints(rplConstraints);
+	*/
     }
     
     public void visitMethodDef(JCMethodDecl tree) {

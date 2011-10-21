@@ -263,7 +263,7 @@ public abstract class Permission {
 	    public boolean isLinear() { return true; }
 	    
 	    public boolean isTreePerm() {
-		return sourceGroup != null;
+		return sourceGroup != RefGroup.NO_GROUP;
 	    }
 	    
 	    public boolean representsMultiplePerms() {
@@ -343,15 +343,16 @@ public abstract class Permission {
 	    @Override public String toString() {
 		StringBuffer sb = new StringBuffer("copies ");
 		sb.append(exp);
-		if (sourceGroup != null) {
-		    sb.append("...");
-		    sb.append(sourceGroup);
-		}
 		if (consumedFields != null) {
+		    sb.append(".?");
 		    for (Name field : consumedFields) {
 			sb.append("\\");
 			sb.append(field);
 		    }
+		}
+		if (sourceGroup != RefGroup.NO_GROUP) {
+		    sb.append("...");
+		    sb.append(sourceGroup);
 		}
 		sb.append(" to ");
 		sb.append(targetGroup);

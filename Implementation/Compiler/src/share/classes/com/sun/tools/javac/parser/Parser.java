@@ -3325,6 +3325,7 @@ public class Parser {
 		accept(COMMA);
 		pos = S.pos();
 		derefSet = derefSet();
+		acceptIdent("to");
 		group = ident();
 		buf.append(toP(F.at(pos).CopyPerm(derefSet, group)));
 	    }

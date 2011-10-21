@@ -1333,14 +1333,21 @@ public class Check {
 	
 	// Error if any permission required in subclass method isn't available, 
 	// given all permissions available in superclass method.	
-	Env<AttrContext> oEnv = attr.enter.typeEnvs.get(other.owner);
-	Env<AttrContext> mEnv = attr.enter.typeEnvs.get(m.owner);
-	if (oEnv != null && mEnv != null) {
+	//System.out.println("*** Checking overriding of " + other.owner.type +
+	//	" by " + m.owner.type + "***");
+	Env<AttrContext> baseEnv = attr.enter.typeEnvs.get(m.owner);
+	if (baseEnv != null) {
+	    Env<AttrContext> oEnv = baseEnv.dup(tree, 
+		    baseEnv.info.dup(baseEnv.info.scope.dup()));
+	    Env<AttrContext> mEnv = baseEnv.dup(tree, 
+		    baseEnv.info.dup(baseEnv.info.scope.dup()));
 	    attr.addRefGroupParamsToScope(other, oEnv.info.scope, origin.type);
 	    attr.addMethodPermsToScope(other, oEnv.info.scope, origin.type, m.params);
 	    attr.addRefGroupParamsToScope(m, mEnv.info.scope, origin.type);
 	    attr.addMethodPermsToScope(m, mEnv.info.scope, origin.type, 
         	List.<VarSymbol>nil());
+	    //System.out.println("Upper env perms: " + oEnv.info.scope.envPerms);
+	    //System.out.println("Lower env perms: " + mEnv.info.scope.envPerms);
 
 	    DiagnosticPosition pos = TreeInfo.diagnosticPositionFor(m, tree);
 	    if (!consumeEnvPerms(pos, mEnv.info.scope.envPerms, oEnv)) {
@@ -1852,15 +1859,22 @@ public class Check {
     <T extends EnvPerm>boolean consumeEnvPerms(DiagnosticPosition pos,
 	    Iterable<T> perms, Env<AttrContext> env) {
 	boolean success = true;
+	ListBuffer<EnvPerm> updatedGroupPerms = ListBuffer.lb();
 	for (T perm : perms) {
-	    boolean result = requireEnvPerm(pos, perm, env);
-	    success &= result;
-	    if (perm.isLinear()) {
-		env.info.scope.removePerm(perm);
+	    if (perm instanceof UpdatedGroupPerm) {
+		updatedGroupPerms.append(perm);
+	    } else {
+		boolean result = requireEnvPerm(pos, perm, env);
+		success &= result;
+		if (perm.isLinear()) {
+		    env.info.scope.removePerm(perm);
+		}
 	    }
 	}
-	return success;
-	
+	// Do all updated group perms last.
+	success &= requireEnvPerms(pos, updatedGroupPerms, env);
+	//System.out.println("FINAL ENV PERMS: " + env.info.scope.envPerms);
+	return success;	
     }
     
     
@@ -1906,10 +1920,13 @@ public class Check {
     
     boolean requireCopyPerm(DiagnosticPosition pos,
 	    CopyPerm neededPerm, Env<AttrContext> env) {
+	//System.out.println("envPerms="+env.info.scope.envPerms);
+	//System.out.println("requiring " + neededPerm);
 	Scope scope = env.info.scope;
 	// If needed perm is already there, we're done
-	if (scope.containsPerm(neededPerm))
+	if (scope.containsPerm(neededPerm)) {
 	    return true;
+	}
 	// Otherwise, we require something that can be split into
 	// needed perm and other stuff
 	if (neededPerm.canBeSplitFromFreshGroup()) {
@@ -1947,10 +1964,12 @@ public class Check {
 		// with unique(G) cells and we are inside a JRG loop with 
 		// index variable i
 		// TODO	
+		log.error(pos, "doesnt.work.yet");
 		return false; // For now
 	    }
 	    else if (types.isArray(neededPerm.exp.type)) {
 		// ...nothing else if e is a regular Java array
+		log.error(pos, "illegal.array");
 		return false;
 	    }
 	    else {
@@ -1971,23 +1990,26 @@ public class Check {
 		    neededPerm.sourceGroup, neededPerm.targetGroup);
 	    CopyPerm found = (CopyPerm) env.info.scope.getPermFor(key);
 	    if (found == null) {
-		// It's not there; ask for 'copies e...G1 to G2', which
+		// It's not there; ask for 'copies e to G2', which
 		// also generates it
-		CopyPerm generatorPerm = CopyPerm.singleTreePerm(fa.selected,
-			neededPerm.sourceGroup, neededPerm.targetGroup);
+		CopyPerm generatorPerm = CopyPerm.simplePerm(fa.selected,
+			neededPerm.targetGroup);
 		if (!requireEnvPerm(pos, generatorPerm, env)) {
 		    // We couldn't get it, so bail out
 		    return false;
 		}
+		found = (CopyPerm) env.info.scope.getPermFor(key);
 	    }
 	    // Now 'found' should contain 'copies e{.f}...G1 to G2'
 	    // Next, ask if the perm we want is in {.f} or has already
 	    // been consumed.
-	    if (found.consumedFields.contains(fa.name))
+	    if (found.consumedFields.contains(fa.name)) {
+		log.error(pos, "missing.perm", neededPerm);
 		return false;
+	    }
 	    // If so, consume the name in 'found' and add the perm we want
 	    // to the environment
-	    found.consumedFields.add(fa.name);
+	    found.consumedFields.append(fa.name);
 	    env.info.scope.addCopyPerm(permissions, neededPerm);		
 	    return true;
 	}
@@ -1995,9 +2017,11 @@ public class Check {
 		neededPerm.isTreePerm()){
 	    // needed perm is 'copies e[i]...G1 to G2'
 	    // TODO
+	    log.error(pos, "doesnt.work.yet");
 	    return false; // For now
 	}
 	// This shouldn't happen...
+	log.error(pos, "missing.perm", neededPerm);
 	return false;
     }
 

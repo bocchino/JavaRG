@@ -145,7 +145,8 @@ public class Scope {
      */
     public Scope dup() {
         Scope result = new Scope(this, this.owner, this.table,
-        	this.envPerms, (HashSet<RefGroupSymbol>) this.lockedGroups.clone(),
+        	(HashSet<EnvPerm>) this.envPerms.clone(), 
+        	(HashSet<RefGroupSymbol>) this.lockedGroups.clone(),
         	this.inParallelBlock);
 	shared++;
 	// System.out.println("====> duping scope " + this.hashCode() + " owned by " + this.owner + " to " + result.hashCode());
@@ -386,7 +387,7 @@ public class Scope {
     
     public boolean addCopyPerm(Permissions permissions, 
 	    CopyPerm perm) {
-	if (perm.sourceGroup != null) {
+	if (perm.sourceGroup != RefGroup.NO_GROUP) {
 	    PreservedGroupPerm preservedGroupPerm =
 		    new PreservedGroupPerm(perm.sourceGroup);
 	    if (!addPreservedGroupPerm(permissions, preservedGroupPerm))
