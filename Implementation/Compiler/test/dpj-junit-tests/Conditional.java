@@ -17,6 +17,10 @@ public class Conditional extends DPJTestCase {
 	compile("IfMergeRefPerms");
     }
     
+    @Test public void testIfSeparateBranches() throws Throwable {
+	compile("IfSeparateBranches");
+    }
+    
     @Test public void testErrorIfMergeRefPerms() throws Throwable {
 	compileExpectingErrors("ErrorIfMergeRefPerms", 1);
     }

@@ -1,7 +1,7 @@
 /**
  * Unused ref perms should survive conditional
  */
-abstract class MergeRefPerms {
+abstract class IfMergeRefPerms {
     class Data{}
     abstract boolean test();
     <refgroup G>unique(G) Data m() {
