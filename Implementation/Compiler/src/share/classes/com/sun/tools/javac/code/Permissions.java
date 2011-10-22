@@ -6,6 +6,7 @@ import com.sun.tools.javac.code.Permission.EnvPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.CopyPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.comp.Env;
@@ -16,6 +17,8 @@ import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.Name;
 
 public class Permissions {
     protected static final Context.Key<Permissions> permissionsKey =
@@ -115,16 +118,25 @@ public class Permissions {
     /**
      * e must be chain of field or array access
      */
-    public boolean isValidDerefExp(JCExpression e) {
+    public boolean isValidDerefExp(JCExpression e, Types types) {
 	if (e instanceof JCIdent)
 	    return true;
 	if (e instanceof JCFieldAccess) {
 	    JCFieldAccess fa = (JCFieldAccess) e;
-	    return isValidDerefExp(fa.selected);
+	    return isValidDerefExp(fa.selected, types);
 	}
 	if (e instanceof JCArrayAccess) {
 	    JCArrayAccess aa = (JCArrayAccess) e;
-	    return isValidDerefExp(aa.indexed);
+	    // Indexed expression must be JRG array class, not Java array
+	    if (!types.isArrayClass(aa.indexed.type))
+		return false;
+	    // Index expression must be a local variable
+	    if (!(aa.index instanceof JCIdent))
+		return false;
+	    if (!(aa.index.getSymbol() instanceof VarSymbol))
+		return false;
+	    // Indexed expression must be recursively valid
+	    return isValidDerefExp(aa.indexed, types);
 	}
 	return false;
     }
@@ -197,6 +209,70 @@ public class Permissions {
 	}
 	return false;
     }
+    
+    /**
+     * Merge two env perms sets into one
+     */
+    public HashSet<EnvPerm> mergeEnvPerms(HashSet<EnvPerm> set1, 
+	    HashSet<EnvPerm> set2, Attr attr, Env<AttrContext> env) {
+	HashSet<EnvPerm> result = new HashSet<EnvPerm>();
+	for (EnvPerm perm : set1) {
+	    if (set2.contains(perm)) result.add(perm);
+	    else if (perm instanceof CopyPerm) {
+		CopyPerm copyPerm = (CopyPerm) perm;
+		if (copyPerm.isMultipleTreePerm()) {
+		    // Look for the corresponding multiple tree perm in set 2
+		    for (EnvPerm set2Perm : set2) {
+			if (copyPerm.equals(set2Perm)) {
+			    // Found it.
+			    // Take the union of consumed fields of the two perms.
+			    CopyPerm set2CopyPerm = (CopyPerm) set2Perm;
+			    HashSet<Name> names = new HashSet<Name>();
+			    for (Name name : copyPerm.consumedFields) {
+				names.add(name);
+			    }
+			    for (Name name : set2CopyPerm.consumedFields) {
+				names.add(name);
+			    }
+			    ListBuffer<Name> lb = ListBuffer.lb();
+			    for (Name name : names) {
+				lb.append(name);
+			    }
+			    // Add a new copy perm with the union of the consumed
+			    // fields.
+			    CopyPerm newPerm = CopyPerm.multipleTreePerm(copyPerm.exp, 
+				    lb.toList(), copyPerm.sourceGroup, 
+				    copyPerm.targetGroup);
+			    result.add(newPerm);
+			    break;
+			}
+		    }
+		}
+	    }
+	}
+	// Find all the non-multiple tree copy perms in set2 that are not 
+	// directly in set1 but are covered by a multiple perm in set 1.
+	for (EnvPerm perm : set2) {
+	    if (perm instanceof CopyPerm) {
+		CopyPerm copyPerm = (CopyPerm) perm;
+		if (copyPerm.isTreePerm() && !copyPerm.isMultipleTreePerm()) {
+		    if (!result.contains(copyPerm)) {
+			for (EnvPerm set1Perm : set1) {
+			    if (set1Perm instanceof CopyPerm) {
+				CopyPerm set1CopyPerm = (CopyPerm) set1Perm;
+				if (set1CopyPerm.representsPerm(copyPerm,
+					attr, env)) {
+				    result.add(copyPerm);
+				}
+			    }
+			}
+		    }
+		}
+	    }
+	}
+	return result;
+    }
+
 
     
 }

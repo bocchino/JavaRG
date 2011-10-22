@@ -132,11 +132,12 @@ public abstract class Permission {
 	
 	/**
 	 * An env permission that refers to an expression is killed
-	 * by assigning to the var in the leftmost position.
+	 * by assigning to the var in the leftmost position or any
+	 * index var appearing in an array access.
 	 */
 	protected boolean recursiveIsKilled(VarSymbol var, JCExpression e) {
 	    if (e instanceof JCIdent) {
-		return e.getSymbol().equals(var);
+		return var.equals(e.getSymbol());
 	    }
 	    else if (e instanceof JCFieldAccess) {
 		JCFieldAccess fa = (JCFieldAccess) e;
@@ -144,6 +145,8 @@ public abstract class Permission {
 	    }
 	    else if (e instanceof JCArrayAccess) {
 		JCArrayAccess aa = (JCArrayAccess) e;
+		if (var.equals(aa.index.getSymbol()))
+		    return true;
 		return recursiveIsKilled(var, aa.indexed);
 	    }
 	    return false;
@@ -259,6 +262,13 @@ public abstract class Permission {
 			targetGroup);
 	    }
 	    
+	    public static CopyPerm multipleTreePerm(JCExpression exp,
+		    List<Name> consumedFields, RefGroup sourceGroup, 
+		    RefGroup targetGroup) {
+		return new CopyPerm(exp, consumedFields, sourceGroup,
+			targetGroup);
+	    }
+	    
 	    @Override
 	    public boolean isLinear() { return true; }
 	    
@@ -266,11 +276,11 @@ public abstract class Permission {
 		return sourceGroup != RefGroup.NO_GROUP;
 	    }
 	    
-	    public boolean representsMultiplePerms() {
+	    public boolean isMultipleTreePerm() {
 		return consumedFields != null;
 	    }
 	
-	    public boolean canBeSplitFromFreshGroup() {
+	    public boolean canBeSplitFromFreshGroup(Scope scope) {
 		// exp must be local variable
 		if (!(exp instanceof JCIdent)) return false;
 		JCIdent id = (JCIdent) exp;
@@ -278,7 +288,7 @@ public abstract class Permission {
 			(id.sym.owner.kind != Kinds.MTH)) 
 		    return false;
 		// perm of exp must match source group
-		RefPerm refPerm = ((VarSymbol) id.sym).refPerm;
+		RefPerm refPerm = scope.getRefPermFor((VarSymbol) id.sym);
 		if (!(refPerm instanceof LocallyUnique))
 		    return false;
 		LocallyUnique lu = (LocallyUnique) refPerm;
@@ -370,8 +380,8 @@ public abstract class Permission {
 		CopyPerm copyPerm = (CopyPerm) obj;
 		if (!Permissions.matchingExprs(this.exp, 
 			copyPerm.exp)) return false;
-		if (this.representsMultiplePerms() != 
-			copyPerm.representsMultiplePerms())
+		if (this.isMultipleTreePerm() != 
+			copyPerm.isMultipleTreePerm())
 		    return false;
 		if (this.isTreePerm() != copyPerm.isTreePerm())
 		    return false;
@@ -388,23 +398,24 @@ public abstract class Permission {
 	     * Does this permission represent perm?
 	     * 
 	     * P1 represents P2 if 
-	     * (1) P1 is a single perm and P1 equals P2; or
-	     * (2) P1 is a multiple tree perm, P2's expression is a field 
-	     * access e.f, P1 is equal to P2 with its expression replaced by e, 
-	     * f is in the source group of P1, and f is not in the consumed perms
-	     * of P1.
+	     * (1) P1 is a simple perm 'copies e to G' or single tree perm
+	     * copies 'e...G1 to G2' and P1 equals P2; or
+	     * (2) P1 is a multiple tree perm 'copies e.?{\f}...G1 to G2', 
+	     * P2's expression is a field access e.f, P1 is equal to P2 
+	     * with its expression replaced by e, f is in the source group of P1, 
+	     * and f is not in the consumed perms of P1.
 	     * 
 	     * For example:  
-	     * (1) copies x...G1 to G2 represents copies x.f...G1 to G2
+	     * (1) copies x.?...G1 to G2 represents copies x.f...G1 to G2
 	     * if f is in group G1
-	     * (2) copies x...G1\f to G2 does not represent copies x.f...G1 to G2,
+	     * (2) copies x.?\f...G1 to G2 does not represent copies x.f...G1 to G2,
 	     * because f is in the consumed perms set of P1
-	     * (3) copies x...G1 to G2 does not represent copies x.f...G1 to G2 if
+	     * (3) copies x.?...G1 to G2 does not represent copies x.f...G1 to G2 if
 	     * f is not in group G1.
 	     */
 	    public boolean representsPerm(CopyPerm perm, Attr attr,
 		    Env<AttrContext> env) {
-		if (!this.representsMultiplePerms())
+		if (!this.isMultipleTreePerm())
 		    return this.equals(perm);
 		if (!(perm.exp instanceof JCFieldAccess))
 		    return false;
@@ -433,7 +444,8 @@ public abstract class Permission {
 		super(RefGroup.NO_GROUP, RefGroup.NO_GROUP);
 	    }
 	    
-	    public EffectPerm substRefGroups(List<RefGroup> from, List<RefGroup> to) {
+	    public EffectPerm substRefGroups(List<RefGroup> from, 
+		    List<RefGroup> to) {
 		// TODO
 		throw new UnsupportedOperationException();
 	    }

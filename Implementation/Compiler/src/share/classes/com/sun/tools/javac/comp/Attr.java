@@ -1344,7 +1344,8 @@ public class Attr extends JCTree.Visitor {
                     v.pos = Position.MAXPOS;
                     attribExpr(tree.init, initEnv, v.type);
                     v.pos = tree.pos;
-                    assignRefPerm(v.refPerm, tree.init, env);
+                    assignRefPerm(initEnv.info.scope.getRefPermFor(v), 
+                	    tree.init, env);
                 }
             }
             result = tree.type = v.type;
@@ -2007,14 +2008,15 @@ public class Attr extends JCTree.Visitor {
                 else {
                     VarSymbol thisSym = (VarSymbol) thisSym(tree.pos(), localEnv);
                     RefPerm remainder = permissions.split(thisPerm, 
-                	    thisSym.refPerm);
+                	    localEnv.info.scope.getRefPermFor(thisSym));
                     if (remainder == RefPerm.ERROR) {
                 	chk.refPermError(tree.pos(), 
                 		JCDiagnostic.fragment("insufficient.ref.perm"), 
-                		thisSym.refPerm, thisPerm);
+                		localEnv.info.scope.getRefPermFor(thisSym), 
+                		thisPerm);
                     }
                     else if (remainder == RefPerm.SHARED){
-                	thisSym.refPerm = RefPerm.SHARED;
+                	localEnv.info.scope.setRefPermToShared(thisSym);
                     }
                 }
             }
@@ -2027,7 +2029,7 @@ public class Attr extends JCTree.Visitor {
         if (!localEnv.info.varArgs && methSym != null) {
             List<JCExpression> args = tree.args;
             for (VarSymbol param : methSym.params) {
-        	RefPerm argPerm = param.refPerm;
+        	RefPerm argPerm = localEnv.info.scope.getRefPermFor(param);
         	if (tree.meth instanceof JCFieldAccess) {
         	    JCFieldAccess fa = (JCFieldAccess) tree.meth;
         	    argPerm = argPerm.asMemberOf(types, fa.selected.type);
@@ -2417,7 +2419,7 @@ public class Attr extends JCTree.Visitor {
 	RefPerm refPerm = null;
 	if (sym instanceof VarSymbol) {
 	    varSym = (VarSymbol) sym;
-	    refPerm = Translation.accessElt(varSym.refPerm,
+	    refPerm = Translation.accessElt(env.info.scope.getRefPermFor(varSym),
 		    types, tree);	    
 	} 
 	else if (tree instanceof JCArrayAccess) {
@@ -2428,7 +2430,7 @@ public class Attr extends JCTree.Visitor {
 		Type site = capture(ct);
 		varSym = (VarSymbol) 
 			rs.findIdentInType(env, site, names.fromString("cell"), VAR);
-		    refPerm = varSym.refPerm.asMemberOf(types, atype);
+		refPerm = env.info.scope.getRefPermFor(varSym).asMemberOf(types, atype);
 	    }
 	}
 	return new Pair(varSym, refPerm);
@@ -2476,7 +2478,7 @@ public class Attr extends JCTree.Visitor {
     	    	remainder = permissions.splitOrCopy(leftPerm, 
     	    		rightPerm, rightExpr, env);
     	    	if (remainder == RefPerm.SHARED) {
-    	    	    rightVarSym.refPerm = RefPerm.SHARED;
+    	    	    env.info.scope.setRefPermToShared(rightVarSym);
     	    	}        	
             }
      	}
@@ -4104,14 +4106,16 @@ public class Attr extends JCTree.Visitor {
 	    env.dup(env.tree, env.info.dup(env.info.scope.dup()));
 	tree.indexVar.mods.flags |= Flags.FINAL;
 	attribStat(tree.indexVar, loopEnv);
+	loopEnv.info.forIndexVars.prepend(tree.indexVar.sym);
 	attribExpr(tree.array, loopEnv);
-	if (!types.isArray(tree.array.type) && !types.isArrayClass(tree.array.type)) {
-            log.error(tree.pos(), "array.req.but.found", tree.array.type);
+	if (!types.isArrayClass(tree.array.type)) {
+            log.error(tree.pos(), "arrayclass.req.but.found", tree.array.type);
 	}
 	loopEnv.tree = tree; // before, we were not in loop!
 	loopEnv.info.scope.inParallelBlock = tree.isParallel;
 	attribStat(tree.body, loopEnv);
 	loopEnv.info.scope.leave();
+	loopEnv.info.forIndexVars = loopEnv.info.forIndexVars.tail;
 	result = null;	
     }
     
@@ -4242,7 +4246,7 @@ public class Attr extends JCTree.Visitor {
     
     public void visitDerefSet(JRGDerefSet tree) {
 	attribTree(tree.root, env, VAR, Type.noType);
-	if (!permissions.isValidDerefExp(tree.root)) {
+	if (!permissions.isValidDerefExp(tree.root, types)) {
 	    log.error(tree.root.pos, "bad.exp.in.deref.set");
 	}
 	if (tree.refGroupID != null)

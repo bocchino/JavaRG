@@ -91,6 +91,10 @@ public class AttrContext {
     List<Pair<RPL,RPL>> constraintsOld = List.nil();
     public Constraints constraints = new Constraints();
     
+    /** All the index variables of the JRG for loops we are currently inside
+     */
+    List<VarSymbol> forIndexVars = List.nil();
+    
     /** A record of the lint/SuppressWarnings currently in effect
      */
     Lint lint;
@@ -107,6 +111,7 @@ public class AttrContext {
 	info.tvars = tvars;
 	info.rvars = rvars;
 	info.constraints = constraints;
+	info.forIndexVars = forIndexVars;
 	info.lint = lint;
 	return info;
     }
@@ -126,10 +131,6 @@ public class AttrContext {
     public String toString() {
         return "AttrContext[" + scope.toString() + "]";
     }
-    
-    /** Add a 'preserves G' permission to the context.
-     */
-    
     
 }
 

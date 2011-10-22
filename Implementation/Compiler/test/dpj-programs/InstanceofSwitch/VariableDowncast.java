@@ -1,5 +1,5 @@
 /**
- * Test variable downcast with type switch
+ * Test variable downcast with instanceof switch
  */
 
 class VariableDowncast {

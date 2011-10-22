@@ -140,6 +140,7 @@ import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JCWildcard;
 import com.sun.tools.javac.tree.TreeInfo;
+import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Abort;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
@@ -175,6 +176,8 @@ public class Check {
     private final RPLs rpls;
     private final Permissions permissions;
     private final Attr attr;
+    private final Resolve rs;
+    private final TreeMaker maker;
 
     // The set of lint options currently in effect. It is initialized
     // from the context, and then is set/reset as needed by Attr as it 
@@ -204,6 +207,8 @@ public class Check {
         rpls = RPLs.instance(context);
         permissions = Permissions.instance(context);
         attr = Attr.instance(context);
+        rs = Resolve.instance(context);
+        maker = TreeMaker.instance(context);
         
 	Source source = Source.instance(context);
 	allowGenerics = source.allowGenerics();
@@ -1338,9 +1343,9 @@ public class Check {
 	Env<AttrContext> baseEnv = attr.enter.typeEnvs.get(m.owner);
 	if (baseEnv != null) {
 	    Env<AttrContext> oEnv = baseEnv.dup(tree, 
-		    baseEnv.info.dup(baseEnv.info.scope.dup()));
+		    baseEnv.info.dup(baseEnv.info.scope.dupUnshared()));
 	    Env<AttrContext> mEnv = baseEnv.dup(tree, 
-		    baseEnv.info.dup(baseEnv.info.scope.dup()));
+		    baseEnv.info.dup(baseEnv.info.scope.dupUnshared()));
 	    attr.addRefGroupParamsToScope(other, oEnv.info.scope, origin.type);
 	    attr.addMethodPermsToScope(other, oEnv.info.scope, origin.type, m.params);
 	    attr.addRefGroupParamsToScope(m, mEnv.info.scope, origin.type);
@@ -1928,8 +1933,9 @@ public class Check {
 	    return true;
 	}
 	// Otherwise, we require something that can be split into
-	// needed perm and other stuff
-	if (neededPerm.canBeSplitFromFreshGroup()) {
+	// needed perm and other stuff on a case by case basis.
+	if (neededPerm.canBeSplitFromFreshGroup(env.info.scope)) {
+	    // CASE 1:
 	    // The needed perm is 'copies v...G1 to G2', where v
 	    // is a unique(G1) local variable.
 	    FreshGroupPerm generatorPerm = 
@@ -1947,33 +1953,51 @@ public class Check {
 	    return true;
 	}
 	else if (!neededPerm.isTreePerm()) {
-	    // The needed perm is 'copies e to G2'
+	    // CASE 2:
+	    // The needed perm is 'copies e to G2' for some e
 	    RefGroup sourceGroup = 
 		    attr.getRefPermFor(neededPerm.exp, env).getRefGroup();
-	    // This won't work unless e is locally unique
+	    // This won't work unless e is locally unique, i.e.,
+	    // is in some group G1
 	    if (sourceGroup == RefGroup.NO_GROUP) return false;
-	    // Require 'copies e...G1 to G2' where e is in G1
+	    // Require 'copies e...G1 to G2'
 	    CopyPerm generatorPerm = CopyPerm.singleTreePerm(neededPerm.exp, 
 		    sourceGroup, neededPerm.targetGroup);
-	    if (!requireEnvPerm(pos, generatorPerm, env)) return false;
-	    // Now split it into 'copies e to G2' and ...
+	    if (!requireEnvPerm(pos, generatorPerm, env)) {
+		// It's not available; bail out
+		return false;
+	    }
+	    // OK, we got it.  Now split it into what we want.  Remove it, 
+	    // add 'copies e to G2', and other stuff that could be useful
+	    // later.
 	    env.info.scope.removePerm(generatorPerm);
 	    env.info.scope.addCopyPerm(permissions, neededPerm);
 	    if (types.isArrayClass(neededPerm.exp.type)) {
-		// ...copies e[i]...G1 to G2, if e is an array class
-		// with unique(G) cells and we are inside a JRG loop with 
-		// index variable i
-		// TODO	
-		log.error(pos, "doesnt.work.yet");
-		return false; // For now
+		// If e is an array class and e has cells in
+		// group G1, also add 'copies e[i]...G1 to G2' for all index 
+		// variables of JRG for loops that we are currently inside
+		for (VarSymbol indexVar : env.info.forIndexVars) {
+		    JCArrayAccess aa = maker.Indexed(neededPerm.exp, 
+			    maker.Ident(indexVar));
+		    RefGroup cellGroup = attr.getRefPermFor(aa, env).getRefGroup();
+		    if (!cellGroup.equals(sourceGroup)) {
+			// Don't add anything if the cell group doesn't match
+			// the source group
+			break;
+		    }
+		    CopyPerm newPerm = CopyPerm.singleTreePerm(aa, 
+			    sourceGroup, neededPerm.targetGroup);
+		    env.info.scope.addCopyPerm(permissions, newPerm);
+		}
 	    }
 	    else if (types.isArray(neededPerm.exp.type)) {
-		// ...nothing else if e is a regular Java array
+		// If e is a regular Java array, complain and bail out
 		log.error(pos, "illegal.array");
 		return false;
 	    }
 	    else {
-		// ...copies e{.f}...G1 to G2 otherwise
+		// Otherwise add 'copies e.?...G1 to G2' representing
+		// all permissions 'copies e.f...G1 to G2' for unique(G1) fields f
 		CopyPerm newPerm = CopyPerm.multipleTreePerm(neededPerm.exp, 
 			sourceGroup, neededPerm.targetGroup);
 		env.info.scope.addCopyPerm(permissions, newPerm);

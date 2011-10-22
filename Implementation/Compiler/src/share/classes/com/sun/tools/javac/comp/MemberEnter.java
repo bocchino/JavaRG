@@ -862,19 +862,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         attr.attribRefPerm(tree.refPerm, localEnv);
         attr.attribType(tree.vartype, localEnv);
         Scope enclScope = enter.enterScope(env);
-        /*
-	if (tree.name.toString().equals("cell")) {
-	    System.err.println("Processing cell field!");
-	    System.err.println("Cell type is " + tree.vartype);
-	    System.err.println("owner="+enclScope.owner);
-	    System.err.println("owner.type="+enclScope.owner.type);
-	    if (types.isArrayClass(enclScope.owner.type)) {
-		System.err.println("ARRAY");
-		((ClassType) enclScope.owner.type).cellType =
-			tree.vartype.type;
-	    }
-	}
-	*/
+
         VarSymbol v =
             new VarSymbol(0, tree.name, tree.vartype.type, enclScope.owner);
         v.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, v, tree);
