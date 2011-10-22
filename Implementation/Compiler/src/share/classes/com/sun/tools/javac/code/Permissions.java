@@ -77,17 +77,12 @@ public class Permissions {
 	if (env.info.scope.inParallelBlock && 
 		env.info.forIndexVars.nonEmpty()) {
 	    // We're in a parallel for loop.  We can only do this
-	    // if the right-hand expression uses a loop index var to
-	    // index into an array.
+	    // if the right-hand expression uses the innermost loop index 
+	    // var to index into an array.
 	    boolean ok = false;
 	    if (rightExpr instanceof JCArrayAccess) {
 		JCArrayAccess aa = (JCArrayAccess) rightExpr;
-		for (VarSymbol var : env.info.forIndexVars) {
-		    if (var.equals(aa.index.getSymbol())) {
-			ok = true;
-			break;
-		    }
-		}
+		ok = env.info.forIndexVars.head.equals(aa.index.getSymbol());
 	    }
 	    if (!ok) {
 		return RefPerm.ERROR;
