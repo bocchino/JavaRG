@@ -2489,7 +2489,7 @@ public class Attr extends JCTree.Visitor {
             VarSymbol rightVarSym = pair.fst;
             if (rightVarSym != null) {
         	rightPerm = pair.snd;
-    	    	remainder = permissions.splitOrCopy(leftPerm, 
+    	    	remainder = permissions.splitOrCopy(types, leftPerm, 
     	    		rightPerm, rightExpr, env);
     	    	if (remainder == RefPerm.SHARED) {
     	    	    env.info.scope.setRefPermToShared(rightVarSym);
@@ -2500,7 +2500,7 @@ public class Attr extends JCTree.Visitor {
         @Override
         public void visitSelect(JCFieldAccess right) {
             rightPerm = RefPerm.SHARED;
-            remainder = permissions.splitOrCopy(leftPerm, 
+            remainder = permissions.splitOrCopy(types, leftPerm, 
         	    rightPerm, right, env);
         }
         
@@ -2571,7 +2571,7 @@ public class Attr extends JCTree.Visitor {
         
         @Override public void visitIndexed(JCArrayAccess right) {
             rightPerm = RefPerm.SHARED;
-            remainder = permissions.splitOrCopy(leftPerm, 
+            remainder = permissions.splitOrCopy(types, leftPerm, 
         	    rightPerm, right, env);
         }
     }

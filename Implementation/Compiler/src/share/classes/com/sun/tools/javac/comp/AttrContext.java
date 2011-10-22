@@ -53,7 +53,7 @@ public class AttrContext {
 
     /** The scope of local symbols.
      */
-    Scope scope = null;
+    public Scope scope = null;
 
     /** The number of enclosing `static' modifiers.
      */
@@ -93,7 +93,7 @@ public class AttrContext {
     
     /** All the index variables of the JRG for loops we are currently inside
      */
-    List<VarSymbol> forIndexVars = List.nil();
+    public List<VarSymbol> forIndexVars = List.nil();
     
     /** A record of the lint/SuppressWarnings currently in effect
      */

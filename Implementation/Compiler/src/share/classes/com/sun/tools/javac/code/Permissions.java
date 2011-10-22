@@ -55,22 +55,49 @@ public class Permissions {
     
     /**
      * Try to split a permission.  If that doesn't work, try 
-     * to use a copy permission from env.  Return RefPerm.ERROR
-     * if both attempts fail.
+     * to use a copy permission from env.  
+     * 
+     * Return the remainder in the original expression if either 
+     * attempt succeeds.  Return RefPerm.ERROR if both attempts fail.
      */
-    public RefPerm splitOrCopy(RefPerm leftPerm, RefPerm rightPerm,
-	    JCExpression rightExpr, Env<AttrContext> env) {
+    public RefPerm splitOrCopy(Types types, RefPerm leftPerm, 
+	    RefPerm rightPerm, JCExpression rightExpr, Env<AttrContext> env) {
 	RefPerm remainder = split(leftPerm, rightPerm);
 	if (remainder != RefPerm.ERROR) {
 	    // OK, we got what we wanted by splitting
 	    return remainder;
 	}
-	// We didn't get it, so create a copy permission for what we want
+	// We didn't get it, so create a copy permission for what we want,
+	// if legal to do so
+	if (!isValidDerefExp(rightExpr, types)) {
+	    // We can only do this if the right-hand expression is a valid
+	    // deref expression
+	    return RefPerm.ERROR;
+	}
+	if (env.info.scope.inParallelBlock && 
+		env.info.forIndexVars.nonEmpty()) {
+	    // We're in a parallel for loop.  We can only do this
+	    // if the right-hand expression uses a loop index var to
+	    // index into an array.
+	    boolean ok = false;
+	    if (rightExpr instanceof JCArrayAccess) {
+		JCArrayAccess aa = (JCArrayAccess) rightExpr;
+		for (VarSymbol var : env.info.forIndexVars) {
+		    if (var.equals(aa.index.getSymbol())) {
+			ok = true;
+			break;
+		    }
+		}
+	    }
+	    if (!ok) {
+		return RefPerm.ERROR;
+	    }	    
+	}
 	RefGroup targetGroup = leftPerm.getRefGroup();
 	CopyPerm copyPerm = CopyPerm.simplePerm(rightExpr, targetGroup);
 	if (chk.consumeEnvPerms(rightExpr.pos(),
 		List.<EnvPerm>of(copyPerm), env)) {
-	    // OK, we got the copy permission
+	    // OK, we got the copy permission and used it
 	    return rightPerm;
 	}	
 	// We didn't get it
