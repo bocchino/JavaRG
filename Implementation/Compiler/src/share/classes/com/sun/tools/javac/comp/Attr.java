@@ -2426,6 +2426,10 @@ public class Attr extends JCTree.Visitor {
 	return getSymbolAndRefPermFor(tree, env).snd;
     }
     
+    public RefGroup getRefGroupFor(JCExpression tree, Env<AttrContext> env) {
+	return getRefPermFor(tree, env).getRefGroup();
+    }
+    
     public Pair<VarSymbol,RefPerm> getSymbolAndRefPermFor(JCExpression tree,
 	    Env<AttrContext> env) {
 	Symbol sym = tree.getSymbol();

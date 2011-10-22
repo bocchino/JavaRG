@@ -1923,6 +1923,25 @@ public class Check {
 	return true;
     }
     
+    private static boolean debug = false;
+    public static void debugPrint(String s) {
+	if (debug) System.out.println(s);
+    }
+    
+    /**
+     * Require a copy permission in the environment.  If the permission 
+     * is already there, nothing happens except that 'true' is returned.  
+     * If the permission is not there, this method attempts to generate
+     * it by requiring permissions from which the needed one can be split.
+     * This process may alter the permissions in the environment.  If
+     * the needed permission can be generated in this way, this method
+     * returns 'true', otherwise 'false.'
+     * permissions 
+     * @param pos
+     * @param neededPerm
+     * @param env
+     * @return
+     */
     boolean requireCopyPerm(DiagnosticPosition pos,
 	    CopyPerm neededPerm, Env<AttrContext> env) {
 	//System.out.println("envPerms="+env.info.scope.envPerms);
@@ -1933,7 +1952,7 @@ public class Check {
 	    return true;
 	}
 	// Otherwise, we require something that can be split into
-	// needed perm and other stuff on a case by case basis.
+	// needed perm and other stuff on a case-by-case basis.
 	if (neededPerm.canBeSplitFromFreshGroup(env.info.scope)) {
 	    // CASE 1:
 	    // The needed perm is 'copies v...G1 to G2', where v
@@ -1948,13 +1967,14 @@ public class Check {
 	    // Now we have 'fresh G2'; split it to what we need
 	    scope.removePerm(generatorPerm);
 	    scope.addCopyPerm(permissions, neededPerm);
-	    scope.addCopyPerm(permissions, CopyPerm.multipleTreePerm(neededPerm.exp, 
+	    scope.addCopyPerm(permissions, 
+		    CopyPerm.multipleTreePerm(neededPerm.exp, 
 		    neededPerm.sourceGroup, neededPerm.targetGroup));
 	    return true;
 	}
 	else if (!neededPerm.isTreePerm()) {
 	    // CASE 2:
-	    // The needed perm is 'copies e to G2' for some e
+	    // The needed perm is 'copies e to G2' for some e.
 	    RefGroup sourceGroup = 
 		    attr.getRefPermFor(neededPerm.exp, env).getRefGroup();
 	    // This won't work unless e is locally unique, i.e.,
@@ -1974,20 +1994,20 @@ public class Check {
 	    env.info.scope.addCopyPerm(permissions, neededPerm);
 	    if (types.isArrayClass(neededPerm.exp.type)) {
 		// If e is an array class and e has cells in
-		// group G1, also add 'copies e[i]...G1 to G2' for all index 
-		// variables of JRG for loops that we are currently inside
-		for (VarSymbol indexVar : env.info.forIndexVars) {
+		// group G1 and we are in a JRG for loop, also add 
+		// 'copies e[i]...G1 to G2', where i is the loop index.
+		if (env.info.forIndexVars.nonEmpty()) {
+		    VarSymbol indexVar = env.info.forIndexVars.head;
 		    JCArrayAccess aa = maker.Indexed(neededPerm.exp, 
 			    maker.Ident(indexVar));
 		    RefGroup cellGroup = attr.getRefPermFor(aa, env).getRefGroup();
-		    if (!cellGroup.equals(sourceGroup)) {
-			// Don't add anything if the cell group doesn't match
-			// the source group
-			break;
+		    // Don't add it unless the cell group matches match
+		    // the source group
+		    if (cellGroup.equals(sourceGroup)) {
+			CopyPerm newPerm = CopyPerm.singleTreePerm(aa, 
+				sourceGroup, neededPerm.targetGroup);
+			env.info.scope.addCopyPerm(permissions, newPerm);
 		    }
-		    CopyPerm newPerm = CopyPerm.singleTreePerm(aa, 
-			    sourceGroup, neededPerm.targetGroup);
-		    env.info.scope.addCopyPerm(permissions, newPerm);
 		}
 	    }
 	    else if (types.isArray(neededPerm.exp.type)) {
@@ -2006,16 +2026,22 @@ public class Check {
 	}
 	else if (neededPerm.exp instanceof JCFieldAccess &&
 		neededPerm.isTreePerm()) {
+	    // CASE 3
 	    // The needed perm is 'copies e.f...G1 to G2'
+	    // Check that the group of e.f matches G1
+	    RefGroup fieldGroup = attr.getRefGroupFor(neededPerm.exp, env);
+	    if (!fieldGroup.equals(neededPerm.sourceGroup)) {
+		return false;
+	    }
 	    JCFieldAccess fa = (JCFieldAccess) neededPerm.exp;
 	    // Look for the multiple tree permission 
-	    // 'copies e{.f}...G1 to G2'
+	    // 'copies e.?{\f}...G1 to G2'
 	    CopyPerm key = CopyPerm.multipleTreePerm(fa.selected,
 		    neededPerm.sourceGroup, neededPerm.targetGroup);
 	    CopyPerm found = (CopyPerm) env.info.scope.getPermFor(key);
 	    if (found == null) {
 		// It's not there; ask for 'copies e to G2', which
-		// also generates it
+		// generates it via case 2.
 		CopyPerm generatorPerm = CopyPerm.simplePerm(fa.selected,
 			neededPerm.targetGroup);
 		if (!requireEnvPerm(pos, generatorPerm, env)) {
@@ -2024,25 +2050,41 @@ public class Check {
 		}
 		found = (CopyPerm) env.info.scope.getPermFor(key);
 	    }
-	    // Now 'found' should contain 'copies e{.f}...G1 to G2'
-	    // Next, ask if the perm we want is in {.f} or has already
-	    // been consumed.
+	    // Now 'found' should contain 'copies e.?{\f}...G1 to G2'
+	    // Next, ask if the field we want is there or is in the 
+	    // consumed set {\f}
 	    if (found.consumedFields.contains(fa.name)) {
+		// Not there.
 		log.error(pos, "missing.perm", neededPerm);
 		return false;
 	    }
-	    // If so, consume the name in 'found' and add the perm we want
-	    // to the environment
+	    // It's there.  Consume the name in 'found' and add the 
+	    // needed perm.
 	    found.consumedFields.append(fa.name);
 	    env.info.scope.addCopyPerm(permissions, neededPerm);		
 	    return true;
 	}
 	else if (neededPerm.exp instanceof JCArrayAccess &&
 		neededPerm.isTreePerm()){
-	    // needed perm is 'copies e[i]...G1 to G2'
-	    // TODO
-	    log.error(pos, "doesnt.work.yet");
-	    return false; // For now
+	    // CASE 4:
+	    // The needed perm is 'copies e[i]...G1 to G2'
+	    // Require 'copies e to G2' which generates the
+	    // needed perm if possible via case 2.
+	    CopyPerm generatorPerm = CopyPerm.simplePerm(neededPerm.exp,
+		    neededPerm.targetGroup);
+	    if (!requireCopyPerm(pos, generatorPerm, env)) {
+		// We couldn't get it
+		return false;
+	    }
+	    // OK, we got the generator perm.  If the needed perm is valid,
+	    // it should be there.
+	    if (!env.info.scope.envPerms.contains(neededPerm)) {
+		// It's not there
+		log.error(pos, "missing.perm", neededPerm);
+		return false;
+	    }
+	    // It is there:  return success
+	    return true;
 	}
 	// This shouldn't happen...
 	log.error(pos, "missing.perm", neededPerm);

@@ -187,6 +187,7 @@ public class Permissions {
 		JCFieldAccess result = maker.Select(newSelected, fa.name);
 		result.pos = e.pos;
 		result.type = e.type;
+		result.sym = fa.sym;
 		return result;
 	    }
 	}
