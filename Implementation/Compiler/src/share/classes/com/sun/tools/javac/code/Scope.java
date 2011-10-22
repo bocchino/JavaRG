@@ -460,10 +460,10 @@ public class Scope {
     /**
      * Take the union of two shared perms sets (destroys the second one)
      */    
-    public HashSet<VarSymbol> mergeVarPerms(HashSet<VarSymbol> map1,
-	    HashSet<VarSymbol> map2) {
-	map2.addAll(map1);
-	return map2;
+    public HashSet<VarSymbol> mergeVarPerms(HashSet<VarSymbol> set1,
+	    HashSet<VarSymbol> set2) {
+	set2.addAll(set1);
+	return set2;
     }
     
         

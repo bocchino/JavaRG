@@ -33,10 +33,12 @@ public class Permissions {
 
     public TreeMaker maker;
     public Check chk;
+    public Attr attr;
     
     protected Permissions(Context context) {
 	maker = TreeMaker.instance(context);
 	chk   = Check.instance(context);
+	attr  = Attr.instance(context);
     }
     
     /**
@@ -214,7 +216,7 @@ public class Permissions {
      * Merge two env perms sets into one
      */
     public HashSet<EnvPerm> mergeEnvPerms(HashSet<EnvPerm> set1, 
-	    HashSet<EnvPerm> set2, Attr attr, Env<AttrContext> env) {
+	    HashSet<EnvPerm> set2, Env<AttrContext> env) {
 	HashSet<EnvPerm> result = new HashSet<EnvPerm>();
 	for (EnvPerm perm : set1) {
 	    if (set2.contains(perm)) result.add(perm);

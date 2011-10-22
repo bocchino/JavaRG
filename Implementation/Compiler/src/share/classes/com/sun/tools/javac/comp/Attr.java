@@ -1692,9 +1692,23 @@ public class Attr extends JCTree.Visitor {
 
     public void visitIf(JCIf tree) {
         attribExpr(tree.cond, env, syms.booleanType);
-        attribStat(tree.thenpart, env);
-        if (tree.elsepart != null)
+        if (tree.elsepart == null) {
+            attribStat(tree.thenpart, env);
+        }
+        else {
+            Scope thenScope = env.info.scope;
+            Scope elseScope = thenScope.dupUnshared();
+            attribStat(tree.thenpart, env);
+            env.info.scope = elseScope;
             attribStat(tree.elsepart, env);
+            env.info.scope = thenScope;
+            thenScope.sharedVarPerms = 
+        	    thenScope.mergeVarPerms(thenScope.sharedVarPerms, 
+        		    elseScope.sharedVarPerms);
+            thenScope.envPerms = 
+        	    permissions.mergeEnvPerms(thenScope.envPerms,
+        		    elseScope.envPerms, env);
+        }
         chk.checkEmptyIf(tree);
         result = null;
     }
