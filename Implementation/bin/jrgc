@@ -25,9 +25,9 @@
 # have any questions.
 #
 
-DPJ_COMPILER=${DPJ_ROOT}/Implementation/Compiler
-DPJ_RUNTIME=${DPJ_ROOT}/Implementation/Runtime
-mylib=${DPJ_COMPILER}/dist/bootstrap/lib
+JRG_COMPILER=${JRG_ROOT}/Implementation/Compiler
+JRG_RUNTIME=${JRG_ROOT}/Implementation/Runtime
+mylib=${JRG_COMPILER}/dist/bootstrap/lib
 
 # By default, put the jar file and its dependencies on the bootclasspath.
 # This is always required on a Mac, because the system langtools classes

@@ -18,21 +18,21 @@ classes :
 	mkdir $@
 
 runtime-only:
-	# Generate Java 'template' classes
+# 	Generate Java 'template' classes
 #	perl expandAll.pl
-	# Compile the JRG runtime
-	dpjc -seq ${INSTRUMENT} -d java -cp classes ${UNCHECKED} jrg/*.java
+	# Compile the DPJ runtime
+	jrgc -seq ${INSTRUMENT} -d java -cp classes ${UNCHECKED} jrg/*.java
 	javac -cp classes -d classes java/DPJRuntime/*.java
 
 # Count DPJ Annotations
 countAll :
-	dpjc -seq -count -d java -cp classes dpj/*.java
+	jrgc -seq -count -d java -cp classes dpj/*.java
 
 classes/DPJRuntime/%.class: java/DPJRuntime/%.java
 	javac -d classes/DPJRuntime $<
 
 java/DPJRuntime/%.java: dpj/%.java
-	dpjc -seq ${INSTRUMENT} -d java ${UNCHECKED} $<
+	jrgc -seq ${INSTRUMENT} -d java ${UNCHECKED} $<
 
 
 # Build javadoc for the OLD version of FJTask that the compiler still uses
