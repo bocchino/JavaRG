@@ -3,34 +3,32 @@ import java.util.Formatter;
 /**
  * Vector operations
  */
-public class Vector<region R> {
+public class Vector {
 
-    public final double[]<R> elts in R = 
-	new double[Constants.NDIM]<R>;
+    public final double[] elts in R = 
+	new double[Constants.NDIM];
 
-    public void CLRV() writes R {
+    public void CLRV() {
 	for (int i = 0; i < Constants.NDIM; ++i)
 	    elts[i] = 0.0;
     }
 
-    public void UNITV(int coord) writes R {
+    public void UNITV(int coord) {
 	for (int i = 0; i < Constants.NDIM; ++i)
 	    elts[i] = (coord == i) ? 1.0 : 0.0;
     }
 
-    public <region Ru>void SETV(Vector<Ru> u) reads Ru writes R {
+    public void SETV(Vector u) {
 	for (int i = 0; i < Constants.NDIM; i++) 					
 	    elts[i] = u.elts[i]; 						
     }
     
-    public <region Ru,Rw>void ADDV(Vector<Ru> u, Vector<Rw> w) 
-	reads Ru, Rw writes R {
+    public void ADDV(Vector u, Vector w) {
 	for (int i = 0; i < Constants.NDIM; ++i)
 	    elts[i] = u.elts[i] + w.elts[i];					
     }
 
-    public <region Ru,Rw>void SUBV(Vector<Ru> u, Vector<Rw> w)
-	reads R, Ru, Rw writes R {
+    public void SUBV(Vector u, Vector w) {
 	for (int i = 0; i < Constants.NDIM; i++)					
 	    elts[i] = u.elts[i] - w.elts[i];					
     }
@@ -38,32 +36,28 @@ public class Vector<region R> {
     /**
      *  MULtiply Vector by Scalar 
      */
-    public <region Ru>void MULVS(Vector<Ru> u, double s) 
-	reads Ru writes R {
+    public void MULVS(Vector u, double s) {
 	int i;							
 	for (i = 0; i < Constants.NDIM; i++)					
 	    elts[i] = u.elts[i] * s;					
     }
 
-    public <region Ru>void DIVVS(Vector<Ru> u, double s)
-	reads Ru writes R {
+    public void DIVVS(Vector u, double s) {
 	int i;					       	
 	for (i = 0; i < Constants.NDIM; i++)					
 	    elts[i] = u.elts[i] / s;					
     }
 
 
-    public <region Ru>double DOTVP(Vector<Ru> u)
-	reads Ru writes R {
+    public double DOTVP(Vector u) {
 	int i;							
 	double s = 0.0;								
 	for (i = 0; i < Constants.NDIM; i++)					
 	    s += elts[i] * u.elts[i];					
 	return s;
     }
-    
-    
-    public void ABSV(double s) reads R {
+     
+    public void ABSV(double s) {
 	double tmp;                                                
 	int i;							
 	tmp = 0.0;								
@@ -72,8 +66,7 @@ public class Vector<region R> {
 	s = Math.sqrt(tmp);                                                   
     }
     
-    public <region Ru>void DISTV(double s, Vector<Ru> u) 
-        reads R, Ru {
+    public void DISTV(double s, Vector u) {
 	double tmp;                                                
 	int i;							
 	tmp = 0.0;								
@@ -82,47 +75,43 @@ public class Vector<region R> {
 	s = Math.sqrt(tmp);                                                   
     }
 
-    public <region Ru,Rw>void CROSSVP(Vector<Ru> u, Vector<Rw> w) 
-	reads Ru, Rw, Ru, Rw writes R {
+    public void CROSSVP(Vector u, Vector w) {
 	elts[0] = u.elts[1]*w.elts[2] - u.elts[2]*w.elts[1];				
 	elts[1] = u.elts[2]*w.elts[0] - u.elts[0]*w.elts[2];				
 	elts[2] = u.elts[0]*w.elts[1] - u.elts[1]*w.elts[0];				
     }
 
-    public <region Ru>void INCADDV(Vector<Ru> u) 
-	reads Ru writes R {
-	    int i;
-	    for (i = 0; i < Constants.NDIM; i++)
-		elts[i] += u.elts[i];                                             
+    public void INCADDV(Vector u) {
+	int i;
+	for (i = 0; i < Constants.NDIM; i++)
+	    elts[i] += u.elts[i];                                             
     }
 
-    public <region Ru>void INCSUBV(Vector<Ru> u) 
-	reads Ru writes R {
+    public void INCSUBV(Vector u) {
 	int i;                                                    
 	for (i = 0; i < Constants.NDIM; i++)                                       
 	    elts[i] -= u.elts[i];                                             
     }
     
-    public void INCMULVS(double s) writes R {
+    public void INCMULVS(double s) {
 	int i;                                                    
 	for (i = 0; i < Constants.NDIM; i++)                                       
 	    elts[i] *= s;                                                 
     }
 
-    public void INCDIVVS(double s) writes R {
+    public void INCDIVVS(double s) {
 	int i;                                                    
 	for (i = 0; i < Constants.NDIM; i++)                                       
 	    elts[i] /= s;                                                 
     }
 
-    public void SETVS(double s) writes R {
+    public void SETVS(double s) {
 	int i;							
 	for (i = 0; i < Constants.NDIM; i++)					
 	    elts[i] = s;							
     }
 
-    public <region Ru>void ADDVS(Vector<Ru> u, double s) 
-	reads Ru writes R {
+    public void ADDVS(Vector u, double s) {
 	int i;
 	for (i = 0; i < Constants.NDIM; i++)			
 	    elts[i] = u.elts[i] + s;					
@@ -140,7 +129,7 @@ public class Vector<region R> {
 	return sb.toString();
     }
 
-    public <region Rv>boolean EQUAL(Vector<Rv> v) reads Rv, R {
+    public boolean EQUAL(Vector v) {
 	for (int i = 0; i < Constants.NDIM; ++i)
 	    if (elts[i] != v.elts[i]) return false;
 	return true;

@@ -1,3 +1,4 @@
+ALL = sequential-classes parallel-classes
 SRCS= ${wildcard dpj/*.java}
 OLDEN= olden/original
 include ../../Makefile.common

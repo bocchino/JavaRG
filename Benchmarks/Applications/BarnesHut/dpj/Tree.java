@@ -29,12 +29,12 @@ public class Tree {
     /**
      * Nodes of the tree
      */
-    public Body<[i]>[]#i bodies;
+    public Body[] bodies;
 
     /**
      * Temporary body array required for reordering
      */
-    public Body<[i]>[]#i bodiesNew;
+    public Body[] bodiesNew;
 
     /**
      * No of threads
@@ -59,7 +59,7 @@ public class Tree {
         for(int i = 0; i < bodies.length; i++)
         {
 	    final int k = i;
-            Body<[k]> p = bodies[k];
+            Body p = bodies[k];
             for(int j = 0; j < Constants.NDIM; j++)
             {
                 if(p.pos.elts[j] < min.elts[j])
@@ -112,7 +112,7 @@ public class Tree {
         root = null;
         for (int i = 0; i < bodies.length; ++i) {
 	    final int j = i;
-            Body<[j]> body = bodies[j];
+            Body body = bodies[j];
             // only load massive ones
             if (body.mass != 0.0) {
                 // insert into tree
@@ -120,7 +120,7 @@ public class Tree {
                 root = loadtree(body, xqic, root, Constants.IMAX >> 1, i);
             }
         }
-        bodiesNew = new Body<[i]>[bodies.length]#i;
+        bodiesNew = new Body[bodies.length];
 
         reOrderBodies(root, 0);
         bodies = bodiesNew;
@@ -130,7 +130,7 @@ public class Tree {
             for(int i = 0; i < bodies.length; i++)
             {
 		final int k = i;
-                Body<[k]> p = bodies[k];
+                Body p = bodies[k];
                 for(int j = 0; j < Constants.NDIM; j++)
                 {
                     System.out.printf("%.6f", p.pos.elts[j]);
@@ -163,9 +163,9 @@ public class Tree {
                 if(cell.subp[i] instanceof Body)
                 {
 		    final int j = i;
-                    Body<[j]> body = (Body<[j]>)cell.subp[j];
+                    Body body = (Body)cell.subp[j];
 		    final int finalIndex = index;
-                    bodiesNew[finalIndex] = new Body<[finalIndex]>(body);
+                    bodiesNew[finalIndex] = new Body(body);
                     assert(bodiesNew[index]!=null);
                     cell.subp[i] = bodiesNew[index];
                     index++;
@@ -186,7 +186,7 @@ public class Tree {
      * @param level - current level in tree 
      * @param idx - index of body in 
      */
-    Node loadtree(Body<*> body, int[] xpic, Node subroot, int level, int idx) {
+    Node loadtree(Body body, int[] xpic, Node subroot, int level, int idx) {
         if (subroot == null) {
             return body;
         }
@@ -240,10 +240,10 @@ public class Tree {
     void computegrav(int processId, int nstep) {
 
         foreach(int i in 0, bodies.length) {
-            HGStruct<[i]> hg = new HGStruct<[i]>();
-            Vector<[i]> acc1 = new Vector<[i]>();
-            Vector<[i]> dacc = new Vector<[i]>();
-            Vector<[i]> dvel = new Vector<[i]>();
+            HGStruct hg = new HGStruct();
+            Vector acc1 = new Vector();
+            Vector dacc = new Vector();
+            Vector dvel = new Vector();
             double dthf = 0.5 * Constants.dtime;
         
             hg.pskip = bodies[i];
@@ -291,7 +291,7 @@ public class Tree {
      * Compute integerized coordinates.
      * Returns: TRUE unless rp was out of bounds.
      */
-    public int[] intcoord(Body<*> p) {
+    public int[] intcoord(Body p) {
         double xsc;
         int[] ic = new int[3];
         boolean inb;

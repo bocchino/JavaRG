@@ -19,7 +19,7 @@ public abstract class Node {
     /**
      * Position of node
      */
-    public  Vector<MP> pos in MP = new Vector<MP>();
+    public  Vector pos in MP = new Vector();
 
     /**
      * Cost for cost zone analysis
@@ -53,6 +53,6 @@ public abstract class Node {
      * @param hg Object holding intermediate computations and other required info
      * @return
      */
-    protected abstract <region R> boolean subdivp(Node p, double dsq, 
-            double tolsq, HGStruct<R> hg) reads MP writes R;
+    protected abstract boolean subdivp(Node p, double dsq, 
+				       double tolsq, HGStruct hg);
 }

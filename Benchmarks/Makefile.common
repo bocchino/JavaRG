@@ -1,36 +1,36 @@
 ALL ?= sequential-classes parallel-classes instrument-classes
-IMPLEMENTATION=${DPJ_ROOT}/Implementation
+IMPLEMENTATION=${JRG_ROOT}/Implementation
 RUNTIME=${IMPLEMENTATION}/Runtime
-SCRIPTS=${DPJ_ROOT}/Scripts
-DPJ=dpj
-DPJ-PAR=${DPJ} -cp parallel/classes
-DPJ-SEQ=${DPJ} -cp sequential/classes
-DPJ-INST=${DPJ} -cp instrument/classes
-DPJC-PAR=jrgc
-DPJC-SEQ=${DPJC-PAR} -seq
-DPJC-INST=${DPJC-SEQ} -instrument
-JAVAC=dpj-javac
-DPJ-PAR-TEST= ${DPJ-PAR} -ea
-DPJ-SEQ-TEST=${DPJ-SEQ} -ea
-DPJ-INST-TEST=${DPJ-INST} -ea
-SRCS= ${wildcard dpj/*.java}
+SCRIPTS=${JRG_ROOT}/Scripts
+JRG=jrg
+JRG-PAR=${JRG} -cp parallel/classes
+JRG-SEQ=${JRG} -cp sequential/classes
+JRG-INST=${JRG} -cp instrument/classes
+JRGC-PAR=jrgc
+JRGC-SEQ=${JRGC-PAR} -seq
+JRGC-INST=${JRGC-SEQ} -instrument
+JAVAC=jrg-javac
+JRG-PAR-TEST= ${JRG-PAR} -ea
+JRG-SEQ-TEST=${JRG-SEQ} -ea
+JRG-INST-TEST=${JRG-INST} -ea
+SRCS= ${wildcard jrg/*.java}
 
 
 all :: ${ALL}
 
 sequential-classes : ${SRCS} sequential/java sequential/classes
-	${DPJC-SEQ} -d sequential/java dpj/*.java ${RUNTIME}/dpj/*.java
+	${JRGC-SEQ} -d sequential/java jrg/*.java ${RUNTIME}/jrg/*.java
 	${JAVAC} -d sequential/classes sequential/java/*.java
 instrument-classes : ${SRCS} instrument/java instrument/classes
-	${DPJC-INST} -d instrument/java dpj/*.java ${RUNTIME}/dpj/*.java
+	${JRGC-INST} -d instrument/java jrg/*.java ${RUNTIME}/jrg/*.java
 	${JAVAC} -d instrument/classes instrument/java/*.java
 parallel-classes : ${SRCS} parallel/java parallel/classes
-	${DPJC-PAR} -d parallel/java dpj/*.java ${RUNTIME}/dpj/*.java
+	${JRGC-PAR} -d parallel/java jrg/*.java ${RUNTIME}/jrg/*.java
 	${JAVAC} -d parallel/classes parallel/java/*.java
 
 
 countAll :: sequential/java
-	${DPJC-SEQ} -count -nowarn -d sequential/java dpj/*.java ${RUNTIME}/dpj/*.java
+	${JRGC-SEQ} -count -nowarn -d sequential/java jrg/*.java ${RUNTIME}/jrg/*.java
 
 count ::
 	perl ${SCRIPTS}/count.pl ${RUNTIME} .

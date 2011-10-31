@@ -5,17 +5,17 @@
  * @author Rakesh Komuravelli
  */
 
-public class Body<region R> extends Node {
+public class Body extends Node {
 
     /**
      * Velocity of body
      */
-    public final Vector<R> vel in R  = new Vector<R>();
+    public final Vector vel in R  = new Vector();
 
     /**
      * Acceleration of body
      */
-    public final Vector<R> acc in R  = new Vector<R>();
+    public final Vector acc in R  = new Vector();
 
     /**
      * Indexing for comparing result with the original code
@@ -37,7 +37,8 @@ public class Body<region R> extends Node {
      * Constructor
      * @param body Number of bodies
      */
-    public Body(Body<*> body) {
+    public Body(Body body) 
+    {
         super(body);
         vel.SETV(body.vel);
         acc.SETV(body.acc);
@@ -51,8 +52,8 @@ public class Body<region R> extends Node {
      * @param rsize Size of the bounding box referring to the space the bodies span
      * @param root Root of the tree
      */
-    <region R1>void hackgrav(HGStruct<R1> hg, double rsize, Node root) 
-	 reads MP writes R, R1 {	
+    void hackgrav(HGStruct hg, double rsize, Node root) 
+    {
         double szsq;
         szsq = rsize * rsize;
         /* recursively scan tree    */
@@ -68,8 +69,9 @@ public class Body<region R> extends Node {
      * @param p   pointer into body-tree 
      * @param dsq size of box squared 
      */
-    protected <region R1>void walksub(Node p, double dsq, double tolsq, HGStruct<R1> hg,
-				      int level) reads MP writes R, R1 {
+    protected void walksub(Node p, double dsq, double tolsq, 
+			   HGStruct hg, int level) 
+    {
         /* should p be opened?    */
         if (p.subdivp(p, dsq, tolsq, hg)) {
             /* loop over the subcells */
@@ -89,8 +91,8 @@ public class Body<region R> extends Node {
      * @param p Node of interaction
      * @param hg Temporary object to hold necessary information
      */
-    protected <region R1>void gravsub(Node p, HGStruct<R1> hg) 
-	reads MP writes R, R1 {
+    protected void gravsub(Node p, HGStruct hg) 
+    {
         double drabs, phii, mor3;
         double drsq;
 
@@ -120,7 +122,7 @@ public class Body<region R> extends Node {
      * Cannot subdivide a leaf
      */
     @Override
-    protected <region R> boolean subdivp(Node p, double dsq, double tolsq, HGStruct<R> hg) pure {
+    protected  boolean subdivp(Node p, double dsq, double tolsq, HGStruct hg) pure {
         return false;
     }
 

@@ -8,8 +8,8 @@ public class Cell extends Node {
     /**
      * Descendants of cell
      */
-    public final Node[]<MP> subp in MP = 
-	new Node[Constants.NSUB]<MP>; 
+    public final Node[] subp in MP = 
+	new Node[Constants.NSUB]; 
 
     /**
      * Descend tree finding center-of-mass coordinates.
@@ -50,9 +50,9 @@ public class Cell extends Node {
      * Decide if a node should be opened.
      */
     @Override
-    protected <region R> boolean subdivp(Node p, double dsq, 
-					 double tolsq, HGStruct<R> hg) 
-	reads MP writes R {
+    protected boolean subdivp(Node p, double dsq, 
+			      double tolsq, HGStruct hg) 
+    {
         double drsq;
         /* compute displacement */   
         hg.dr.SUBV(p.pos, hg.pos0);

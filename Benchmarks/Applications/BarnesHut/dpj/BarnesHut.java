@@ -174,7 +174,7 @@ public class BarnesHut {
      */
     private void uniformTestdata(int segmentNum, Vector cmr, Vector cmv) {
         double rsc, vsc, r, v, x, y;
-        Body<*> p;
+        Body p;
         int i;
         int seedfactor = segmentNum+1;
         double temp, t1;
