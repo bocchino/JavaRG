@@ -2726,8 +2726,7 @@ public class Parser {
         return toP(F.at(pos).Import(pid, importStatic));
     }
 
-    /** TypeDeclaration = ClassOrInterfaceOrEnumDeclaration
-     *                  | ArrayDeclaration | ";"
+    /** TypeDeclaration = ClassOrArrayClassOrInterfaceOrEnumDeclaration ";"
      */
     JCTree typeDeclaration(JCModifiers mods) {
         int pos = S.pos();
@@ -2736,9 +2735,6 @@ public class Parser {
             return toP(F.at(pos).Skip());
         } else {
             String dc = S.docComment();
-            if (S.token() == ARRAYCLASS) {
-        	return arrayDeclaration(modifiersOpt(mods), dc);
-            }
             return classOrInterfaceOrEnumDeclaration(modifiersOpt(mods), dc);
         }
     }
@@ -2749,7 +2745,10 @@ public class Parser {
      *  @param dc       The documentation comment for the class, or null.
      */
     JCStatement classOrInterfaceOrEnumDeclaration(JCModifiers mods, String dc) {
-        if (S.token() == CLASS) {
+        if (S.token() == ARRAYCLASS) {
+            return arrayDeclaration(modifiersOpt(mods), dc);
+        }
+        else if (S.token() == CLASS) {
             return classDeclaration(mods, dc);
         } else if (S.token() == INTERFACE) {
             return interfaceDeclaration(mods, dc);
