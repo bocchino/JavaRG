@@ -18,8 +18,9 @@ SRCS= ${wildcard jrg/*.java}
 
 all :: ${ALL}
 
-sequential-classes : ${SRCS} sequential/java sequential/classes
+sequential-java : ${SRCS} sequential/java
 	${JRGC-SEQ} -d sequential/java jrg/*.java ${RUNTIME}/jrg/*.java
+sequential-classes : sequential-java sequential/classes
 	${JAVAC} -d sequential/classes sequential/java/*.java
 instrument-classes : ${SRCS} instrument/java instrument/classes
 	${JRGC-INST} -d instrument/java jrg/*.java ${RUNTIME}/jrg/*.java

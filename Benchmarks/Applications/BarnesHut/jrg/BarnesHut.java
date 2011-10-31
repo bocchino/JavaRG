@@ -97,12 +97,12 @@ public class BarnesHut {
         // Fill in the tree
         tree.rmin.SETVS(-2.0);
         tree.rsize = -2.0 * -2.0;  // t->rmin.elts[0];
-        tree.bodies = new Body<[i]>[nbody]#i;
+        tree.bodies = new BodyArray(nbody);
 
         // Create an array of empty bodies
         for (int i = 0; i < nbody; ++i) {
 	    final int j = i;
-            tree.bodies[j] = new Body<[j]>();
+            tree.bodies[j] = new Body();
         }
 
         // Fill in the bodies, accumulating total mass and velocity.
@@ -117,7 +117,7 @@ public class BarnesHut {
         cmv.DIVVS(cmv, (double) nbody);
         for (int i = 0; i < tree.bodies.length; ++i) {
 	    final int j = i;
-            Body<[j]> p = tree.bodies[j];
+            Body p = tree.bodies[j];
             p.pos.SUBV(p.pos, cmr); 
             p.vel.SUBV(p.vel, cmv);
             p.index = i;

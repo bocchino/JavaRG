@@ -29,12 +29,12 @@ public class Tree {
     /**
      * Nodes of the tree
      */
-    public Body[] bodies;
+    public BodyArray bodies;
 
     /**
      * Temporary body array required for reordering
      */
-    public Body[] bodiesNew;
+    public BodyArray bodiesNew;
 
     /**
      * No of threads
@@ -120,7 +120,7 @@ public class Tree {
                 root = loadtree(body, xqic, root, Constants.IMAX >> 1, i);
             }
         }
-        bodiesNew = new Body[bodies.length];
+        bodiesNew = new BodyArray(bodies.length);
 
         reOrderBodies(root, 0);
         bodies = bodiesNew;
@@ -239,7 +239,7 @@ public class Tree {
      */
     void computegrav(int processId, int nstep) {
 
-        foreach(int i in 0, bodies.length) {
+        for each i in bodies pardo {
             HGStruct hg = new HGStruct();
             Vector acc1 = new Vector();
             Vector dacc = new Vector();

@@ -6,22 +6,22 @@
 public class HGStruct {
     
     /* Node to skip in force evaluation */
-    Node pskip in R;
+    Node pskip;
     
     /* point at which to evaluate field */
-    Vector pos0 in R;
+    Vector pos0;
     
     /* computed potential at pos0       */
-    double phi0 in R;
+    double phi0;
     
     /* computed acceleration at pos0    */
-    Vector acc0 in R;
+    Vector acc0;
     
     /* intermediate computation for gravsub */
-    Vector ai in R;
+    Vector ai;
 
     /* intermediate computation for gravsub */
-    Vector dr in R;
+    Vector dr;
     
     /**
      * Constructor

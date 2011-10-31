@@ -10,12 +10,12 @@ public class Body extends Node {
     /**
      * Velocity of body
      */
-    public final Vector vel in R  = new Vector();
+    public final Vector vel = new Vector();
 
     /**
      * Acceleration of body
      */
-    public final Vector acc in R  = new Vector();
+    public final Vector acc = new Vector();
 
     /**
      * Indexing for comparing result with the original code
@@ -25,7 +25,7 @@ public class Body extends Node {
     /**
      * Updated potential at body
      */
-    public double phi in R; 
+    public double phi; 
 
     /**
      * Constructor
@@ -122,7 +122,7 @@ public class Body extends Node {
      * Cannot subdivide a leaf
      */
     @Override
-    protected  boolean subdivp(Node p, double dsq, double tolsq, HGStruct hg) pure {
+    protected  boolean subdivp(Node p, double dsq, double tolsq, HGStruct hg) {
         return false;
     }
 
