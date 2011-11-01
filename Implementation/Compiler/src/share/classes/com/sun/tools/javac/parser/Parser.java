@@ -2909,11 +2909,19 @@ public class Parser {
     JRGRefPerm refPermOpt() {
 	JCIdent group = null;
 	int pos = S.pos();
+	if (tokenIsIdent("borrowed")) {
+	    // TODO:  Handle this properly
+	    S.nextToken();
+	}
 	if (S.token() == UNIQUE) {
 	    S.nextToken();
-	    accept(LPAREN);
-	    group = ident();
-	    accept(RPAREN);
+	    // TODO:  Handle non-local unique properly
+	    // Right now it's translated as shared
+	    if (S.token() == LPAREN) {
+		accept(LPAREN);
+		group = ident();
+		accept(RPAREN);
+	    }
 	}
 	return toP(F.at(pos).RefPerm(group));
     }
@@ -3192,28 +3200,6 @@ public class Parser {
 	return lb.toList();
     }
     
-    /**
-     * EffectPerms := PURE | [ ReadEffects ] [ WriteEffects ]
-     * ReadEffects := READS RPLList
-     * WriteEffects := WRITES RPLList
-     */
-    JRGEffectPerm effectPerms(int pos) {	
-        List<JCTree.DPJRegionPathList> readEffects = List.nil();
-        List<JCTree.DPJRegionPathList> writeEffects = List.nil();
-        if (S.token() == READS) {
-            S.nextToken();
-            readEffects = RPLList();
-        }
-        if (S.token() == WRITES) {
-            S.nextToken();
-            writeEffects = RPLList();
-        }
-        // FIXME
-        JCTree.JRGEffectPerm result = 
-            toP(F.at(pos).EffectPerm(null, null));
-        return result;
-    }
-    
     /** MethodDeclaratorRest =
      *      FormalParameters BracketsOpt MethodPermsOpt [THROWS TypeList] 
      *      ( MethodBody | [DEFAULT AnnotationValue] ";")
@@ -3286,18 +3272,27 @@ public class Parser {
 	    freshGroups = identList();
 	}
 	List<JRGCopyPerm> copyPerms = copyPermsOpt();
+	// If this ends up true, then no effects were provided,
+	// and we need the default.
 	boolean defaultEffectPerms = true;
 	List<JRGEffectPerm> readEffectPerms = List.nil();
-	if (S.token() == READS) {
-	    S.nextToken();
-	    defaultEffectPerms = false;
-	    readEffectPerms = effectPermList();
-	}
 	List<JRGEffectPerm> writeEffectPerms = List.nil();
-	if (S.token() == WRITES) {
+	if (tokenIsIdent("pure")) {
 	    S.nextToken();
+	    // Empty effects are what we want
 	    defaultEffectPerms = false;
-	    writeEffectPerms = effectPermList();	    
+	}
+	else {
+	    if (S.token() == READS) {
+		S.nextToken();
+		defaultEffectPerms = false;
+		readEffectPerms = effectPermList();
+	    }
+	    if (S.token() == WRITES) {
+		S.nextToken();
+		defaultEffectPerms = false;
+		writeEffectPerms = effectPermList();	    
+	    }
 	}
 	List<JCIdent> preservedGroups = List.nil();
 	if (S.token() == PRESERVES) {

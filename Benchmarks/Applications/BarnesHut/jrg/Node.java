@@ -7,24 +7,14 @@
 public abstract class Node {
 
     /**
-     * Region for mass and position data
-     */
-    region MP;
-
-    /**
      * Total mass of node
      */
-    public double mass in MP;
+    public double mass in BarnesHut.Masses;
 
     /**
      * Position of node
      */
-    public  Vector pos in MP = new Vector();
-
-    /**
-     * Cost for cost zone analysis
-     */
-    //public int cost;
+    public Vector pos in BarnesHut.Positions = new Vector();
 
     /**
      * Constructor
@@ -50,7 +40,8 @@ public abstract class Node {
      * @param p Node of interest
      * @param dsq
      * @param tolsq
-     * @param hg Object holding intermediate computations and other required info
+     * @param hg Object holding intermediate computations 
+     *           and other required info
      * @return
      */
     protected abstract boolean subdivp(Node p, double dsq, 

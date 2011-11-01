@@ -8,7 +8,7 @@ public class Cell extends Node {
     /**
      * Descendants of cell
      */
-    public final Node[] subp in MP = 
+    public final Node[] subp in BarnesHut.Links = 
 	new Node[Constants.NSUB]; 
 
     /**

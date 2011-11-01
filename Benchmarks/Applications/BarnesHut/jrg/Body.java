@@ -30,8 +30,7 @@ public class Body extends Node {
     /**
      * Constructor
      */
-    public Body() {
-    }
+    public Body() {}
     
     /**
      * Constructor
