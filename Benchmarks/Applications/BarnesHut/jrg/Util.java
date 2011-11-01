@@ -10,6 +10,10 @@ import DPJRuntime.*;
 public class Util {
     public static final double A = 16807.0;
     public static final double M = 2147483647.0;
+
+    public static <T>T cast(Object obj) {
+	return (T) obj;
+    }
     
     /** 
      * Return a random number, which is also the next seed. 

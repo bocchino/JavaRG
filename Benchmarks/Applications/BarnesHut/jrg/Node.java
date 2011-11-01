@@ -4,17 +4,23 @@
  * @author Rakesh Komuravelli
  */
 
-public abstract class Node {
+public abstract class Node<refgroup G> {
+
+    /**
+     * Regions
+     */
+    region Forces, Masses, Positions, Links;
 
     /**
      * Total mass of node
      */
-    public double mass in BarnesHut.Masses;
+    public double mass in Masses;
 
     /**
      * Position of node
      */
-    public Vector pos in BarnesHut.Positions = new Vector();
+    public final unique Vector<Positions> pos 
+	in Positions = new Vector<Positions>();
 
     /**
      * Constructor
@@ -25,7 +31,7 @@ public abstract class Node {
      * Copy Constructor
      * @param node
      */
-    public Node(Node node) {
+    public Node(Node<G> node) {
         this.mass = node.mass;
         this.pos.SETV(node.pos);
     }
@@ -44,6 +50,9 @@ public abstract class Node {
      *           and other required info
      * @return
      */
-    protected abstract boolean subdivp(Node p, double dsq, 
-				       double tolsq, HGStruct hg);
+    protected abstract <region Rhg> boolean subdivp(Node p, double dsq, 
+            double tolsq, HGStruct<Rhg> hg) 
+	reads Masses, Positions
+	writes Rhg via hg;
+
 }

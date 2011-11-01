@@ -4,7 +4,7 @@
  * @author Rakesh Komuravelli
  */
 
-public class Cell extends Node {
+public class Cell<refgroup G> extends Node<G> {
     /**
      * Descendants of cell
      */
@@ -50,8 +50,10 @@ public class Cell extends Node {
      * Decide if a node should be opened.
      */
     @Override
-    protected boolean subdivp(Node p, double dsq, 
-			      double tolsq, HGStruct hg) 
+    protected <region Rhg>boolean subdivp(Node p, double dsq, 
+					  double tolsq, HGStruct<Rhg> hg) 
+	reads Masses, Positions
+	writes Rhg via hg
     {
         double drsq;
         /* compute displacement */   

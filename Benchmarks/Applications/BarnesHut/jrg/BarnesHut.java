@@ -14,11 +14,6 @@ import java.util.concurrent.CyclicBarrier;
 public class BarnesHut {
 
     /**
-     * Regions
-     */
-    region Forces, Masses, Positions, Links;
-
-    /**
      * Number of bodies in the simulation
      */
     private final int nbody;

@@ -1420,7 +1420,9 @@ public class Pretty extends JCTree.Visitor {
 		return;
 	    }
 	} 
-	print("new "+ cellType + "[");
+	print("new ");
+	printType(cellType);
+	print("[");
 	printExprs(args);
 	print("]");
     }

@@ -1496,10 +1496,10 @@ public class Parser {
         	}
             }
             // Get the args that are definitely RPL args, if any
-            if (S.token() == SEMI || S.token() == REGION) {
-        	if (S.token() == SEMI) S.nextToken();
+            if (S.token() == REGION) {
+        	//if (S.token() == SEMI) S.nextToken();
         	rplArgs = RPLList();
-        	if (S.token() == COMMA || S.token() == SEMI) S.nextToken();
+        	//if (S.token() == COMMA || S.token() == SEMI) S.nextToken();
             }
             // Get the group args, if any
             if (S.token() == REFGROUP) {        	
@@ -3398,6 +3398,7 @@ public class Parser {
         ts.append(rpl());
         while (S.token() == COMMA) {
             S.nextToken();
+            if (S.token() == REFGROUP) break;
             ts.append(rpl());
         }        
         return ts.toList();

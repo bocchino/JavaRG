@@ -150,21 +150,21 @@ public class Tree {
      * @param index
      * @return
      */
-    int reOrderBodies(Node root, int index)
+    <refgroup Tree,Array>int reOrderBodies(Node root, int index)
     {
         if(root == null)
             return index;
-        else if(root instanceof Cell)
+        else if(Util.<Cell>cast(root) instanceof Cell)
         {
-            Cell cell = (Cell)root;
+            Cell cell = Util.<Cell>cast(root);
             for(int i = 0; i < Constants.NSUB; i++) 
             {
                 if(cell.subp[i] == null)
                     continue;
-                if(cell.subp[i] instanceof Body)
+                if(Util.<Body>cast(cell.subp[i]) instanceof Body)
                 {
 		    final int j = i;
-                    Body body = (Body)cell.subp[j];
+                    Body body = Util.<Body>cast(cell.subp[j]);
 		    final int finalIndex = index;
                     bodiesNew[finalIndex] = new Body(body);
                     assert(bodiesNew[index]!=null);
@@ -194,18 +194,17 @@ public class Tree {
         /*   dont run out of bits   */
         assert(level != 0);
         Cell cell = null;
-        if (subroot instanceof Body) {
+        if (Util.<Body>cast(subroot) instanceof Body) {
             cell = new Cell();
-            final int si1 = subindex(intcoord((Body) subroot), level); 
+            final int si1 = subindex(intcoord(Util.<Body>cast(subroot)), level); 
             cell.subp[si1] = subroot;
         } 
         else {
-            assert(subroot instanceof Cell);
-            cell = (Cell) subroot;
+            cell = Util.<Cell>cast(subroot);
         }
         final int si = subindex(xpic, level);
         cell.subp[si] = loadtree(body, xpic, cell.subp[si], level >> 1, idx);
-        return cell;
+        return Util.<Node>cast(cell);
     }
 
     /**
@@ -238,7 +237,7 @@ public class Tree {
     /**
      * Compute and update forces on particles
      */
-    void computegrav(int processId, int nstep) {
+    <refgroup Tree>void computegrav(int processId, int nstep) {
 
         for each i in bodies pardo {
             HGStruct hg = new HGStruct();
@@ -252,7 +251,7 @@ public class Tree {
             hg.pos0.SETV(bodies[i].pos);
             hg.acc0.CLRV();
             acc1.SETV(bodies[i].acc);
-            bodies[i].hackgrav(hg, rsize, root);
+            bodies[i].<region Root,refgroup Tree> hackgrav(hg, rsize, Util.<Node<Tree>>cast(root));
             if(nstep > 0)
             {
                 dacc.SUBV(bodies[i].acc, acc1);

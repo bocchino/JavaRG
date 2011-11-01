@@ -886,8 +886,11 @@ public class Type implements PrimitiveType {
         @Override
         public List<RefGroup> allRefGroups() {
             if (allRefGroupParams_field == null) {
+        	allRefGroupParams_field = getRefGroupArguments();
+        	if (this != getEnclosingType()) {
                 allRefGroupParams_field = 
-                    getRefGroupArguments().prependList(getEnclosingType().allRefGroups());
+                    allRefGroupParams_field.prependList(getEnclosingType().allRefGroups());
+        	}
             }
             return allRefGroupParams_field;
         }
