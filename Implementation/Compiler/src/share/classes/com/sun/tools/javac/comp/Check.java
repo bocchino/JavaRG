@@ -1895,7 +1895,8 @@ public class Check {
 	}
 	else if (perm instanceof CopyPerm) {
 	    CopyPerm copyPerm = (CopyPerm) perm;
-	    return requireCopyPerm(pos, copyPerm, env);
+	    boolean success = requireCopyPerm(pos, copyPerm, env);
+	    return success;
 	}
 	else if (perm instanceof EffectPerm) {
 	    // TODO
@@ -1944,6 +1945,7 @@ public class Check {
      */
     boolean requireCopyPerm(DiagnosticPosition pos,
 	    CopyPerm neededPerm, Env<AttrContext> env) {
+	System.out.flush();
 	//System.out.println("envPerms="+env.info.scope.envPerms);
 	Scope scope = env.info.scope;
 	// If needed perm is already there, we're done
@@ -1974,14 +1976,23 @@ public class Check {
 	else if (!neededPerm.isTreePerm()) {
 	    // CASE 2:
 	    // The needed perm is 'copies e to G2' for some e.
-	    RefGroup sourceGroup = 
-		    attr.getRefPermFor(neededPerm.exp, env).getRefGroup();
-	    // This won't work unless e is locally unique, i.e.,
-	    // is in some group G1
-	    if (sourceGroup == RefGroup.NO_GROUP) return false;
-	    // Require 'copies e...G1 to G2'
-	    CopyPerm generatorPerm = CopyPerm.singleTreePerm(neededPerm.exp, 
+	    RefGroup sourceGroup = null;
+	    CopyPerm generatorPerm = 
+		    env.info.scope.findTreePermContaining(neededPerm);
+	    if (generatorPerm != null) {
+		// If there's already a tree perm containing it, use that.
+		// TODO:  What if there are multiple choices here?
+		sourceGroup = generatorPerm.sourceGroup;
+	    }
+	    else {
+		// Otherwise, e must be in some group G1
+		sourceGroup = 
+			attr.getRefPermFor(neededPerm.exp, env).getRefGroup();
+		if (sourceGroup == RefGroup.NO_GROUP) return false;
+		// Require 'copies e...G1 to G2'
+		generatorPerm = CopyPerm.singleTreePerm(neededPerm.exp, 
 		    sourceGroup, neededPerm.targetGroup);
+	    }
 	    if (!requireEnvPerm(pos, generatorPerm, env)) {
 		// It's not available; bail out
 		return false;

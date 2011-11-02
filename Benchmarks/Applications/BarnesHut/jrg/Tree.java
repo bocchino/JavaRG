@@ -162,9 +162,9 @@ public class Tree {
 		for each i in root.subp {
 		    if(root.subp[i] instanceof Body) {
 			// Consumes 'copies root.subp[i] to A'
-			/*unique(A)*/ Node node = root.subp[i];
-			Body body = Util.<Body>cast(node);
-			newBodies[reorderIndex] = body;
+			unique(A) Node node = root.subp[i];
+			newBodies[reorderIndex] = 
+			    Util.<Body,refgroup A>castUnique(node);
 			assert(newBodies[reorderIndex]!=null);
 			reorderIndex++;
 		    }

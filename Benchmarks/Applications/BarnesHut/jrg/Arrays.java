@@ -3,7 +3,7 @@
  */
 
 arrayclass BodyArray<refgroup A> {
-    /*unique(A)*/ Body in BarnesHut.Links;
+    unique(A) Body in BarnesHut.Links;
 }
 
 arrayclass NodeArray<refgroup G> {

@@ -520,6 +520,24 @@ public class Scope {
 	return envPerms.contains(new FreshGroupPerm(refGroup));
     }
     
+    /**
+     *  Find a permission copies e...G1 to G2 that contains
+     *  copies e to G2
+     */
+    public CopyPerm findTreePermContaining(CopyPerm needed) {
+	for (EnvPerm perm : envPerms) {
+	    if (perm instanceof CopyPerm) {
+		CopyPerm candidate = (CopyPerm) perm;
+		if (candidate.isTreePerm() &&
+			Permissions.matchingExprs(needed.exp, 
+				candidate.exp) &&
+			candidate.targetGroup.equals(needed.targetGroup))
+		    return candidate;
+		}
+	}
+	return null;
+    }
+    
     public RefPerm getRefPermFor(VarSymbol varSym) {
 	if (sharedVarPerms.contains(varSym)) return RefPerm.SHARED;
 	return varSym.refPerm;

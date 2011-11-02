@@ -4140,7 +4140,8 @@ public class Attr extends JCTree.Visitor {
 	    env.dup(env.tree, env.info.dup(env.info.scope.dup()));
 	tree.indexVar.mods.flags |= Flags.FINAL;
 	attribStat(tree.indexVar, loopEnv);
-	loopEnv.info.forIndexVars.prepend(tree.indexVar.sym);
+	loopEnv.info.forIndexVars = 
+		loopEnv.info.forIndexVars.prepend(tree.indexVar.sym);
 	attribExpr(tree.array, loopEnv);
 	if (!types.isArrayClass(tree.array.type)) {
             log.error(tree.pos(), "arrayclass.req.but.found", tree.array.type);
