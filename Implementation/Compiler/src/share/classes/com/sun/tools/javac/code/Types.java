@@ -1015,10 +1015,10 @@ public class Types {
             ClassType ct = (ClassType) t;
             s = new ClassType(cs.outer_field, cs.typarams_field, 
         	    List.<RegionParameterSymbol>nil(),
-        	    List.<RPL>nil(), List.<RefGroup>nil(), cs.tsym, ct.cellType);
+        	    List.<RPL>nil(), cs.allRefGroups(), cs.tsym, ct.cellType);
             t = new ClassType(ct.outer_field, ct.typarams_field, 
         	    List.<RegionParameterSymbol>nil(),
-        	    List.<RPL>nil(), List.<RefGroup>nil(), ct.tsym, ct.cellType);
+        	    List.<RPL>nil(), ct.allRefGroups(), ct.tsym, ct.cellType);
         }
 
         if (t.isPrimitive() != s.isPrimitive())
@@ -1809,18 +1809,27 @@ public class Types {
                         List<Type> formals = t.tsym.type.alltyparams();
                         if (actuals.isEmpty()) {
                             if (formals.isEmpty())
-                                // Should not happen.  See comments below in interfaces
+                        	// Should not happen.  See comments below in interfaces
                                 t.supertype_field = supertype;
                             else
                                 t.supertype_field = erasure(supertype);
                         } else {
                             t.supertype_field = subst(supertype, formals, actuals);
                         }
+
                         List<RPL> rgnactuals = classBound(t).allrgnactuals();
                         List<RegionParameterSymbol> rgnformals = t.tsym.type.allrgnparams();
                         t.supertype_field = substRPL(t.supertype_field, rgnformals, rgnactuals);
-                        t.supertype_field = substRefGroups(t.supertype_field, 
-                        	t.tsym.type.allRefGroups(), classBound(t).allRefGroups());
+
+                        List<RefGroup> actualRefGroups = classBound(t).allRefGroups();
+                        List<RefGroup> formalRefGroups = t.tsym.type.allRefGroups();
+                        if (actualRefGroups.isEmpty() && t.supertype_field instanceof ClassType) {
+                            ((ClassType)t.supertype_field).groupparams_field =
+                        	    List.nil();
+                        } else {
+                            t.supertype_field = substRefGroups(t.supertype_field, 
+                            	t.tsym.type.allRefGroups(), classBound(t).allRefGroups());
+                        }
                     }
                 }
                 return t.supertype_field;

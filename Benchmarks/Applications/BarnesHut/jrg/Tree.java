@@ -125,7 +125,7 @@ public class Tree<refgroup T,A> {
         this.root = root;
         bodiesNew = new BodyArray<T,A>(bodies.length);
 
-        reOrderBodies(root, 0);
+        reorderBodies(root, 0);
         bodies = bodiesNew;
 
         if(printBodies)
@@ -152,30 +152,28 @@ public class Tree<refgroup T,A> {
      * @param index
      * @return
      */
-    int reOrderBodies(Node<T> root, int index)
+    int reorderBodies(Node<T> root, int index)
     {
         if(root == null)
             return index;
-        else if(Util.<Cell<T>>cast(root) instanceof Cell<T>)
-        {
+        if (root instanceof Cell) {
             Cell<T> cell = Util.<Cell<T>>cast(root);
             for(int i = 0; i < Constants.NSUB; i++) 
             {
                 if(cell.subp[i] == null)
                     continue;
-                if(Util.<Body<T,A>>cast(cell.subp[i]) instanceof Body<T,A>)
+                if(cell.subp[i] instanceof Body<T,A>)
                 {
 		    final int j = i;
                     Body<T,A> body = Util.<Body<T,A>>cast(cell.subp[j]);
 		    final int finalIndex = index;
                     bodiesNew[finalIndex] = body;
                     assert(bodiesNew[index]!=null);
-                    //cell.subp[i] = bodiesNew[index];
                     index++;
                 }
                 else
                 {
-                    index = this.reOrderBodies(cell.subp[i], index);
+                    index = this.reorderBodies(cell.subp[i], index);
                 }
             }
         }
@@ -200,9 +198,10 @@ public class Tree<refgroup T,A> {
         /*   dont run out of bits   */
         assert(level != 0);
         /*unique(T)*/ Cell<T> cell = null;
-        if (Util.<Body<T,A>>cast(subroot) instanceof Body<T,A>) {
+        if (subroot instanceof Body<T,A>) {
             cell = new Cell<T>();
-            final int si1 = subindex(intcoord(Util.<Body<T,A>>cast(subroot)), level); 
+            final int si1 = subindex(intcoord(Util.<Body<T,A>>cast(subroot)), 
+				     level); 
             cell.subp[si1] = subroot;
         } 
         else {

@@ -926,8 +926,12 @@ public class Type implements PrimitiveType {
         public boolean isRaw() {
             return
                 this != tsym.type && // necessary, but not sufficient condition
-                tsym.type.alltyparams().nonEmpty() &&
-                alltyparams().isEmpty();
+                ((tsym.type.alltyparams().nonEmpty() &&
+                alltyparams().isEmpty()) ||
+                (allrgnactuals().nonEmpty() &&
+                allrgnparams().isEmpty()) ||
+                (tsym.type.allRefGroups().nonEmpty() &&
+                allRefGroups().isEmpty()));
         }
 
         public Type map(Mapping f) {
