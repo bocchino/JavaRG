@@ -78,12 +78,14 @@ public class BarnesHut<refgroup T,A> {
 	refgroup Tree, Array;
         BarnesHut<Tree,Array> bh = 
 	    new BarnesHut<Tree,Array>(nbody, emitBodies);
+	bh.doSimulation();
+    }
 
+    void doSimulation() throws Exception {
         // Initialize the system
-        bh.initSystem(nbody);
-
+        BodyArray<A> bodies = initSystem(nbody);
         // Do the simulation
-        bh.doSimulation();
+        doSimulationOn(bodies);
     }
 
     /**
@@ -92,7 +94,7 @@ public class BarnesHut<refgroup T,A> {
      *
      * @param nbody  Number of bodies in the simulation
      */
-    public void initSystem(int nbody) throws Exception {
+    BodyArray<A> initSystem(int nbody) throws Exception {
         // Accumulated center of mass
         Vector cmr = new Vector();
         // Accumulated velocity
@@ -101,27 +103,27 @@ public class BarnesHut<refgroup T,A> {
         // Fill in the tree
         tree.rmin.SETVS(-2.0);
         tree.rsize = -2.0 * -2.0;  // t->rmin.elts[0];
-        tree.bodies = new BodyArray<A>(nbody);
+        BodyArray<A> bodies = new BodyArray<A>(nbody);
 
         // Create an array of empty bodies
         for (int i = 0; i < nbody; ++i) {
 	    final int j = i;
-            tree.bodies[j] = new Body();
+	    bodies[j] = new Body();
         }
 
         // Fill in the bodies, accumulating total mass and velocity.
         // For some reason we are creating 32 distinct groups of
         // bodies, each with its own "seed factor."
         for (int i = 0; i < 32; i++) {
-            uniformTestdata(i, cmr, cmv);
+            uniformTestdata(bodies, i, cmr, cmv);
         }
 
         // Normalize coordinates so average pos and vel are 0
         cmr.DIVVS(cmr, (double) nbody);
         cmv.DIVVS(cmv, (double) nbody);
-        for (int i = 0; i < tree.bodies.length; ++i) {
+        for (int i = 0; i < bodies.length; ++i) {
 	    final int j = i;
-            Body p = tree.bodies[j];
+            Body p = bodies[j];
             p.pos.SUBV(p.pos, cmr); 
             p.vel.SUBV(p.vel, cmv);
             p.index = i;
@@ -129,13 +131,14 @@ public class BarnesHut<refgroup T,A> {
 
         // Calculate bounding box once instead of expanding it
         // everytime
-        tree.setRsize();
+        tree.setRsize(bodies);
+	return bodies;
     }
 
     /**
      * Carry out the simulation
      */
-    public void doSimulation() throws InterruptedException {
+    public void doSimulationOn(BodyArray<A> bodies) throws InterruptedException {
         double tnow;
         double tout;
         int i, nsteps;
@@ -152,7 +155,7 @@ public class BarnesHut<refgroup T,A> {
 
         i = 0;
         while ((tnow < Constants.tstop + 0.1*Constants.dtime) && (i < Constants.NSTEPS)) {
-            tree.stepsystem(i,tree.bodies); 
+            tree.stepsystem(i,bodies); 
             tnow = tnow + Constants.dtime;
             assert(Util.chatting("tnow = %f sp = 0x%x\n", tnow, 0));
             i++;
@@ -168,7 +171,7 @@ public class BarnesHut<refgroup T,A> {
     }
 
     /**
-     * Create uniform test data for a segment of tree.bodies.
+     * Create uniform test data for a segment of bodies.
      *
      * @param nbodyx      Number of bodies to fill in starting at nbodyx *
      *                    segmentNum
@@ -176,7 +179,8 @@ public class BarnesHut<refgroup T,A> {
      * @param cmr         Accumulated center of mass
      * @param cmv         Accumulated velocity
      */
-    private void uniformTestdata(int segmentNum, Vector cmr, Vector cmv) {
+    private void uniformTestdata(BodyArray<A> bodies, int segmentNum, 
+				 Vector cmr, Vector cmv) {
         double rsc, vsc, r, v, x, y;
         Body p;
         int i;
@@ -196,7 +200,7 @@ public class BarnesHut<refgroup T,A> {
 
         for (i = 0; i < nbodyx; i++) {	        /* loop over particles      */
             /* fetch body from previously created array */
-            p = tree.bodies[start+i]; 
+            p = bodies[start+i]; 
             //p.mass = 1.0 / nbodyx;			/*   set masses equal       */
             p.mass = rockmass;			/*   set masses equal       */
             seed = Util.rand(seed);

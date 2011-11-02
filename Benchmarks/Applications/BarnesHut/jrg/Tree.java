@@ -41,7 +41,7 @@ public class Tree<refgroup T,A> {
      * Calculate bounding box once instead of expanding it on every
      * body insertion
      */
-    void setRsize()
+    void setRsize(BodyArray<A> bodies)
     {
         Vector max  = new Vector();
         Vector min  = new Vector();
@@ -81,21 +81,20 @@ public class Tree<refgroup T,A> {
 	root = maketree(nstep,bodies);
         BodyArray<A> newBodies = new BodyArray<A>(bodies.length);
         reorderBodies(root, newBodies);
-        bodies = newBodies;
 	// Generate test output
 	testOutput(newBodies);
 
         // 2. Compute gravity on particles
 	start = System.nanoTime();
-        computegrav(nstep);
+        computegrav(nstep,newBodies);
 	end = System.nanoTime();
 	count += (end-start)/1000000000.0;
 	if(!printBodies)
 	    System.out.println("timestep " + nstep + " " + (end-start)/1000000000.0);
         
         // 3. Update positions
-	vp(nstep);
-	setRsize();
+	vp(nstep,newBodies);
+	setRsize(newBodies);
     }
 
     private void testOutput(BodyArray<A> bodies) 
@@ -240,7 +239,7 @@ public class Tree<refgroup T,A> {
     /**
      * Compute and update forces on particles
      */
-    void computegrav(int nstep) {
+    void computegrav(int nstep,BodyArray<A> bodies) {
 
         for each i in bodies pardo {
 	    region r;
@@ -270,7 +269,7 @@ public class Tree<refgroup T,A> {
     /**
      * Update the points based on computed forces
      */
-    void vp(int nstep) {
+    void vp(int nstep,BodyArray<A> bodies) {
                 
       long start1 = System.nanoTime();
       for (int i = 0; i < bodies.length; i++) {
