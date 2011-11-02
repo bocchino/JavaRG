@@ -14,7 +14,7 @@ public class Tree<refgroup T,A> {
     /**
      * Bounding box for tree
      */
-    public Vector rmin = new Vector();
+    public final Vector rmin = new Vector();
     public double rsize;
 
     /**
@@ -31,16 +31,6 @@ public class Tree<refgroup T,A> {
      * Nodes of the tree
      */
     public BodyArray<A> bodies;
-
-    /**
-     * Temporary body array required for reordering
-     */
-    public BodyArray<A> bodiesNew;
-
-    /**
-     * No of threads
-     */
-    int N; 
 
     /**
      * Flag indicating whether to print debug information
@@ -121,10 +111,9 @@ public class Tree<refgroup T,A> {
 				Constants.IMAX >> 1, i);
             }
         }
-        bodiesNew = new BodyArray<A>(bodies.length);
-
-        reorderBodies(root,0);
-        bodies = bodiesNew;
+        BodyArray<A> newBodies = new BodyArray<A>(bodies.length);
+        reorderBodies(root, newBodies);
+        bodies = newBodies;
 
         if(printBodies)
         {
@@ -151,10 +140,15 @@ public class Tree<refgroup T,A> {
      * @param index
      * @return
      */
-    int reorderBodies(Node root, int index)
+    int reorderIndex;
+    void reorderBodies(Node root, BodyArray<A> newBodies) 
     {
-        if(root == null) 
-	    return index;
+	reorderIndex = 0;
+	recursiveReorder(root, newBodies);
+    }
+
+    void recursiveReorder(Node root, BodyArray<A> newBodies)
+    {
         if (root instanceof Cell) {
             Cell<T> cell = Util.<Cell<T>>cast(root);
             for(int i = 0; i < Constants.NSUB; i++) 
@@ -165,17 +159,16 @@ public class Tree<refgroup T,A> {
                 {
 		    final int j = i;
                     Body body = Util.<Body>cast(cell.subp[j]);
-		    bodiesNew[index] = body;
-                    assert(bodiesNew[index]!=null);
-		    index++;
+		    newBodies[reorderIndex] = body;
+                    assert(newBodies[reorderIndex]!=null);
+		    reorderIndex++;
                 }
                 else
                 {
-                    index = this.reorderBodies(cell.subp[i], index);
+                    recursiveReorder(cell.subp[i], newBodies);
                 }
             }
         }
-	return index;
     }
 
     /**
