@@ -1945,7 +1945,6 @@ public class Check {
     boolean requireCopyPerm(DiagnosticPosition pos,
 	    CopyPerm neededPerm, Env<AttrContext> env) {
 	//System.out.println("envPerms="+env.info.scope.envPerms);
-	//System.out.println("requiring " + neededPerm);
 	Scope scope = env.info.scope;
 	// If needed perm is already there, we're done
 	if (scope.containsPerm(neededPerm)) {
@@ -2070,7 +2069,8 @@ public class Check {
 	    // The needed perm is 'copies e[i]...G1 to G2'
 	    // Require 'copies e to G2' which generates the
 	    // needed perm if possible via case 2.
-	    CopyPerm generatorPerm = CopyPerm.simplePerm(neededPerm.exp,
+	    JCArrayAccess aa = (JCArrayAccess) neededPerm.exp;
+	    CopyPerm generatorPerm = CopyPerm.simplePerm(aa.indexed,
 		    neededPerm.targetGroup);
 	    if (!requireCopyPerm(pos, generatorPerm, env)) {
 		// We couldn't get it

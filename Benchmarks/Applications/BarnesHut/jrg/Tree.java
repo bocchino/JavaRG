@@ -168,9 +168,9 @@ public class Tree<refgroup T,A> {
 		    final int j = i;
                     Body<T,A> body = Util.<Body<T,A>>cast(cell.subp[j]);
 		    final int finalIndex = index;
-                    bodiesNew[finalIndex] = new Body<T,A>(body);
+                    bodiesNew[finalIndex] = body;
                     assert(bodiesNew[index]!=null);
-                    cell.subp[i] = bodiesNew[index];
+                    //cell.subp[i] = bodiesNew[index];
                     index++;
                 }
                 else
