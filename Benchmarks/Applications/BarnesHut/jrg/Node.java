@@ -4,12 +4,12 @@
  * @author Rakesh Komuravelli
  */
 
-public abstract class Node<refgroup G> {
+public abstract class Node<refgroup T> {
 
     /**
      * Regions
      */
-    region Forces, Masses, Positions, Links;
+    region Forces, Masses, Positions;
 
     /**
      * Total mass of node
@@ -31,7 +31,7 @@ public abstract class Node<refgroup G> {
      * Copy Constructor
      * @param node
      */
-    public Node(Node<G> node) {
+    public Node(Node<T> node) {
         this.mass = node.mass;
         this.pos.SETV(node.pos);
     }
@@ -51,7 +51,7 @@ public abstract class Node<refgroup G> {
      * @return
      */
     protected abstract <region Rhg> boolean subdivp(Node p, double dsq, 
-            double tolsq, HGStruct<Rhg> hg) 
+						    double tolsq, HGStruct<Rhg,T> hg) 
 	reads Masses, Positions
 	writes Rhg via hg;
 

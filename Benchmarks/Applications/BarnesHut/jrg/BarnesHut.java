@@ -11,7 +11,9 @@ import java.io.PrintStream;
 import java.text.DecimalFormat;
 import java.util.concurrent.CyclicBarrier;
 
-public class BarnesHut {
+public class BarnesHut<refgroup T,A> {
+
+    region Links;
 
     /**
      * Number of bodies in the simulation
@@ -21,7 +23,7 @@ public class BarnesHut {
     /**
      * The geometric tree representation of the bodies
      */
-    private final Tree tree = new Tree();
+    private final Tree<T,A> tree = new Tree<T,A>();
 
     /**
      * Constructor
@@ -73,7 +75,9 @@ public class BarnesHut {
 	}
 
         // Create new BH object
-        BarnesHut bh = new BarnesHut(nbody, emitBodies);
+	refgroup Tree, Array;
+        BarnesHut<Tree,Array> bh = 
+	    new BarnesHut<Tree,Array>(nbody, emitBodies);
 
         // Initialize the system
         bh.initSystem(nbody);
@@ -97,12 +101,12 @@ public class BarnesHut {
         // Fill in the tree
         tree.rmin.SETVS(-2.0);
         tree.rsize = -2.0 * -2.0;  // t->rmin.elts[0];
-        tree.bodies = new BodyArray(nbody);
+        tree.bodies = new BodyArray<T,A>(nbody);
 
         // Create an array of empty bodies
         for (int i = 0; i < nbody; ++i) {
 	    final int j = i;
-            tree.bodies[j] = new Body();
+            tree.bodies[j] = new Body<T,A>();
         }
 
         // Fill in the bodies, accumulating total mass and velocity.
@@ -117,7 +121,7 @@ public class BarnesHut {
         cmv.DIVVS(cmv, (double) nbody);
         for (int i = 0; i < tree.bodies.length; ++i) {
 	    final int j = i;
-            Body p = tree.bodies[j];
+            Body<T,A> p = tree.bodies[j];
             p.pos.SUBV(p.pos, cmr); 
             p.vel.SUBV(p.vel, cmv);
             p.index = i;
@@ -174,7 +178,7 @@ public class BarnesHut {
      */
     private void uniformTestdata(int segmentNum, Vector cmr, Vector cmv) {
         double rsc, vsc, r, v, x, y;
-        Body p;
+        Body<T,A> p;
         int i;
         int seedfactor = segmentNum+1;
         double temp, t1;

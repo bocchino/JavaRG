@@ -5,7 +5,7 @@
  * @author Rakesh Komuravelli
  */
 
-public class Body extends Node {
+public class Body<refgroup T,A> extends Node<T> {
 
     /**
      * Velocity of body
@@ -39,7 +39,7 @@ public class Body extends Node {
      * Constructor
      * @param body Number of bodies
      */
-    public Body(Body body) {
+    public Body(Body<T,A> body) {
         super(body);
         vel.SETV(body.vel);
         acc.SETV(body.acc);
@@ -53,15 +53,15 @@ public class Body extends Node {
      * @param rsize Size of the bounding box referring to the space the bodies span
      * @param root Root of the tree
      */
-    <region Rhg,refgroup Tree>void hackgrav(HGStruct<Rhg> hg, 
-					    double rsize, Node<Tree> root) 
+    <region Rhg>void hackgrav(HGStruct<Rhg,T> hg, 
+			      double rsize, Node<T> root) 
 	reads Masses, Positions
 	writes Forces via this, Rhg via hg 
     {	
         double szsq;
         szsq = rsize * rsize;
         /* recursively scan tree    */
-        this.<region Rhg,refgroup Tree>
+        this.<region Rhg>
 	    walksub(root, szsq, Constants.tol*Constants.tol, hg, 0);
         /* stash resulting pot. and */
         phi = hg.phi0;
@@ -74,9 +74,9 @@ public class Body extends Node {
      * @param p   pointer into body-tree 
      * @param dsq size of box squared 
      */
-    protected <region Rhg,refgroup Tree>
-	void walksub(Node<Tree> p, double dsq, double tolsq, 
-		     HGStruct<Rhg> hg, int level) 
+    protected <region Rhg>
+	void walksub(Node<T> p, double dsq, double tolsq, 
+		     HGStruct<Rhg,T> hg, int level) 
 	reads Masses, Positions
 	writes Forces via this, Rhg via hg
     {
@@ -84,14 +84,13 @@ public class Body extends Node {
         if (p.subdivp(p, dsq, tolsq, hg)) {
             /* loop over the subcells */
             for (int k = 0; k < Constants.NSUB; k++) {
-		// FIXME
-                Node<Tree> r = Util.<Node<Tree>>cast(Util.<Cell<Tree>>cast(p).subp[k]);
+                Node<T> r = Util.<Node<T>>cast(Util.<Cell<T>>cast(p).subp[k]);
                 if (r != null)
                     walksub(r, dsq / 4.0, tolsq, hg, level+1);
             }
         }
-        else if (p != (Node<Tree>) hg.pskip)   {
-            this.<region Rhg,refgroup Tree>gravsub(p, hg);
+        else if (p != (Node<T>) hg.pskip)   {
+            this.<region Rhg>gravsub(p, hg);
         }
     }
 
@@ -100,8 +99,8 @@ public class Body extends Node {
      * @param p Node of interaction
      * @param hg Temporary object to hold necessary information
      */
-    protected <region Rhg,refgroup Tree>void 
-	gravsub(Node<Tree> p, HGStruct<Rhg> hg) 
+    protected <region Rhg>void 
+	gravsub(Node<T> p, HGStruct<Rhg,T> hg) 
 	reads Masses, Positions
 	writes Forces via this, Rhg via hg
     {
@@ -134,7 +133,8 @@ public class Body extends Node {
      * Cannot subdivide a leaf
      */
     @Override
-    protected <region R> boolean subdivp(Node p, double dsq, double tolsq, HGStruct<R> hg) 
+    protected <region R> boolean subdivp(Node<T> p, double dsq, 
+					 double tolsq, HGStruct<R,T> hg) 
 	pure 
     {
         return false;

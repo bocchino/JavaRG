@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.BrokenBarrierException;
 
-public class Tree {
+public class Tree<refgroup T,A> {
 
     /**
      * Bounding box for tree
@@ -25,17 +25,17 @@ public class Tree {
     /**
      * Root of the tree
      */
-    public Node root;
+    public Node<T> root;
 
     /**
      * Nodes of the tree
      */
-    public BodyArray bodies;
+    public BodyArray<T,A> bodies;
 
     /**
      * Temporary body array required for reordering
      */
-    public BodyArray bodiesNew;
+    public BodyArray<T,A> bodiesNew;
 
     /**
      * No of threads
@@ -60,7 +60,7 @@ public class Tree {
         for(int i = 0; i < bodies.length; i++)
         {
 	    final int k = i;
-            Body p = bodies[k];
+            Body<T,A> p = bodies[k];
             for(int j = 0; j < Constants.NDIM; j++)
             {
                 if(p.pos.elts[j] < min.elts[j])
@@ -110,18 +110,20 @@ public class Tree {
      */
     void maketree(int step) {
         int[] xqic;
-        root = null;
+        /*unique(T)*/ Node<T> root = null;
         for (int i = 0; i < bodies.length; ++i) {
 	    final int j = i;
-            Body body = bodies[j];
+            Body<T,A> body = bodies[j];
             // only load massive ones
             if (body.mass != 0.0) {
                 // insert into tree
                 xqic = intcoord(body);
-                root = loadtree(body, xqic, root, Constants.IMAX >> 1, i);
+                root = loadtree(body, xqic, root,
+				Constants.IMAX >> 1, i);
             }
         }
-        bodiesNew = new BodyArray(bodies.length);
+        this.root = root;
+        bodiesNew = new BodyArray<T,A>(bodies.length);
 
         reOrderBodies(root, 0);
         bodies = bodiesNew;
@@ -131,7 +133,7 @@ public class Tree {
             for(int i = 0; i < bodies.length; i++)
             {
 		final int k = i;
-                Body p = bodies[k];
+                Body<T,A> p = bodies[k];
                 for(int j = 0; j < Constants.NDIM; j++)
                 {
                     System.out.printf("%.6f", p.pos.elts[j]);
@@ -150,30 +152,30 @@ public class Tree {
      * @param index
      * @return
      */
-    <refgroup Tree,Array>int reOrderBodies(Node root, int index)
+    int reOrderBodies(Node<T> root, int index)
     {
         if(root == null)
             return index;
-        else if(Util.<Cell>cast(root) instanceof Cell)
+        else if(Util.<Cell<T>>cast(root) instanceof Cell<T>)
         {
-            Cell cell = Util.<Cell>cast(root);
+            Cell<T> cell = Util.<Cell<T>>cast(root);
             for(int i = 0; i < Constants.NSUB; i++) 
             {
                 if(cell.subp[i] == null)
                     continue;
-                if(Util.<Body>cast(cell.subp[i]) instanceof Body)
+                if(Util.<Body<T,A>>cast(cell.subp[i]) instanceof Body<T,A>)
                 {
 		    final int j = i;
-                    Body body = Util.<Body>cast(cell.subp[j]);
+                    Body<T,A> body = Util.<Body<T,A>>cast(cell.subp[j]);
 		    final int finalIndex = index;
-                    bodiesNew[finalIndex] = new Body(body);
+                    bodiesNew[finalIndex] = new Body<T,A>(body);
                     assert(bodiesNew[index]!=null);
                     cell.subp[i] = bodiesNew[index];
                     index++;
                 }
                 else
                 {
-                    index = reOrderBodies(cell.subp[i], index);
+                    index = this.reOrderBodies(cell.subp[i], index);
                 }
             }
         }
@@ -187,24 +189,29 @@ public class Tree {
      * @param level - current level in tree 
      * @param idx - index of body in 
      */
-    Node loadtree(Body body, int[] xpic, Node subroot, int level, int idx) {
+    /*unique(T)*/ Node<T> 
+	loadtree(Body<T,A> body, int[] xpic, 
+		 /*unique(T)*/ Node<T> subroot, 
+		 int level, int idx) 
+    {
         if (subroot == null) {
             return body;
         }
         /*   dont run out of bits   */
         assert(level != 0);
-        Cell cell = null;
-        if (Util.<Body>cast(subroot) instanceof Body) {
-            cell = new Cell();
-            final int si1 = subindex(intcoord(Util.<Body>cast(subroot)), level); 
+        /*unique(T)*/ Cell<T> cell = null;
+        if (Util.<Body<T,A>>cast(subroot) instanceof Body<T,A>) {
+            cell = new Cell<T>();
+            final int si1 = subindex(intcoord(Util.<Body<T,A>>cast(subroot)), level); 
             cell.subp[si1] = subroot;
         } 
         else {
-            cell = Util.<Cell>cast(subroot);
+            cell = Util.<Cell<T>>cast(subroot);
         }
         final int si = subindex(xpic, level);
-        cell.subp[si] = loadtree(body, xpic, cell.subp[si], level >> 1, idx);
-        return Util.<Node>cast(cell);
+        cell.subp[si] = this.loadtree(body, xpic, 
+				      cell.subp[si], level >> 1, idx);
+        return cell;
     }
 
     /**
@@ -237,10 +244,11 @@ public class Tree {
     /**
      * Compute and update forces on particles
      */
-    <refgroup Tree>void computegrav(int processId, int nstep) {
+    void computegrav(int processId, int nstep) {
 
         for each i in bodies pardo {
-            HGStruct hg = new HGStruct();
+	    region r;
+	    HGStruct<r,T> hg = new HGStruct<r,T>();
             Vector acc1 = new Vector();
             Vector dacc = new Vector();
             Vector dvel = new Vector();
@@ -251,7 +259,7 @@ public class Tree {
             hg.pos0.SETV(bodies[i].pos);
             hg.acc0.CLRV();
             acc1.SETV(bodies[i].acc);
-            bodies[i].<region Root,refgroup Tree> hackgrav(hg, rsize, Util.<Node<Tree>>cast(root));
+            bodies[i].<region r,refgroup T> hackgrav(hg, rsize, root);
             if(nstep > 0)
             {
                 dacc.SUBV(bodies[i].acc, acc1);
@@ -291,7 +299,7 @@ public class Tree {
      * Compute integerized coordinates.
      * Returns: TRUE unless rp was out of bounds.
      */
-    public int[] intcoord(Body p) {
+    public int[] intcoord(Body<T,A> p) {
         double xsc;
         int[] ic = new int[3];
         boolean inb;

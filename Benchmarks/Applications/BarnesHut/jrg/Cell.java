@@ -4,12 +4,13 @@
  * @author Rakesh Komuravelli
  */
 
-public class Cell<refgroup G> extends Node<G> {
+public class Cell<refgroup T> extends Node<T> {
+
     /**
      * Descendants of cell
      */
-    public final Node[] subp in BarnesHut.Links = 
-	new Node[Constants.NSUB]; 
+    public final unique(T) NodeArray<T> subp 
+	in BarnesHut.Links = new NodeArray<T>(Constants.NSUB); 
 
     /**
      * Descend tree finding center-of-mass coordinates.
@@ -24,7 +25,7 @@ public class Cell<refgroup G> extends Node<G> {
         mq   = 0.0;
         
         for (int i = 0; i < Constants.NSUB; i++) {
-            Node r = subp[i];
+            Node<T> r = subp[i];
             if (r != null) {
                 tmpv[i] = new Vector();
                 mrs[i] = r.hackcofm();
@@ -37,7 +38,6 @@ public class Cell<refgroup G> extends Node<G> {
             if (tmpv[i] != null)
                 tmp_pos.ADDV(tmp_pos, tmpv[i]);
             mq = mrs[i] + mq;
-            Node r = subp[i];
         }
 
         mass = mq;
@@ -50,8 +50,8 @@ public class Cell<refgroup G> extends Node<G> {
      * Decide if a node should be opened.
      */
     @Override
-    protected <region Rhg>boolean subdivp(Node p, double dsq, 
-					  double tolsq, HGStruct<Rhg> hg) 
+    protected <region Rhg>boolean subdivp(Node<T> p, double dsq, 
+					  double tolsq, HGStruct<Rhg,T> hg) 
 	reads Masses, Positions
 	writes Rhg via hg
     {

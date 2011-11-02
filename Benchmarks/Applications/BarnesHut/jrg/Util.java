@@ -14,6 +14,10 @@ public class Util {
     public static <T>T cast(Object obj) {
 	return (T) obj;
     }
+
+    public static <type T, refgroup G>unique(G) T castUnique(unique(G) Object obj) {
+	return (T) obj;
+    }
     
     /** 
      * Return a random number, which is also the next seed. 
