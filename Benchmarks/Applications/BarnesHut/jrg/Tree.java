@@ -194,15 +194,24 @@ public class Tree {
         /*   dont run out of bits   */
         assert(level != 0);
         unique(T) Cell<T> cell = null;
-        if (subroot instanceof Body) {
-            cell = new Cell<T>();
-            final int si1 = subindex(intcoord(Util.<Body>cast(subroot)), 
-				     level); 
-            cell.subp[si1] = subroot;
-        } 
-        else {
-            cell = Util.<Cell<T>,refgroup T>castUnique(subroot);
-        }
+
+	// TODO: Fix typing of switch to eliminate if...else
+	// Note fall-through cannot be allowed here!
+	if (subroot instanceof Body) {
+	    switch(subroot) instanceof {
+		case Body:
+		    cell = new Cell<T>();
+		    final int si1 = subindex(intcoord(subroot), level);
+		    cell.subp[si1] = subroot;
+		}
+	}
+	else {
+	    switch (subroot) instanceof {
+		case Cell<T>:
+		    cell = subroot;
+		}
+	}
+
         final int si = subindex(xpic, level);
         cell.subp[si] = this.<refgroup T>loadtree(body, xpic, 
 						  cell.subp[si],
@@ -247,9 +256,9 @@ public class Tree {
         for each i in bodies pardo {
 	    region r;
 	    HGStruct<r> hg = new HGStruct<r>();
-            Vector acc1 = new Vector();
-            Vector dacc = new Vector();
-            Vector dvel = new Vector();
+            Vector<r> acc1 = new Vector<r>();
+            Vector<r> dacc = new Vector<r>();
+            Vector<r> dvel = new Vector<r>();
             double dthf = 0.5 * Constants.dtime;
         
             hg.pskip = bodies[i];
@@ -257,7 +266,9 @@ public class Tree {
             hg.pos0.SETV(bodies[i].pos);
             hg.acc0.CLRV();
             acc1.SETV(bodies[i].acc);
-            bodies[i].<region r,refgroup T> hackgrav(hg, rsize, root);
+	    // reads Masses, Positions
+	    // writes Forces via bodies[i], Rhg via hg 
+            bodies[i].<region r,refgroup T>hackgrav(hg, rsize, root);
             if(nstep > 0)
             {
                 dacc.SUBV(bodies[i].acc, acc1);

@@ -84,12 +84,15 @@ public class Body extends Node {
         if (p.subdivp(p, dsq, tolsq, hg)) {
             /* loop over the subcells */
             for (int k = 0; k < Constants.NSUB; k++) {
-                Node r = Util.<Node>cast(Util.<Cell>cast(p).subp[k]);
-                if (r != null)
-                    walksub(r, dsq / 4.0, tolsq, hg, level+1);
+		switch (p) instanceof {
+		    case Cell:
+			Node r = p.subp[k];
+			if (r != null)
+			    walksub(r, dsq / 4.0, tolsq, hg, level+1);
+		    }
             }
         }
-        else if (p != (Node) hg.pskip)   {
+        else if (p != hg.pskip)   {
             this.<region Rhg>gravsub(p, hg);
         }
     }

@@ -176,6 +176,8 @@ public class Pretty extends JCTree.Visitor {
     /** We need to rewrite variable symbols during code generation
      *  for instanceof switch.
      */
+    // TODO:  This is broken because it doesn't handle nested scopes.  Replace it
+    // with a map from each variable we need to mangle to its mangled name.
     Symbol variableToMangle;
     String prefix = "__jrg";
     int suffix;    
