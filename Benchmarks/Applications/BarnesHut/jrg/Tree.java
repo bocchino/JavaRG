@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.BrokenBarrierException;
 
-public class Tree<refgroup T,A> {
+public class Tree {
 
     /**
      * Bounding box for tree
@@ -23,16 +23,6 @@ public class Tree<refgroup T,A> {
     public float count;
 
     /**
-     * Root of the tree
-     */
-    public Node root;
-
-    /**
-     * Nodes of the tree
-     */
-    public BodyArray<A> bodies;
-
-    /**
      * Flag indicating whether to print debug information
      */
     boolean printBodies;
@@ -41,7 +31,7 @@ public class Tree<refgroup T,A> {
      * Calculate bounding box once instead of expanding it on every
      * body insertion
      */
-    void setRsize(BodyArray<A> bodies)
+    <refgroup A>void setRsize(BodyArray<A> bodies)
     {
         Vector max  = new Vector();
         Vector min  = new Vector();
@@ -74,30 +64,41 @@ public class Tree<refgroup T,A> {
      * Advance N-body system one time-step
      * @param nstep nth step
      */
-    void stepsystem(int nstep, BodyArray<A> bodies) 
+    <refgroup A>unique(A) BodyArray<A> stepsystem(int nstep, 
+						  unique(A) BodyArray<A> bodies) 
     {
         long start = 0, end = 0;
         // 1. Rebuild the tree with the new positions
-	root = maketree(nstep,bodies);
-        BodyArray<A> newBodies = new BodyArray<A>(bodies.length);
-        reorderBodies(root, newBodies);
-	// Generate test output
-	testOutput(newBodies);
+	refgroup T;
+	unique(T) Node root = 
+	    this.<refgroup T,A>maketree(nstep,bodies);
+	
+	// 2. Reorder the bodies according to position in tree
+	refgroup NewA;
+        BodyArray<NewA> newBodies = 
+	    new BodyArray<NewA>(bodies.length);
+	// Requires 'copies root...T to NewA'
+        this.<refgroup T,NewA>reorderBodies(root, newBodies);
 
-        // 2. Compute gravity on particles
+	// 3. Generate test output
+	this.<refgroup NewA>testOutput(newBodies);
+
+        // 4. Compute gravity on particles
 	start = System.nanoTime();
-        computegrav(nstep,newBodies);
+        this.<refgroup T,NewA>computegrav(nstep,root,newBodies);
 	end = System.nanoTime();
 	count += (end-start)/1000000000.0;
 	if(!printBodies)
 	    System.out.println("timestep " + nstep + " " + (end-start)/1000000000.0);
         
-        // 3. Update positions
-	vp(nstep,newBodies);
-	setRsize(newBodies);
+        // 5. Update positions
+	this.<refgroup NewA>vp(nstep,newBodies);
+	this.<refgroup NewA>setRsize(newBodies);
+
+	return bodies;
     }
 
-    private void testOutput(BodyArray<A> bodies) 
+    private <refgroup A>void testOutput(BodyArray<A> bodies) 
     {
         if(printBodies)
         {
@@ -118,7 +119,8 @@ public class Tree<refgroup T,A> {
     /**
      *  Initialize tree structure for hack force calculation.                     
      */
-    unique(T) Node maketree(int step, BodyArray<A> bodies) 
+    <refgroup T,A>unique(T) Node maketree(int step, BodyArray<A> bodies) 
+	copies bodies...A to T
     {
         int[] xqic;
         unique(T) Node root = null;
@@ -129,8 +131,8 @@ public class Tree<refgroup T,A> {
             if (body.mass != 0.0) {
                 // insert into tree
                 xqic = intcoord(body);
-                root = loadtree(body, xqic, root,
-				Constants.IMAX >> 1, i);
+                root = this.<refgroup T>loadtree(body, xqic, root,
+						 Constants.IMAX >> 1, i);
             }
         }
         assert(Util.chatting("About to hackcofm\n"));
@@ -145,34 +147,35 @@ public class Tree<refgroup T,A> {
      * @return
      */
     int reorderIndex;
-    void reorderBodies(Node root, BodyArray<A> newBodies) 
+    <refgroup T,A>void reorderBodies(Node root, 
+				     BodyArray<A> newBodies) 
+	copies root...T to A
     {
 	reorderIndex = 0;
-	recursiveReorder(root, newBodies);
+	this.<refgroup T,A>recursiveReorder(root, newBodies);
     }
 
-    void recursiveReorder(Node root, BodyArray<A> newBodies)
+    <refgroup T,A>void recursiveReorder(Node root, 
+					BodyArray<A> newBodies)
+	copies root...T to A
     {
-        if (root instanceof Cell) {
-            Cell<T> cell = Util.<Cell<T>>cast(root);
-            for(int i = 0; i < Constants.NSUB; i++) 
-            {
-                if(cell.subp[i] == null)
-                    continue;
-                if(cell.subp[i] instanceof Body)
-                {
-		    final int j = i;
-                    Body body = Util.<Body>cast(cell.subp[j]);
-		    newBodies[reorderIndex] = body;
-                    assert(newBodies[reorderIndex]!=null);
-		    reorderIndex++;
-                }
-                else
-                {
-                    recursiveReorder(cell.subp[i], newBodies);
-                }
-            }
-        }
+	switch (root) instanceof  {
+	    case Cell<T>:
+		for each i in root.subp {
+		    if(root.subp[i] instanceof Body) {
+			// Consumes 'copies root.subp[i] to A'
+			/*unique(A)*/ Node node = root.subp[i];
+			Body body = Util.<Body>cast(node);
+			newBodies[reorderIndex] = body;
+			assert(newBodies[reorderIndex]!=null);
+			reorderIndex++;
+		    }
+		    else if (root.subp[i] != null) {
+			// Consumes 'copies root.subp[i]...T to A'
+			recursiveReorder(root.subp[i], newBodies);
+		    }
+		}
+	    }
     }
 
     /**
@@ -182,10 +185,9 @@ public class Tree<refgroup T,A> {
      * @param level - current level in tree 
      * @param idx - index of body in 
      */
-    unique(T) Node 
-	loadtree(Body body, int[] xpic, 
-		 unique(T) Node subroot, 
-		 int level, int idx) 
+    <refgroup T>unique(T) Node loadtree(Body body, int[] xpic, 
+					unique(T) Node subroot, 
+					int level, int idx) 
 	copies body to T
     {
         if (subroot == null) {
@@ -204,8 +206,9 @@ public class Tree<refgroup T,A> {
             cell = Util.<Cell<T>,refgroup T>castUnique(subroot);
         }
         final int si = subindex(xpic, level);
-        cell.subp[si] = this.loadtree(body, xpic, 
-				      cell.subp[si], level >> 1, idx);
+        cell.subp[si] = this.<refgroup T>loadtree(body, xpic, 
+						  cell.subp[si],
+						  level >> 1, idx);
         return cell;
     }
 
@@ -239,7 +242,9 @@ public class Tree<refgroup T,A> {
     /**
      * Compute and update forces on particles
      */
-    void computegrav(int nstep,BodyArray<A> bodies) {
+    <refgroup T,A>void computegrav(int nstep,
+				   Node root,
+				   BodyArray<A> bodies) {
 
         for each i in bodies pardo {
 	    region r;
@@ -269,7 +274,7 @@ public class Tree<refgroup T,A> {
     /**
      * Update the points based on computed forces
      */
-    void vp(int nstep,BodyArray<A> bodies) {
+    <refgroup A>void vp(int nstep,BodyArray<A> bodies) {
                 
       long start1 = System.nanoTime();
       for (int i = 0; i < bodies.length; i++) {

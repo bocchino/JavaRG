@@ -11,7 +11,7 @@ import java.io.PrintStream;
 import java.text.DecimalFormat;
 import java.util.concurrent.CyclicBarrier;
 
-public class BarnesHut<refgroup T,A> {
+public class BarnesHut {
 
     region Links;
 
@@ -23,7 +23,7 @@ public class BarnesHut<refgroup T,A> {
     /**
      * The geometric tree representation of the bodies
      */
-    private final Tree<T,A> tree = new Tree<T,A>();
+    private final Tree tree = new Tree();
 
     /**
      * Constructor
@@ -75,17 +75,17 @@ public class BarnesHut<refgroup T,A> {
 	}
 
         // Create new BH object
-	refgroup Tree, Array;
-        BarnesHut<Tree,Array> bh = 
-	    new BarnesHut<Tree,Array>(nbody, emitBodies);
+        BarnesHut bh = new BarnesHut(nbody, emitBodies);
 	bh.doSimulation();
     }
 
     void doSimulation() throws Exception {
         // Initialize the system
-        BodyArray<A> bodies = initSystem(nbody);
+	refgroup A;
+        unique(A) BodyArray<A> bodies = 
+	    this.<refgroup A>initSystem(nbody);
         // Do the simulation
-        doSimulationOn(bodies);
+        this.<refgroup A>doSimulationOn(bodies);
     }
 
     /**
@@ -94,7 +94,9 @@ public class BarnesHut<refgroup T,A> {
      *
      * @param nbody  Number of bodies in the simulation
      */
-    BodyArray<A> initSystem(int nbody) throws Exception {
+    <refgroup A>unique(A) BodyArray<A> initSystem(int nbody) 
+	throws Exception 
+    {
         // Accumulated center of mass
         Vector cmr = new Vector();
         // Accumulated velocity
@@ -103,7 +105,8 @@ public class BarnesHut<refgroup T,A> {
         // Fill in the tree
         tree.rmin.SETVS(-2.0);
         tree.rsize = -2.0 * -2.0;  // t->rmin.elts[0];
-        BodyArray<A> bodies = new BodyArray<A>(nbody);
+        unique(A) BodyArray<A> bodies = 
+	    new BodyArray<A>(nbody);
 
         // Create an array of empty bodies
         for (int i = 0; i < nbody; ++i) {
@@ -115,7 +118,7 @@ public class BarnesHut<refgroup T,A> {
         // For some reason we are creating 32 distinct groups of
         // bodies, each with its own "seed factor."
         for (int i = 0; i < 32; i++) {
-            uniformTestdata(bodies, i, cmr, cmv);
+            this.<refgroup A>uniformTestdata(bodies, i, cmr, cmv);
         }
 
         // Normalize coordinates so average pos and vel are 0
@@ -131,14 +134,16 @@ public class BarnesHut<refgroup T,A> {
 
         // Calculate bounding box once instead of expanding it
         // everytime
-        tree.setRsize(bodies);
+        tree.<refgroup A>setRsize(bodies);
 	return bodies;
     }
 
     /**
      * Carry out the simulation
      */
-    public void doSimulationOn(BodyArray<A> bodies) throws InterruptedException {
+    public <refgroup A>void doSimulationOn(unique(A) BodyArray<A> bodies) 
+	throws InterruptedException 
+    {
         double tnow;
         double tout;
         int i, nsteps;
@@ -155,7 +160,7 @@ public class BarnesHut<refgroup T,A> {
 
         i = 0;
         while ((tnow < Constants.tstop + 0.1*Constants.dtime) && (i < Constants.NSTEPS)) {
-            tree.stepsystem(i,bodies); 
+            bodies = tree.<refgroup A>stepsystem(i,bodies); 
             tnow = tnow + Constants.dtime;
             assert(Util.chatting("tnow = %f sp = 0x%x\n", tnow, 0));
             i++;
@@ -179,8 +184,8 @@ public class BarnesHut<refgroup T,A> {
      * @param cmr         Accumulated center of mass
      * @param cmv         Accumulated velocity
      */
-    private void uniformTestdata(BodyArray<A> bodies, int segmentNum, 
-				 Vector cmr, Vector cmv) {
+    private <refgroup A>void uniformTestdata(BodyArray<A> bodies, int segmentNum, 
+					     Vector cmr, Vector cmv) {
         double rsc, vsc, r, v, x, y;
         Body p;
         int i;

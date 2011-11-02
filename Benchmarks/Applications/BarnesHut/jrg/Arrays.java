@@ -7,7 +7,7 @@ arrayclass BodyArray<refgroup A> {
 }
 
 arrayclass NodeArray<refgroup G> {
-    /*unique(G)*/ Node in BarnesHut.Links;
+    unique(G) Node in BarnesHut.Links;
 }
 
 arrayclass DoubleArray<region R> {

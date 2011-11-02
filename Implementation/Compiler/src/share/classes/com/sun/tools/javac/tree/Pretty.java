@@ -1176,8 +1176,10 @@ public class Pretty extends JCTree.Visitor {
 	    indent(); align();
 	    variableToMangle = selector.sym;
 	    if (c.pat != null) {
-		print(c.pat.type + " " + mangle(selector.name) + 
-			" = (" + c.pat.type + ") " + selector.name + ";");
+		printType(c.pat.type);
+		print(" " + mangle(selector.name) + " = (");
+		printType(c.pat.type);
+		print(") " + selector.name + ";");
 		println();
 	    }
 	    printStats(c.stats);

@@ -2193,7 +2193,7 @@ public class Parser {
             switch (S.token()) {
             case CASE: {
                 S.nextToken();
-                JCExpression pat = expression();
+                JCExpression pat = isTypeSwitch ? type() : expression();
                 accept(COLON);
                 List<JCStatement> stats = blockStatements();
                 JCCase c = F.at(pos).Case(pat, stats);
