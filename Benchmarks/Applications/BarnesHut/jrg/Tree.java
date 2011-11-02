@@ -84,17 +84,17 @@ public class Tree<refgroup T,A> {
      * Advance N-body system one time-step
      * @param nstep nth step
      */
-    void stepsystem(int nstep) {
+    void stepsystem(int nstep) 
+    {
         long start = 0, end = 0;
         // 1. Rebuild the tree with the new positions
-	maketree(nstep);
+	root = maketree(nstep);
 	start = System.nanoTime();
 
         // 2. Compute gravity on particles
         computegrav(nstep);
         
         // 3. Update positions
-	
 	end = System.nanoTime();
 	count += (end-start)/1000000000.0;
 	if(!printBodies)
@@ -106,9 +106,10 @@ public class Tree<refgroup T,A> {
     /**
      *  Initialize tree structure for hack force calculation.                     
      */
-    void maketree(int step) {
+    unique(T) Node maketree(int step) 
+    {
         int[] xqic;
-        /*unique(T)*/ Node root = null;
+        unique(T) Node root = null;
         for (int i = 0; i < bodies.length; ++i) {
 	    final int j = i;
             Body body = bodies[j];
@@ -120,10 +121,9 @@ public class Tree<refgroup T,A> {
 				Constants.IMAX >> 1, i);
             }
         }
-        this.root = root;
         bodiesNew = new BodyArray<A>(bodies.length);
 
-        reorderBodies(root, 0);
+        reorderBodies(root,0);
         bodies = bodiesNew;
 
         if(printBodies)
@@ -142,6 +142,7 @@ public class Tree<refgroup T,A> {
         }
         assert(Util.chatting("About to hackcofm\n"));
         root.hackcofm();
+        return root;
     }
 
     /**
@@ -152,8 +153,8 @@ public class Tree<refgroup T,A> {
      */
     int reorderBodies(Node root, int index)
     {
-        if(root == null)
-            return index;
+        if(root == null) 
+	    return index;
         if (root instanceof Cell) {
             Cell<T> cell = Util.<Cell<T>>cast(root);
             for(int i = 0; i < Constants.NSUB; i++) 
@@ -164,10 +165,9 @@ public class Tree<refgroup T,A> {
                 {
 		    final int j = i;
                     Body body = Util.<Body>cast(cell.subp[j]);
-		    final int finalIndex = index;
-                    bodiesNew[finalIndex] = body;
+		    bodiesNew[index] = body;
                     assert(bodiesNew[index]!=null);
-                    index++;
+		    index++;
                 }
                 else
                 {
@@ -175,7 +175,7 @@ public class Tree<refgroup T,A> {
                 }
             }
         }
-        return index;
+	return index;
     }
 
     /**
@@ -185,17 +185,18 @@ public class Tree<refgroup T,A> {
      * @param level - current level in tree 
      * @param idx - index of body in 
      */
-    /*unique(T)*/ Node 
+    unique(T) Node 
 	loadtree(Body body, int[] xpic, 
-		 /*unique(T)*/ Node subroot, 
+		 unique(T) Node subroot, 
 		 int level, int idx) 
+	copies body to T
     {
         if (subroot == null) {
             return body;
         }
         /*   dont run out of bits   */
         assert(level != 0);
-        /*unique(T)*/ Cell<T> cell = null;
+        unique(T) Cell<T> cell = null;
         if (subroot instanceof Body) {
             cell = new Cell<T>();
             final int si1 = subindex(intcoord(Util.<Body>cast(subroot)), 
@@ -203,7 +204,7 @@ public class Tree<refgroup T,A> {
             cell.subp[si1] = subroot;
         } 
         else {
-            cell = Util.<Cell<T>>cast(subroot);
+            cell = Util.<Cell<T>,refgroup T>castUnique(subroot);
         }
         final int si = subindex(xpic, level);
         cell.subp[si] = this.loadtree(body, xpic, 

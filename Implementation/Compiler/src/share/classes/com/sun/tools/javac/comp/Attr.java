@@ -2391,9 +2391,16 @@ public class Attr extends JCTree.Visitor {
 	if (leftPerm != null) {
 	    assignRefPerm(leftPerm, tree.rhs, env);
 	}
-	if (tree.lhs.getSymbol() instanceof VarSymbol)
+	Symbol leftSym = tree.lhs.getSymbol();
+	if (tree.lhs.getSymbol() instanceof VarSymbol) {
+	    VarSymbol varSym = (VarSymbol) tree.lhs.getSymbol();
+	    if (getRefPermFor(tree.rhs, env) instanceof LocallyUnique) {
+		// Put permission back by assignment
+		env.info.scope.restoreRefPerm(varSym);
+	    }
 	    env.info.scope.killPermsByAssigningTo(permissions, 
 		    (VarSymbol) tree.lhs.getSymbol());	    
+	}
     }
     
     /**
@@ -2450,6 +2457,15 @@ public class Attr extends JCTree.Visitor {
 			rs.findIdentInType(env, site, names.fromString("cell"), VAR);
 		refPerm = env.info.scope.getRefPermFor(varSym).asMemberOf(types, atype);
 	    }
+	}
+	else if (tree instanceof JCMethodInvocation) {
+	    JCMethodInvocation meth = (JCMethodInvocation) tree;
+            MethodSymbol methSym = meth.getMethodSymbol();
+            if (methSym != null) {
+        	refPerm = methSym.resPerm;
+        	refPerm = refPerm.substRefGroups(methSym.refGroupParams, 
+        		meth.mtype.refGroupActuals);
+            }
 	}
 	return new Pair(varSym, refPerm);
     }

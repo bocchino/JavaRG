@@ -530,6 +530,10 @@ public class Scope {
 	    sharedVarPerms.add(varSym);
     }
     
+    public void restoreRefPerm(VarSymbol varSym) {
+	sharedVarPerms.remove(varSym);
+    }
+    
     public String toString() {
         StringBuilder result = new StringBuilder();
         result.append("Scope[");
