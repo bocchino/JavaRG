@@ -152,7 +152,7 @@ public class BarnesHut<refgroup T,A> {
 
         i = 0;
         while ((tnow < Constants.tstop + 0.1*Constants.dtime) && (i < Constants.NSTEPS)) {
-            tree.stepsystem(i); 
+            tree.stepsystem(i,tree.bodies); 
             tnow = tnow + Constants.dtime;
             assert(Util.chatting("tnow = %f sp = 0x%x\n", tnow, 0));
             i++;

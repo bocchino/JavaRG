@@ -74,47 +74,32 @@ public class Tree<refgroup T,A> {
      * Advance N-body system one time-step
      * @param nstep nth step
      */
-    void stepsystem(int nstep) 
+    void stepsystem(int nstep, BodyArray<A> bodies) 
     {
         long start = 0, end = 0;
         // 1. Rebuild the tree with the new positions
-	root = maketree(nstep);
-	start = System.nanoTime();
+	root = maketree(nstep,bodies);
+        BodyArray<A> newBodies = new BodyArray<A>(bodies.length);
+        reorderBodies(root, newBodies);
+        bodies = newBodies;
+	// Generate test output
+	testOutput(newBodies);
 
         // 2. Compute gravity on particles
+	start = System.nanoTime();
         computegrav(nstep);
-        
-        // 3. Update positions
 	end = System.nanoTime();
 	count += (end-start)/1000000000.0;
 	if(!printBodies)
 	    System.out.println("timestep " + nstep + " " + (end-start)/1000000000.0);
+        
+        // 3. Update positions
 	vp(nstep);
 	setRsize();
     }
 
-    /**
-     *  Initialize tree structure for hack force calculation.                     
-     */
-    unique(T) Node maketree(int step) 
+    private void testOutput(BodyArray<A> bodies) 
     {
-        int[] xqic;
-        unique(T) Node root = null;
-        for (int i = 0; i < bodies.length; ++i) {
-	    final int j = i;
-            Body body = bodies[j];
-            // only load massive ones
-            if (body.mass != 0.0) {
-                // insert into tree
-                xqic = intcoord(body);
-                root = loadtree(body, xqic, root,
-				Constants.IMAX >> 1, i);
-            }
-        }
-        BodyArray<A> newBodies = new BodyArray<A>(bodies.length);
-        reorderBodies(root, newBodies);
-        bodies = newBodies;
-
         if(printBodies)
         {
             for(int i = 0; i < bodies.length; i++)
@@ -127,6 +112,26 @@ public class Tree<refgroup T,A> {
                     System.out.print(" ");
                 }
                 System.out.println("");
+            }
+        }
+    }
+
+    /**
+     *  Initialize tree structure for hack force calculation.                     
+     */
+    unique(T) Node maketree(int step, BodyArray<A> bodies) 
+    {
+        int[] xqic;
+        unique(T) Node root = null;
+        for (int i = 0; i < bodies.length; ++i) {
+	    final int j = i;
+            Body body = bodies[j];
+            // only load massive ones
+            if (body.mass != 0.0) {
+                // insert into tree
+                xqic = intcoord(body);
+                root = loadtree(body, xqic, root,
+				Constants.IMAX >> 1, i);
             }
         }
         assert(Util.chatting("About to hackcofm\n"));
