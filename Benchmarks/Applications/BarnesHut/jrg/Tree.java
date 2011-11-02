@@ -70,6 +70,7 @@ public class Tree {
         long start = 0, end = 0;
         // 1. Rebuild the tree with the new positions
 	refgroup T;
+	// Requires 'copies bodies...A to T'
 	unique(T) Node root = 
 	    this.<refgroup T,A>maketree(nstep,bodies);
 	
@@ -100,14 +101,11 @@ public class Tree {
 
     private <refgroup A>void testOutput(BodyArray<A> bodies) 
     {
-        if(printBodies)
-        {
-            for(int i = 0; i < bodies.length; i++)
-            {
+        if(printBodies) {
+            for each i in bodies {
 		final int k = i;
                 Body p = bodies[k];
-                for(int j = 0; j < Constants.NDIM; j++)
-                {
+                for each j in p.pos.elts {
                     System.out.printf("%.6f", p.pos.elts[j]);
                     System.out.print(" ");
                 }
@@ -124,14 +122,14 @@ public class Tree {
     {
         int[] xqic;
         unique(T) Node root = null;
-        for (int i = 0; i < bodies.length; ++i) {
-	    final int j = i;
-            Body body = bodies[j];
+        for each i in bodies {
+            Body body = bodies[i];
             // only load massive ones
             if (body.mass != 0.0) {
                 // insert into tree
                 xqic = intcoord(body);
-                root = this.<refgroup T>loadtree(body, xqic, root,
+		// Consumes 'copies bodies[i] to T'
+                root = this.<refgroup T>loadtree(bodies[i], xqic, root,
 						 Constants.IMAX >> 1, i);
             }
         }
@@ -277,18 +275,17 @@ public class Tree {
     <refgroup A>void vp(int nstep,BodyArray<A> bodies) {
                 
       long start1 = System.nanoTime();
-      for (int i = 0; i < bodies.length; i++) {
-	  final int j = i;
+      for each i in bodies {
           Vector dvel = new Vector();
           Vector vel1 = new Vector();
           Vector dpos = new Vector();
           double dthf = 0.5 * Constants.dtime;
           
-          dvel.MULVS(bodies[j].acc, dthf);
-          vel1.ADDV(bodies[j].vel, dvel);
+          dvel.MULVS(bodies[i].acc, dthf);
+          vel1.ADDV(bodies[i].vel, dvel);
           dpos.MULVS(vel1, Constants.dtime);
-          bodies[j].pos.ADDV(bodies[j].pos, dpos);
-          bodies[j].vel.ADDV(vel1, dvel);
+          bodies[i].pos.ADDV(bodies[i].pos, dpos);
+          bodies[i].vel.ADDV(vel1, dvel);
         }
       long end1 = System.nanoTime();
       if(!printBodies)
