@@ -25,17 +25,17 @@ public class Tree<refgroup T,A> {
     /**
      * Root of the tree
      */
-    public Node<T> root;
+    public Node root;
 
     /**
      * Nodes of the tree
      */
-    public BodyArray<T,A> bodies;
+    public BodyArray<A> bodies;
 
     /**
      * Temporary body array required for reordering
      */
-    public BodyArray<T,A> bodiesNew;
+    public BodyArray<A> bodiesNew;
 
     /**
      * No of threads
@@ -43,12 +43,13 @@ public class Tree<refgroup T,A> {
     int N; 
 
     /**
-     * Flag indicating whether to pring debug information
+     * Flag indicating whether to print debug information
      */
     boolean printBodies;
 
     /**
-     * Calculate bounding box once instead of expanding it on every body insertion 
+     * Calculate bounding box once instead of expanding it on every
+     * body insertion
      */
     void setRsize()
     {
@@ -60,7 +61,7 @@ public class Tree<refgroup T,A> {
         for(int i = 0; i < bodies.length; i++)
         {
 	    final int k = i;
-            Body<T,A> p = bodies[k];
+            Body p = bodies[k];
             for(int j = 0; j < Constants.NDIM; j++)
             {
                 if(p.pos.elts[j] < min.elts[j])
@@ -81,19 +82,16 @@ public class Tree<refgroup T,A> {
 
     /**
      * Advance N-body system one time-step
-     * @param processId process ID
      * @param nstep nth step
      */
-    void stepsystem(int processId, int nstep) {
+    void stepsystem(int nstep) {
         long start = 0, end = 0;
         // 1. Rebuild the tree with the new positions
-        if(processId == 0) {
-            maketree(nstep);
-            start = System.nanoTime();
-        }
+	maketree(nstep);
+	start = System.nanoTime();
 
         // 2. Compute gravity on particles
-        computegrav(processId, nstep);
+        computegrav(nstep);
         
         // 3. Update positions
 	
@@ -110,10 +108,10 @@ public class Tree<refgroup T,A> {
      */
     void maketree(int step) {
         int[] xqic;
-        /*unique(T)*/ Node<T> root = null;
+        /*unique(T)*/ Node root = null;
         for (int i = 0; i < bodies.length; ++i) {
 	    final int j = i;
-            Body<T,A> body = bodies[j];
+            Body body = bodies[j];
             // only load massive ones
             if (body.mass != 0.0) {
                 // insert into tree
@@ -123,7 +121,7 @@ public class Tree<refgroup T,A> {
             }
         }
         this.root = root;
-        bodiesNew = new BodyArray<T,A>(bodies.length);
+        bodiesNew = new BodyArray<A>(bodies.length);
 
         reorderBodies(root, 0);
         bodies = bodiesNew;
@@ -133,7 +131,7 @@ public class Tree<refgroup T,A> {
             for(int i = 0; i < bodies.length; i++)
             {
 		final int k = i;
-                Body<T,A> p = bodies[k];
+                Body p = bodies[k];
                 for(int j = 0; j < Constants.NDIM; j++)
                 {
                     System.out.printf("%.6f", p.pos.elts[j]);
@@ -152,7 +150,7 @@ public class Tree<refgroup T,A> {
      * @param index
      * @return
      */
-    int reorderBodies(Node<T> root, int index)
+    int reorderBodies(Node root, int index)
     {
         if(root == null)
             return index;
@@ -162,10 +160,10 @@ public class Tree<refgroup T,A> {
             {
                 if(cell.subp[i] == null)
                     continue;
-                if(cell.subp[i] instanceof Body<T,A>)
+                if(cell.subp[i] instanceof Body)
                 {
 		    final int j = i;
-                    Body<T,A> body = Util.<Body<T,A>>cast(cell.subp[j]);
+                    Body body = Util.<Body>cast(cell.subp[j]);
 		    final int finalIndex = index;
                     bodiesNew[finalIndex] = body;
                     assert(bodiesNew[index]!=null);
@@ -187,9 +185,9 @@ public class Tree<refgroup T,A> {
      * @param level - current level in tree 
      * @param idx - index of body in 
      */
-    /*unique(T)*/ Node<T> 
-	loadtree(Body<T,A> body, int[] xpic, 
-		 /*unique(T)*/ Node<T> subroot, 
+    /*unique(T)*/ Node 
+	loadtree(Body body, int[] xpic, 
+		 /*unique(T)*/ Node subroot, 
 		 int level, int idx) 
     {
         if (subroot == null) {
@@ -198,9 +196,9 @@ public class Tree<refgroup T,A> {
         /*   dont run out of bits   */
         assert(level != 0);
         /*unique(T)*/ Cell<T> cell = null;
-        if (subroot instanceof Body<T,A>) {
+        if (subroot instanceof Body) {
             cell = new Cell<T>();
-            final int si1 = subindex(intcoord(Util.<Body<T,A>>cast(subroot)), 
+            final int si1 = subindex(intcoord(Util.<Body>cast(subroot)), 
 				     level); 
             cell.subp[si1] = subroot;
         } 
@@ -243,11 +241,11 @@ public class Tree<refgroup T,A> {
     /**
      * Compute and update forces on particles
      */
-    void computegrav(int processId, int nstep) {
+    void computegrav(int nstep) {
 
         for each i in bodies pardo {
 	    region r;
-	    HGStruct<r,T> hg = new HGStruct<r,T>();
+	    HGStruct<r> hg = new HGStruct<r>();
             Vector acc1 = new Vector();
             Vector dacc = new Vector();
             Vector dvel = new Vector();
@@ -298,7 +296,7 @@ public class Tree<refgroup T,A> {
      * Compute integerized coordinates.
      * Returns: TRUE unless rp was out of bounds.
      */
-    public int[] intcoord(Body<T,A> p) {
+    public int[] intcoord(Body p) {
         double xsc;
         int[] ic = new int[3];
         boolean inb;

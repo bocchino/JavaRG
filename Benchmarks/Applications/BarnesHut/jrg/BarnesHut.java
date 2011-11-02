@@ -101,12 +101,12 @@ public class BarnesHut<refgroup T,A> {
         // Fill in the tree
         tree.rmin.SETVS(-2.0);
         tree.rsize = -2.0 * -2.0;  // t->rmin.elts[0];
-        tree.bodies = new BodyArray<T,A>(nbody);
+        tree.bodies = new BodyArray<A>(nbody);
 
         // Create an array of empty bodies
         for (int i = 0; i < nbody; ++i) {
 	    final int j = i;
-            tree.bodies[j] = new Body<T,A>();
+            tree.bodies[j] = new Body();
         }
 
         // Fill in the bodies, accumulating total mass and velocity.
@@ -121,7 +121,7 @@ public class BarnesHut<refgroup T,A> {
         cmv.DIVVS(cmv, (double) nbody);
         for (int i = 0; i < tree.bodies.length; ++i) {
 	    final int j = i;
-            Body<T,A> p = tree.bodies[j];
+            Body p = tree.bodies[j];
             p.pos.SUBV(p.pos, cmr); 
             p.vel.SUBV(p.vel, cmv);
             p.index = i;
@@ -152,7 +152,7 @@ public class BarnesHut<refgroup T,A> {
 
         i = 0;
         while ((tnow < Constants.tstop + 0.1*Constants.dtime) && (i < Constants.NSTEPS)) {
-            tree.stepsystem(0, i); 
+            tree.stepsystem(i); 
             tnow = tnow + Constants.dtime;
             assert(Util.chatting("tnow = %f sp = 0x%x\n", tnow, 0));
             i++;
@@ -178,7 +178,7 @@ public class BarnesHut<refgroup T,A> {
      */
     private void uniformTestdata(int segmentNum, Vector cmr, Vector cmv) {
         double rsc, vsc, r, v, x, y;
-        Body<T,A> p;
+        Body p;
         int i;
         int seedfactor = segmentNum+1;
         double temp, t1;

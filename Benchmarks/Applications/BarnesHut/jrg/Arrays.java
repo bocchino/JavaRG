@@ -2,12 +2,12 @@
  * Array classes for Barnes-Hut
  */
 
-arrayclass BodyArray<refgroup T,A> {
-    /*unique(A)*/ Body<T,A> in BarnesHut.Links;
+arrayclass BodyArray<refgroup A> {
+    /*unique(A)*/ Body in BarnesHut.Links;
 }
 
 arrayclass NodeArray<refgroup G> {
-    /*unique(G)*/ Node<G> in BarnesHut.Links;
+    /*unique(G)*/ Node in BarnesHut.Links;
 }
 
 arrayclass DoubleArray<region R> {

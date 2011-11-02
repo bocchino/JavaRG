@@ -4,7 +4,7 @@
  * @author Rakesh Komuravelli
  */
 
-public class Cell<refgroup T> extends Node<T> {
+public class Cell<refgroup T> extends Node {
 
     /**
      * Descendants of cell
@@ -25,7 +25,7 @@ public class Cell<refgroup T> extends Node<T> {
         mq   = 0.0;
         
         for (int i = 0; i < Constants.NSUB; i++) {
-            Node<T> r = subp[i];
+            Node r = subp[i];
             if (r != null) {
                 tmpv[i] = new Vector();
                 mrs[i] = r.hackcofm();
@@ -50,8 +50,8 @@ public class Cell<refgroup T> extends Node<T> {
      * Decide if a node should be opened.
      */
     @Override
-    protected <region Rhg>boolean subdivp(Node<T> p, double dsq, 
-					  double tolsq, HGStruct<Rhg,T> hg) 
+    protected <region Rhg>boolean subdivp(Node p, double dsq, 
+					  double tolsq, HGStruct<Rhg> hg) 
 	reads Masses, Positions
 	writes Rhg via hg
     {

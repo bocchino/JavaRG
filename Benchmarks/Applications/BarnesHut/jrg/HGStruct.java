@@ -3,10 +3,10 @@
  * @author Rakesh Komuravelli
  */
 
-public class HGStruct<region R,refgroup T> {
+public class HGStruct<region R> {
     
     /* Node to skip in force evaluation */
-    Node<T> pskip in R;
+    Node pskip in R;
     
     /* point at which to evaluate field */
     final unique Vector<R> pos0 in R;
