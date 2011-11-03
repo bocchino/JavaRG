@@ -1,7 +1,7 @@
 ALL = sequential-classes parallel-classes
 SRCS= ${wildcard jrg/*.java}
 OLDEN= olden/original
-include ../../Makefile.common
+include ../Makefile.common
 
 NBODY ?= 100000
 
