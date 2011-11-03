@@ -35,6 +35,7 @@ import static com.sun.tools.javac.code.Flags.VARARGS;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -50,7 +51,6 @@ import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.TypeTags;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.tree.JCTree.DPJNegationExpression;
-import com.sun.tools.javac.tree.JCTree.JRGParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
@@ -105,6 +105,7 @@ import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JCWhileLoop;
 import com.sun.tools.javac.tree.JCTree.JCWildcard;
 import com.sun.tools.javac.tree.JCTree.JRGForLoop;
+import com.sun.tools.javac.tree.JCTree.JRGParamInfo;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
 import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
@@ -176,9 +177,13 @@ public class Pretty extends JCTree.Visitor {
     /** We need to rewrite variable symbols during code generation
      *  for instanceof switch.
      */
-    // TODO:  This is broken because it doesn't handle nested scopes.  Replace it
-    // with a map from each variable we need to mangle to its mangled name.
-    Symbol variableToMangle;
+    HashMap<Symbol,String> mangleMap = new HashMap<Symbol,String>();
+    void addMangling(Symbol var) {
+	mangleMap.put(var, String.valueOf(suffix++));
+    }
+    void removeMangling(Symbol var) {
+	mangleMap.remove(var);
+    }
     String prefix = "__jrg";
     int suffix;    
     
@@ -289,6 +294,14 @@ public class Pretty extends JCTree.Visitor {
     }
     private String mangle(String name, int suffix) {
 	return prefix + "_" + name + "_" + suffix;
+    }
+    private String newMangle(Symbol sym) {
+	String suffix = mangleMap.get(sym);
+	return prefix + "_" + sym.name + suffix;
+    }
+    
+    private boolean symbolIsMangled(Symbol sym) {
+	return mangleMap.containsKey(sym);
     }
 
     /**************************************************************************
@@ -1176,20 +1189,19 @@ public class Pretty extends JCTree.Visitor {
 	    print(") {");
 	    println();
 	    indent(); align();
-	    variableToMangle = selector.sym;
+	    addMangling(selector.sym);
 	    if (c.pat != null) {
 		printType(c.pat.type);
-		print(" " + mangle(selector.name) + " = (");
+		print(" " + newMangle(selector.sym) + " = (");
 		printType(c.pat.type);
 		print(") " + selector.name + ";");
 		println();
 	    }
 	    printStats(c.stats);
-	    variableToMangle = null;
 	    undent(); align();
 	    print("}");
 	    ++caseNum;
-	    ++suffix;
+	    removeMangling(selector.sym);
 	}
     }
 
@@ -1944,8 +1956,8 @@ public class Pretty extends JCTree.Visitor {
             else if (tree.sym instanceof ClassSymbol) {
         	printType(tree.sym.type);
             }
-            else if (tree.sym != null && tree.sym == variableToMangle) {
-        	    print(mangle(tree.name));
+            else if (symbolIsMangled(tree.sym)) {
+        	print(newMangle(tree.sym));
             }
             else {
         	print(tree.name);

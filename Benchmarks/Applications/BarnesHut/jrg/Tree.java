@@ -163,8 +163,10 @@ public class Tree {
 		    if(root.subp[i] instanceof Body) {
 			// Consumes 'copies root.subp[i] to A'
 			unique(A) Node node = root.subp[i];
-			newBodies[reorderIndex] = 
-			    Util.<Body,refgroup A>castUnique(node);
+			switch (node) instanceof {
+			    case Body:
+				newBodies[reorderIndex] = node;
+			    }
 			assert(newBodies[reorderIndex]!=null);
 			reorderIndex++;
 		    }
@@ -269,8 +271,7 @@ public class Tree {
 	    // reads Masses, Positions
 	    // writes Forces via bodies[i], Rhg via hg 
             bodies[i].<region r,refgroup T>hackgrav(hg, rsize, root);
-            if(nstep > 0)
-            {
+            if(nstep > 0) {
                 dacc.SUBV(bodies[i].acc, acc1);
                 dvel.MULVS(dacc, dthf);
                 bodies[i].vel.ADDV(bodies[i].vel, dvel);
