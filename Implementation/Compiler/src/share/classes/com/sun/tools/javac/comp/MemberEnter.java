@@ -701,20 +701,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         }
         m.typarams = typarams.toList();
 
-        /*
-        // Set m.resPerm
-        m.resPerm = (tree.resPerm == null) ? RefPerm.SHARED : 
-            attr.attribRefPerm(tree.resPerm, localEnv);
-        
-        // Attribute method permissions
-        if (tree.perms != null) {
-            attribMethodPerms(tree.perms, m, localEnv);
-        }
-        else if ((m.flags_field & STATIC) == 0) {
-            m.thisPerm = RefPerm.SHARED;
-        }
-        */
-        
         // Set m.params
         ListBuffer<VarSymbol> params = new ListBuffer<VarSymbol>();
         JCVariableDecl lastParam = null;
@@ -1149,7 +1135,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 // Add array class constructor
                 List<Type> argtypes = List.of(syms.intType);
                 List<JCVariableDecl> params = make.Params(argtypes, syms.noSymbol);
-                long ctorFlags = (c.flags() & AccessFlags) | PUBLIC | ARRAYCONSTR;
+                long ctorFlags = PUBLIC | ARRAYCONSTR;
                 JCTree constrDef = make.MethodDef(
                     make.Modifiers(ctorFlags),
                     names.init,
@@ -1166,7 +1152,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 
                 // Add length field for array class
                 JCTree fieldDef = make.VarDef(
-                	make.Modifiers(ctorFlags | FINAL),
+                	make.Modifiers(PUBLIC | FINAL),
                 	names.length,
                 	null,
                 	make.Type(syms.typeOfTag[TypeTags.INT]),

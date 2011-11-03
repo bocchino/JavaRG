@@ -1082,32 +1082,6 @@ public class Attr extends JCTree.Visitor {
 	}
 	
 	return enterConstraints(tree, localEnv);
-	/*
-	// Attribute RPL constraints and check for validity
-	for (Pair<DPJRegionPathList,DPJRegionPathList> constraint : tree.rplConstraints) {
-	    attribTree(constraint.fst, localEnv, NIL, Type.noType);
-	    attribTree(constraint.snd, localEnv, NIL, Type.noType);	    
-	    if (constraint.fst.rpl.isIncludedIn(constraint.snd.rpl) ||
-		    constraint.snd.rpl.isIncludedIn(constraint.fst.rpl)) {
-		log.error(constraint.fst.pos(), "rpls.not.disjoint");
-	    }
-	}
- 
-        // Enter RPL constraints
-	ListBuffer<Pair<RPL,RPL>> rplBuf = ListBuffer.lb();
-	for (Pair<DPJRegionPathList,DPJRegionPathList> treeConstraint : tree.rplConstraints) {
-	    Pair<RPL,RPL> constraint = 
-		new Pair<RPL,RPL>(treeConstraint.fst.rpl,
-				  treeConstraint.snd.rpl);
-	    rplBuf.append(constraint);
-	}
-	List<Pair<RPL,RPL>> rplConstraints = rplBuf.toList();
-	localEnv.info.constraints.disjointRPLs =
-	    localEnv.info.constraints.disjointRPLs.appendList(rplConstraints);
-
-	// Return constraints
-	return new Constraints(rplConstraints);
-	*/
     }
     
     public void visitMethodDef(JCMethodDecl tree) {
@@ -1227,21 +1201,6 @@ public class Attr extends JCTree.Visitor {
 
             }
             
-            /*
-            if (tree.rgnParamInfo != null) {
-        	attribTree(tree.rgnParamInfo, localEnv, NIL, Type.noType);
-            }
-	
-            if (tree.effects != null) {
-        	attribTree(tree.effects, localEnv, NIL, Type.noType);
-            }
-            */
-
-            // Compute the effect set from the syntactic effect specification
-            // and store it in the method symbol for later use in effect
-            // checking
-            // computeDeclaredEffects(tree, m);
-
             localEnv.info.scope.leave();
 
             // If we override any other methods, check that we do so properly.

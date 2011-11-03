@@ -40,6 +40,7 @@ import java.util.Map;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.RPLs;
 import com.sun.tools.javac.code.RefGroup;

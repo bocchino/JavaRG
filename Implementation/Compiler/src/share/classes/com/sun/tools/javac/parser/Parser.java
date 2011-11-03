@@ -2746,7 +2746,7 @@ public class Parser {
      */
     JCStatement classOrInterfaceOrEnumDeclaration(JCModifiers mods, String dc) {
         if (S.token() == ARRAYCLASS) {
-            return arrayDeclaration(modifiersOpt(mods), dc);
+            return arrayDeclaration(mods, dc);
         }
         else if (S.token() == CLASS) {
             return classDeclaration(mods, dc);
