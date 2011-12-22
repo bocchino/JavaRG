@@ -157,24 +157,6 @@ public class Effects implements Iterable<Effect> {
 	return result;		
     }
     
-    public Effects substIndices(List<VarSymbol> from, 
-	    	List<JCExpression> to) {
-	Effects result = new Effects();
-	for (Effect e: effects) {
-	    result.add(e.substIndices(from, to));
-	}
-	return result;
-    }
-
-    public static List<Effects> substIndices(List<Effects> list,
-	    List<VarSymbol> from, List<JCExpression> to) {
-	ListBuffer<Effects> buf = ListBuffer.lb();
-	for (Effects effects : list) {
-	    buf.append(effects.substIndices(from, to));
-	}	
-	return buf.toList();
-    }
-    
     public Iterator<Effect> iterator() {
 	return effects.iterator();
     }
@@ -291,20 +273,6 @@ public class Effects implements Iterable<Effect> {
         	}
             }
             
-            // Substitute for index exprs
-            if (methSym != null && methSym.params != null &&
-        	    !effects.isEmpty() && !tree.getArguments().isEmpty()) {
-        	result = result.substIndices(methSym.params, 
-        		tree.getArguments());
-            }
-
-            // Substitute for method effect params
-            /*
-            if (sym.effectparams != null && tree.mtype != null) {
-        	result = result.substForEffectVars(sym.effectparams,
-        	    tree.mtype.effectactuals);
-            }
-            */
 	}
 	return result;
     }

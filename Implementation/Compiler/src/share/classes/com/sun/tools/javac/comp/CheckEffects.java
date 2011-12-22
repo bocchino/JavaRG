@@ -200,19 +200,6 @@ public class CheckEffects extends EnvScanner { // DPJ
             return false;
 	}
 
-	public void visitSelect(JCFieldAccess tree) {
-	    if (tree.selected.type instanceof ClassType &&
-		    tree.sym instanceof VarSymbol) {
-		ClassType ct = (ClassType) tree.selected.type;
-		VarSymbol vsym = (VarSymbol) tree.sym;
-		if (inConstructor && isInstanceField(vsym)) return;
-		if (vsym.rpl == null) return;
-		result = rpls.memberRPL(types, ct, 
-			vsym).substForAllParams(ct);
-		RPL rpl = attr.exprToRPL(tree.selected);
-	    }
-        }
-	
 	public void visitIdent(JCIdent tree) {
 	    if (tree.sym instanceof VarSymbol) {        	
                 VarSymbol v = (VarSymbol) tree.sym;
@@ -226,13 +213,6 @@ public class CheckEffects extends EnvScanner { // DPJ
 
 	private RPL selectedRPL(JCFieldAccess tree) {
 	    RPL rpl = null;
-	    if (tree.selected.type instanceof ClassType &&
-		    tree.sym instanceof VarSymbol) {
-		ClassType ct = (ClassType) tree.selected.type;
-		VarSymbol vsym = (VarSymbol) tree.sym;
-		if (vsym.rpl == null) return null;
-		rpl = attr.exprToRPL(tree.selected);
-	    }
 	    return rpl;
 	}
 	

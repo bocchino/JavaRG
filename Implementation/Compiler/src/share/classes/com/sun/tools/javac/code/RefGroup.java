@@ -12,7 +12,9 @@ import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.util.List;
 
 public abstract class RefGroup 
-	implements SubstRefGroups<RefGroup>, AsMemberOf<RefGroup>,
+	implements 
+	SubstRefGroups<RefGroup>, 
+	AsMemberOf<RefGroup>,
 	AtCallSite<RefGroup>
 {
     

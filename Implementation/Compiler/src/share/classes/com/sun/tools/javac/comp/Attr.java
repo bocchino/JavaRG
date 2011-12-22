@@ -91,7 +91,6 @@ import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLElement;
 import com.sun.tools.javac.code.RPLElement.NameRPLElement;
 import com.sun.tools.javac.code.RPLElement.RPLParameterElement;
-import com.sun.tools.javac.code.RPLElement.VarRPLElement;
 import com.sun.tools.javac.code.RPLs;
 import com.sun.tools.javac.code.RefGroup;
 import com.sun.tools.javac.code.RefGroup.RefGroupName;
@@ -620,25 +619,6 @@ public class Attr extends JCTree.Visitor {
         }
     }
    
-    /**
-     * Convert an expression to an RPL.  Used in substituting for 'this' in expressions
-     * like e.f, where f is declared in region this.
-     */
-    public RPL exprToRPL(JCExpression tree) {
-	// Conversion only makes sense for class types
-	if (!(tree.type instanceof ClassType)) return null;
-	Symbol sym = tree.getSymbol();
-	// If the expression is a final local variable, use it as the RPL
-	if (sym instanceof VarSymbol && 
-		(sym.owner.kind == Kinds.MTH || sym.name.equals(names._this))
-		&& (sym.flags() & Flags.FINAL) != 0) {
-	    return new RPL(List.<RPLElement>of(new RPLElement.VarRPLElement((VarSymbol) sym)));
-	}
-	// Otherwise, use the owner region
-	RPL owner = ((ClassType) tree.type).getOwner();
-	return new RPL(owner.elts.append(RPLElement.STAR));
-    }
-
 
 /* ************************************************************************
  * Visitor methods
@@ -3198,12 +3178,6 @@ public class Attr extends JCTree.Visitor {
                     owntype = owntype1;
                 }
 
-                // Substitutions required by DPJ type system
-                if (tree instanceof JCFieldAccess) {
-                    JCFieldAccess fa = (JCFieldAccess) tree;
-                    RPL rpl = exprToRPL(fa.selected);
-               	}
-                
                 // If the variable is a constant, record constant value in
                 // computed type.
                 if (v.getConstValue() != null && isStaticReference(tree))
@@ -4137,7 +4111,6 @@ public class Attr extends JCTree.Visitor {
 		    // In the first position ...
 		    if (elt.rplElt != RPLElement.ROOT_ELEMENT &&
 			    !(elt.rplElt instanceof RPLParameterElement) &&
-			    !(elt.rplElt instanceof VarRPLElement) &&
 			    !(elt.rplElt.isLocalName())) {
 			// If RPL doesn't start with 'Root', a parameter, a variable,
 			// or a local name, then prepend the implicit 'Root :'
@@ -4152,15 +4125,13 @@ public class Attr extends JCTree.Visitor {
 		    */
 		} else {
 		    // Otherwise ...
-		    if (elt.rplElt == RPLElement.ROOT_ELEMENT)
+		    if (elt.rplElt == RPLElement.ROOT_ELEMENT) {
 			// 'Root' is not allowed
 			log.error(elt.pos(), "root.must.start.rpl");
-		    else if (elt.rplElt instanceof RPLParameterElement)
+		    }
+		    else if (elt.rplElt instanceof RPLParameterElement) {
 			// Region params are not allowed
 			log.error(elt.pos(), "region.param.must.start.rpl");
-		    else if (elt.rplElt instanceof VarRPLElement) {
-			// Variables are not allowed
-			log.error(elt.pos(), "var.region.must.start.rpl");
 		    }
 		}
 		buf.append(elt.rplElt);
@@ -4179,26 +4150,15 @@ public class Attr extends JCTree.Visitor {
         	JCIdent id = (JCIdent) elt.exp;
         	if (id.name == names.root) {
         	    elt.rplElt = RPLElement.ROOT_ELEMENT;
-        	} else if (id.name == names.local) {
-        	    if (env.enclMethod == null) {
-        		log.error(elt.pos(), "local.region.not.in.scope");
-        	    }
-        	    elt.rplElt = RPLElement.LOCAL_ELEMENT;
         	}
         	else {
         	    attribTree(elt.exp, env, RPL_ELT, Type.noType);
         	    Symbol sym = elt.exp.getSymbol();
-        	    if (sym instanceof RegionNameSymbol)
+        	    if (sym instanceof RegionNameSymbol) {
         		elt.rplElt = new NameRPLElement((RegionNameSymbol)sym);
-        	    else if (sym instanceof RegionParameterSymbol)
+        	    }
+        	    else if (sym instanceof RegionParameterSymbol) {
         		elt.rplElt = new RPLParameterElement((RegionParameterSymbol)sym);
-        	    else if (sym instanceof VarSymbol) {
-        		VarSymbol vsym = (VarSymbol) sym;
-        		elt.rplElt = new RPLElement.VarRPLElement(vsym);
-        		if ((vsym.flags() & Flags.FINAL) == 0 ||
-        			(vsym.name != names._this &&
-        				vsym.owner.kind != Kinds.MTH))
-        		    log.error(elt.pos, "region.must.be.final.local.variable");
         	    }
         	}
             } else if (elt.exp instanceof JCFieldAccess) {
@@ -4211,8 +4171,6 @@ public class Attr extends JCTree.Visitor {
         	fieldAccess.sym = sym;
         	if (fieldAccess.sym instanceof RegionNameSymbol)
         	    elt.rplElt = new NameRPLElement((RegionNameSymbol) fieldAccess.sym);
-        	else if (fieldAccess.sym instanceof VarSymbol)
-        	    elt.rplElt = new RPLElement.VarRPLElement((VarSymbol) fieldAccess.sym);
             } else {
         	log.error(elt.pos(), "bad.field.region");
             }

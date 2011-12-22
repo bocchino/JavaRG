@@ -27,12 +27,7 @@ public abstract class RPLElement {
     // THE RPLElement API
     
     /**
-     * Whether the element is atomic
-     */
-    public boolean isAtomic() { return false; }
-    
-    /**
-     * Whether the element is fully specified (i.e., contains no * or [?]).
+     * Whether the element is fully specified (i.e., contains no *).
      */
     public boolean isFullySpecified() { return true; }
     
@@ -88,24 +83,6 @@ public abstract class RPLElement {
         }
     };
 
-    /** The RPL element Local.
-     */
-    public static final RPLElement LOCAL_ELEMENT = new RPLElement() {
-        @Override public String toString() {
-            return "Local";
-        }
-        public boolean isDisjointFrom(RPLElement e, RPLs rpls,
-        	List<Pair<RPL,RPL>> constraints) {            
-            if (e == LOCAL_ELEMENT) return false;
-            if (e instanceof RPLCaptureParameter) {
-        	return !(((RPLCaptureParameter) e).includedIn.isUnderLocal());
-            }
-            return e != LOCAL_ELEMENT;
-        }
-        @Override
-        public boolean isLocalName() { return true; }
-    };
-
     /**
      * The RPL element *.
      */
@@ -136,11 +113,6 @@ public abstract class RPLElement {
 	
 	public NameRPLElement(RegionNameSymbol sym) {
 	    this.sym = sym;
-	}
-
-	@Override
-	public boolean isAtomic() {
-	    return sym.isAtomic;
 	}
 
 	@Override
@@ -180,11 +152,6 @@ public abstract class RPLElement {
 	@Override
 	public Symbol getSymbol() { return sym; }
 	
-	@Override
-	public boolean isAtomic() {
-	    return sym.isAtomic;
-	}
-	
 	/** RPL in which this parameter is included -- used for capture parameters
          */
         public RPL includedIn;
@@ -216,131 +183,6 @@ public abstract class RPLElement {
 	public String toString() {
 	    return sym.toString();
 	}
-    }
-
-    /** An array index RPL element.
-     */
-    public static class ArrayIndexRPLElement extends RPLElement {
-	public JCExpression indexExp;
-
-	public ArrayIndexRPLElement(JCExpression indexExp) {
-	    this.indexExp = indexExp;
-	}
-	
-	@Override public String toString() {
-	    return "[" + ((indexExp == null) ? "?" : indexExp) + "]";
-	}
-	public boolean equals(Object o) {
-	    if (!(o instanceof ArrayIndexRPLElement)) return false;
-	    ArrayIndexRPLElement that = (ArrayIndexRPLElement) o;
-	    return areAlwaysEqualExprs(this.indexExp, that.indexExp);
-	}
-	public boolean isIncludedIn(RPLElement that) {
-	    if (that instanceof ArrayIndexRPLElement) {
-		// this is included in [?]
-		ArrayIndexRPLElement ae = (ArrayIndexRPLElement) that;
-		if (ae.indexExp == null) return true;
-	    }
-	    return super.isIncludedIn(that);
-	}
-	public boolean isDisjointFrom(RPLElement e, RPLs rpls,
-		List<Pair<RPL,RPL>> constraints) {
-	    if (this.isIncludedIn(e) || e.isIncludedIn(this))
-		return false;
-	    if (!(e instanceof ArrayIndexRPLElement))
-		return true;
-	    return areNeverEqualExprs(indexExp, ((ArrayIndexRPLElement) e).indexExp);
-	}
-	public boolean isFullySpecified() {
-	    return indexExp != null;
-	}
-	public static boolean areAlwaysEqualExprs(JCExpression first, JCExpression second) {
-	    if (first instanceof JCBinary && second instanceof JCBinary) {
-		JCBinary firstBinary = (JCBinary) first;
-		JCBinary secondBinary = (JCBinary) second;
-		if (firstBinary.operator != secondBinary.operator) {
-		    return false;
-		}
-		return (areAlwaysEqualExprs(firstBinary.lhs, secondBinary.lhs) &&
-			areAlwaysEqualExprs(firstBinary.rhs, secondBinary.rhs));
-	    }
-	    if (first instanceof JCLiteral && second instanceof JCLiteral) {
-		return ((JCLiteral) first).getValue().equals(((JCLiteral) second).getValue());
-	    }
-	    if (first instanceof JCIdent && second instanceof JCIdent) {
-		Symbol firstSymbol = ((JCIdent) first).sym;
-		Symbol secondSymbol = ((JCIdent) second).sym;
-		if (firstSymbol != secondSymbol) return false;
-		if ((firstSymbol.flags() & Flags.FINAL) != 0) return true;
-		return false;
-	    }
-	    if (first instanceof JCFieldAccess && second instanceof JCFieldAccess) {
-		JCFieldAccess fa1 = (JCFieldAccess) first;
-		JCFieldAccess fa2 = (JCFieldAccess) second;
-		return areAlwaysEqualExprs(fa1.selected, fa2.selected) && fa1.sym == fa2.sym;
-	    }
-	    return first == second;
-	}
-	public static boolean areNeverEqualExprs(JCExpression first, JCExpression second) {
-	    if (first instanceof JCLiteral && second instanceof JCLiteral) {
-		return !((JCLiteral) first).getValue().equals(((JCLiteral) second).getValue());
-	    }
-	    if (first instanceof DPJNegationExpression) {
-		return areNeverEqualExprs(second, first);
-	    } else if (!(first instanceof DPJNegationExpression) &&
-		    second instanceof DPJNegationExpression){
-		if (first.getSymbol() == second.getSymbol())
-		    return true;
-	    }
-	    return false;
-	}
-    }
-
-    /** A class for final local variable RPL elements, also called "z region" RPL
-     *  elements.
-     */
-    public static class VarRPLElement extends RPLElement {
-    
-        /** The symbol for the associated variable
-         */
-        public Symbol.VarSymbol vsym;
-        
-        @Override
-        public Symbol getSymbol() { return vsym; }
-        
-        /** Construct a variable RPL element, given the underlying variable
-         *  symbol.
-         */
-        public VarRPLElement(Symbol.VarSymbol vsym) {
-            this.vsym = vsym;
-        }
-        
-        @Override
-        public RPL upperBound() {
-            if (vsym.type instanceof TypeVar) {
-        	TypeVar tvar = (TypeVar) vsym.type;
-            }
-            return new RPL(vsym.type.getOwner().elts.append(STAR));
-        }
-        
-        public String toString() {
-            return vsym.toString();
-        }
-        
-        public boolean equals(Object o) {
-            if (!(o instanceof VarRPLElement)) return false;
-            VarRPLElement vrs = (VarRPLElement) o;
-            if (vsym.name.toString().equals("this")) {
-        	return vrs.vsym.name.toString().equals("this");
-            }
-            return vsym.equals(vrs.vsym);
-        }
-    
-        public boolean isDisjointFrom(RPLElement e, RPLs rpls,
-        	List<Pair<RPL, RPL>> constraints) {
-            return false;
-        }
-    
     }
 
     // INTERNAL-USE RPL ELEMENTS

@@ -74,10 +74,6 @@ public abstract class Effect {
 	return this;
     }
     
-    public Effect substIndices(List<VarSymbol> from, List<JCExpression> to) {
-	return this;
-    }
-    
     public Effect inEnvironment(Resolve rs, Env<AttrContext> env, 
 	    boolean pruneLocalEffects) {
 	return this;
@@ -164,7 +160,6 @@ public abstract class Effect {
 		boolean isNonint) {
 	    super(rpls, isAtomic, isNonint);
 	    this.rpl = rpl;
-	    if (!rpl.isAtomic()) this.isAtomic = false;
 	}
 	
 	public boolean isSubeffectOf(Effect e) {
@@ -211,30 +206,6 @@ public abstract class Effect {
 	@Override
 	public Effect substForParams(List<RegionParameterSymbol> from, List<RPL> to) {
 	    return new ReadEffect(rpls, rpl.substForParams(from, to), 
-		    this.isAtomic(), this.isNonint());
-	}
-	
-	@Override
-	public Effect substForVars(List<VarSymbol> from, List<VarSymbol> to) {
-	    return new ReadEffect(rpls, rpl.substForVars(from, to), 
-		    this.isAtomic(), this.isNonint());
-	}
-	
-	@Override
-	public Effect substExpsForVars(List<VarSymbol> from, List<JCExpression> to) {
-	    return new ReadEffect(rpls, rpl.substExpsForVars(from, to), 
-		    this.isAtomic(), this.isNonint());
-	}
-	
-	@Override
-	public Effect substForThis(RPL rpl) {
-	    return new ReadEffect(rpls, this.rpl.substForThis(rpl), 
-		    this.isAtomic(), this.isNonint());
-	}
-	
-	@Override
-	public Effect substIndices(List<VarSymbol> from, List<JCExpression> to) {
-	    return new ReadEffect(rpls, rpl.substIndices(from, to), 
 		    this.isAtomic(), this.isNonint());
 	}
 	
@@ -302,7 +273,6 @@ public abstract class Effect {
 		boolean isNonint) {
 	    super(rpls, isAtomic, isNonint);
 	    this.rpl = rpl;
-	    if (!rpl.isAtomic()) this.isAtomic = false;
 	}
 	
 	public boolean isSubeffectOf(Effect e) {
@@ -347,31 +317,6 @@ public abstract class Effect {
 	public Effect substForParams(List<RegionParameterSymbol> from, List<RPL> to) {
 	    return new WriteEffect(rpls, rpl.substForParams(from, to), 
 		    this.isAtomic(), this.isNonint());
-	}
-	
-	@Override
-	public Effect substForVars(List<VarSymbol> from, List<VarSymbol> to) {
-	    return new WriteEffect(rpls, rpl.substForVars(from, to), 
-		    this.isAtomic(), this.isNonint());
-	}
-	
-	@Override
-	public Effect substExpsForVars(List<VarSymbol> from, List<JCExpression> to) {
-	    return new WriteEffect(rpls, rpl.substExpsForVars(from, to), 
-		    this.isAtomic(), this.isNonint());
-	}
-	
-	@Override
-	public Effect substForThis(RPL rpl) {
-	    return new WriteEffect(rpls, this.rpl.substForThis(rpl), 
-		    this.isAtomic(), this.isNonint());
-	}
-	
-	@Override
-	public Effect substIndices(List<VarSymbol> from, List<JCExpression> to) {
-	    Effect result = new WriteEffect(rpls, rpl.substIndices(from, to),
-		    this.isAtomic(), this.isNonint());
-	    return result;
 	}
 	
 	@Override
@@ -506,11 +451,6 @@ public abstract class Effect {
 	@Override
 	public Effect substExpsForVars(List<VarSymbol> from, List<JCExpression> to) {
 	    return new InvocationEffect(rpls, methSym, withEffects.substExpsForVars(from, to));
-	}
-	
-	@Override
-	public Effect substIndices(List<VarSymbol> from, List<JCExpression> to) {
-	    return new InvocationEffect(rpls, methSym, withEffects.substIndices(from, to));
 	}
 	
 	@Override

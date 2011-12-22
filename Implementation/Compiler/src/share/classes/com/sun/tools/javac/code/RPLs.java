@@ -188,31 +188,4 @@ public class RPLs {
 	return buf.toList();
     }
     
-    public static List<RPL> substForTRParams(List<RPL>rpls,
-	    List<Type> from, List<Type> to) {
-	ListBuffer<RPL> buf = new ListBuffer<RPL>();
-	while (rpls.nonEmpty()) {
-	    buf.append(rpls.head.substForTRParams(from, to));
-	    rpls = rpls.tail;
-	}
-	return buf.toList();	
-    }
-    
-    public static List<RPL> substForAllParams(List<RPL> rpls, Type t) {
-	List<RPL> result = substForParams(rpls, t.tsym.type.getRegionParams(),
-		t.getRegionActuals());
-	result = substForTRParams(result, t.tsym.type.getTypeArguments(),
-		t.getTypeArguments());
-	return result;
-    }
-
-    public List<RPL> substIndices(List<RPL> rpls, List<VarSymbol> from, 
-	    List<JCExpression> to) {
-	ListBuffer<RPL> buf = ListBuffer.<RPL>lb();
-	for (RPL rpl : rpls) {
-	    buf.append(rpl.substIndices(from, to));
-	}	
-	return buf.toList();
-    }
-    
 }

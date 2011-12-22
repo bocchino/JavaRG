@@ -1583,7 +1583,7 @@ public class Types {
                 	List<Type> toTypes = base.alltyparams();
                 	List<RegionParameterSymbol> from = owner.type.allrgnparams();
                         List<RPL> to = base.allrgnactuals();
-                        result = substRPL(result, fromTypes, toTypes, from, to);
+                        result = substRPLs(result, from, to);
                     }
                 }
                 if (((flags & STATIC) == 0) && owner.type.hasRefGroupParams()) {
@@ -1819,7 +1819,7 @@ public class Types {
 
                         List<RPL> rgnactuals = classBound(t).allrgnactuals();
                         List<RegionParameterSymbol> rgnformals = t.tsym.type.allrgnparams();
-                        t.supertype_field = substRPL(t.supertype_field, rgnformals, rgnactuals);
+                        t.supertype_field = substRPLs(t.supertype_field, rgnformals, rgnactuals);
 
                         List<RefGroup> actualRefGroups = classBound(t).allRefGroups();
                         List<RefGroup> formalRefGroups = t.tsym.type.allRefGroups();
@@ -1915,8 +1915,7 @@ public class Types {
                             t.interfaces_field =
                                 upperBounds(subst(interfaces, formals, actuals));
                         }
-                        t.interfaces_field = substRPL(t.interfaces_field,
-                            formals, actuals,
+                        t.interfaces_field = substRPLs(t.interfaces_field,
                     	    t.tsym.type.allrgnparams(),
                     	    t.allrgnactuals());
                         t.interfaces_field = substRefGroups(t.interfaces_field,
@@ -2315,179 +2314,31 @@ public class Types {
         }
     }
 
-    public List<Type> substIndices(List<Type> ts, List<VarSymbol> from,
-	    List<JCExpression> to) {
-	return new SubstIndices(from, to).substIndices(ts);
-    }
-    
-    public Type substIndices(Type t, List<VarSymbol> from, List<JCExpression> to) {
-	Type result =  new SubstIndices(from, to).substIndices(t);
-	return result;
-    }
-    
-    private class SubstIndices extends UnaryVisitor<Type> {
-        List<VarSymbol> from;
-        List<JCExpression> to;
-
-        public SubstIndices(List<VarSymbol> from, List<JCExpression> to) {
-            this.from = from;
-            this.to = to;
-        }
-
-        Type substIndices(Type t) {
-            return visit(t);
-        }
-
-        List<Type> substIndices(List<Type> ts) {
-            if (ts.nonEmpty()) {
-        	Type head1 = substIndices(ts.head);
-                List<Type> tail1 = substIndices(ts.tail);
-                if (head1 != ts.head || tail1 != ts.tail)
-                    ts = tail1.prepend(head1);
-            }
-            return ts;
-        }
-        
-        public Type visitType(Type t, Void ignored) {
-            return t;
-        }
-
-        public Type visitUndetVar(UndetVar t, Void ignored) {
-            visit(t.qtype);
-            return t;
-        }
-
-        @Override
-        public Type visitMethodType(MethodType t, Void ignored) {
-            List<Type> argtypes = substIndices(t.argtypes);
-            Type restype = substIndices(t.restype);
-            List<Type> thrown = substIndices(t.thrown);
-            boolean isPure = false;
-            if (argtypes == t.argtypes &&
-                restype == t.restype &&
-                thrown == t.thrown)
-                return t;
-            else
-                return new MethodType(argtypes, restype, thrown, t.tsym);
-        }
-
-        @Override
-        public Type visitTypeVar(TypeVar t, Void ignored) {
-            return t;
-        }
-
-        @Override
-        public Type visitClassType(ClassType t, Void ignored) {
-            if (!t.isCompound()) {
-                List<Type> typarams = t.getTypeArguments();
-                List<Type> typarams1 = substIndices(typarams);
-                List<RPL> rgnactuals = t.getRegionActuals();
-                List<RPL> rgnactuals1 = rpls.substIndices(rgnactuals, from, to);
-                Type outer = t.getEnclosingType();
-                Type outer1 = substIndices(outer);
-                if (typarams1 == typarams && outer1 == outer && 
-                	rgnactuals1 == rgnactuals)
-                    return t;
-                else
-                    return new ClassType(outer1, typarams1, t.getRegionParams(), 
-                	    rgnactuals1, t.getRefGroupArguments(), t.tsym, 
-                	    (t.cellType == null) ? null : substIndices(t.cellType));
-            } else {
-                Type st = substIndices(supertype(t));
-                List<Type> is = upperBounds(substIndices(interfaces(t)));
-                if (st == supertype(t) && is == interfaces(t))
-                    return t;
-                else
-                    return makeCompoundType(is.prepend(st));
-            }
-        }
-        
-        @Override
-        public Type visitWildcardType(WildcardType t, Void ignored) {
-            Type bound = t.type;
-            if (t.kind != BoundKind.UNBOUND)
-                bound = substIndices(bound);
-            if (bound == t.type) {
-                return t;
-            } else {
-                if (t.isExtendsBound() && bound.isExtendsBound())
-                    bound = upperBound(bound);
-                return new WildcardType(bound, t.kind, syms.boundClass, t.bound);
-            }
-        }
-
-        @Override
-        public Type visitArrayType(ArrayType t, Void ignored) {
-            Type elemtype = substIndices(t.elemtype);
-            if (elemtype == t.elemtype)
-                return t;
-            else
-                return new ArrayType(upperBound(elemtype), t.tsym);
-        }
-
-        @Override
-        public Type visitForAll(ForAll t, Void ignored) {
-            // TODO:  Substitute into the region args
-            // List<Type> tvars1 = substBoundsIndices(t.tvars, from, to); // TODO
-            List<Type> tvars1 = t.tvars; 
-            Type qtype1 = substIndices(t.qtype);
-            if (tvars1 == t.tvars && qtype1 == t.qtype) {
-                return t;
-            } else if (tvars1 == t.tvars) {
-                return new ForAll(tvars1, t.rvars, t.gvars, qtype1);
-            } else {
-                return new ForAll(tvars1, t.rvars, 
-                	t.gvars, Types.this.subst(qtype1, t.tvars, tvars1));
-            }
-        }
-
-        @Override
-        public Type visitErrorType(ErrorType t, Void ignored) {
-            return t;
-        }
-        
-    }
-
     /**
      * Substitute all occurrences of parameter in `from' with the
      * corresponding RPL in `to' in 't'.
      */
-    public List<Type> substRPL(List<Type> ts, List<RegionParameterSymbol> from, 
+    public List<Type> substRPLs(List<Type> ts, 
+	    List<RegionParameterSymbol> from, 
 	    List<RPL> to) {
-	return new SubstRPL(from, to).substRPL(ts);
+	return new SubstRPLs(from, to).substRPL(ts);
     }
-    public List<Type> substRPL(List<Type> ts, List<Type> fromTypes, List<Type> toTypes,
-	    List<RegionParameterSymbol> from, List<RPL> to) {
-	return new SubstRPL(fromTypes, toTypes, from, to).substRPL(ts);
+    public Type substRPLs(Type t, List<RegionParameterSymbol> from, 
+	    List<RPL> to) {
+	return new SubstRPLs(from, to).substRPL(t);
     }
-    public Type substRPL(Type t, List<RegionParameterSymbol> from, List<RPL> to) {
-	return new SubstRPL(from, to).substRPL(t);
-    }
-    public Type substRPL(Type t, List<Type> fromTypes, List<Type> toTypes,
-	    List<RegionParameterSymbol> from, List<RPL> to) {
-	return new SubstRPL(fromTypes, toTypes, from, to).substRPL(t);
-    }
-    public Type substRPL(Type t, RegionParameterSymbol from, RPL to) {
-	return substRPL(t, List.of(from), List.of(to));
-    }
-
-    private class SubstRPL extends UnaryVisitor<Type> {
-	List<Type> fromTypes;
-	List<Type> toTypes;
+    
+    private class SubstRPLs extends UnaryVisitor<Type> {
 	List<RegionParameterSymbol> from;
         List<RPL> to;
 
-        public SubstRPL(List<RegionParameterSymbol> from, List<RPL> to) {
-            this.fromTypes = List.nil();
-            this.toTypes = List.nil();
+        public SubstRPLs(List<RegionParameterSymbol> from, List<RPL> to) {
             this.from = from;
             this.to = to;
         }
         
-        public SubstRPL(List<Type> fromTypes, List<Type> toTypes,
+        public SubstRPLs(List<Type> fromTypes, List<Type> toTypes,
         	List<RegionParameterSymbol> from, List<RPL> to) {
-            this.fromTypes = fromTypes;
-            this.toTypes = toTypes;
             this.from = from;
             this.to = to;
         }
@@ -2531,13 +2382,7 @@ public class Types {
 
         @Override
         public Type visitTypeVar(TypeVar t, Void ignored) {
-            if (from.isEmpty() && fromTypes.isEmpty()) return t;
-            TypeVar result = new TypeVar(t.tsym, t.getUpperBound(), t.lower);
-            result.rplparams = t.rplparams;
-            result.prototype = (t.prototype == null) ? t : t.prototype;
-            result.rplargs = RPLs.substForParams(t.rplargs, from, to);
-            result.rplargs = RPLs.substForTRParams(result.rplargs, fromTypes, toTypes);
-            return result;
+            return t;
         }
 
         @Override
@@ -2547,7 +2392,6 @@ public class Types {
                 List<Type> typarams1 = substRPL(typarams);
                 List<RPL> rgnactuals = t.getRegionActuals();
                 List<RPL> rgnactuals1 = RPLs.substForParams(rgnactuals, from, to);
-                rgnactuals1 = RPLs.substForTRParams(rgnactuals1, fromTypes, toTypes);
                 Type outer = t.getEnclosingType();
                 Type outer1 = substRPL(outer);
                 return new ClassType(outer1, typarams1, t.getRegionParams(), 
@@ -2782,7 +2626,7 @@ public class Types {
 	// calculate new bounds
 	for (Type t : tvars) {
 	    TypeVar tv = (TypeVar) t;
-	    Type bound = substRPL(tv.getUpperBound(), from, to);
+	    Type bound = substRPLs(tv.getUpperBound(), from, to);
 	    if (bound != tv.getUpperBound())
 		changed = true;
 	    newBoundsBuf.append(bound);
@@ -2826,7 +2670,7 @@ public class Types {
     // <editor-fold defaultstate="collapsed" desc="hasSameBounds">
 
     public TypeVar substBoundRPL(TypeVar t, List<RegionParameterSymbol> from, List<RPL> to) {
-        Type bound1 = substRPL(t.getUpperBound(), from, to);
+        Type bound1 = substRPLs(t.getUpperBound(), from, to);
         if (bound1 == t.getUpperBound())
             return t;
         else

@@ -1276,7 +1276,7 @@ public class Check {
 	List<Type> otvars = ot.getTypeArguments();
 	Type mtres = mt.getReturnType();
 	Type otres = types.subst(ot.getReturnType(), otvars, mtvars);
-	otres = types.substRPL(otres, ot.getRegionParams(), mt.getRegionActuals());
+	otres = types.substRPLs(otres, ot.getRegionParams(), mt.getRegionActuals());
 	otres = types.substRefGroups(otres, ot.getRefGroupArguments(), 
 		mt.getRefGroupArguments());
 

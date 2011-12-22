@@ -1,11 +1,8 @@
 package com.sun.tools.javac.code;
 
-import com.sun.tools.javac.code.RPLElement.ArrayIndexRPLElement;
-import com.sun.tools.javac.code.RPLElement.NameRPLElement;
 import com.sun.tools.javac.code.RPLElement.RPLCaptureParameter;
-import com.sun.tools.javac.code.RPLElement.StackRPLElement;
+import com.sun.tools.javac.code.RPLElement.RPLParameterElement;
 import com.sun.tools.javac.code.RPLElement.UndetRPLParameterElement;
-import com.sun.tools.javac.code.RPLElement.VarRPLElement;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Type.ClassType;
@@ -62,13 +59,6 @@ public class RPL {
 	return elts.isEmpty();
     }
 
-    public boolean isAtomic() {
-	for (RPLElement elt : elts) {
-	    if (elt.isAtomic()) return true;
-	}
-	return false;
-    }
-    
     /** RPL under relation
      *  See Section 1.2.2 of the DPJ Tech Report
      */
@@ -150,7 +140,7 @@ public class RPL {
     
     /**
      * Is this RPL fully specified?  An RPL is fully specified if it contains
-     * no * or [?].
+     * no *.
      */
     
     public boolean isFullySpecified() {
@@ -167,8 +157,7 @@ public class RPL {
      */
     public RPL upperBound() {
 	if (elts.isEmpty() ||
-		(!(elts.head instanceof VarRPLElement) &&
-			!(elts.head instanceof RPLCaptureParameter))) 
+		!(elts.head instanceof RPLCaptureParameter))
 	    return this;
 	RPL upperBound = elts.head.upperBound();
 	//if (elts.size() == 1) return upperBound;
@@ -244,21 +233,6 @@ public class RPL {
 	return result;
     }
     
-    public RPL substForThis(VarSymbol vsym) {
-	if (!(this.elts.head instanceof RPLElement.VarRPLElement)) return this;
-	RPLElement.VarRPLElement vrs = (RPLElement.VarRPLElement) this.elts.head;
-	if (!vrs.vsym.name.toString().equals("this")) return this;
-	return new RPL(List.<RPLElement>of(new 
-		RPLElement.VarRPLElement(vsym)).appendList(this.elts.tail));
-    }
-
-    public RPL substForThis(RPL rpl) {
-	if (!(this.elts.head instanceof RPLElement.VarRPLElement)) return this;
-	RPLElement.VarRPLElement vrs = (RPLElement.VarRPLElement) this.elts.head;
-	if (!vrs.vsym.name.toString().equals("this")) return this;
-	return new RPL(rpl.elts.appendList(this.elts.tail));
-    }
-
     public static RPL exprToRPL(JCExpression tree) {
 	Symbol sym = tree.getSymbol();
 	if (sym != null) return symToRPL(sym);
@@ -269,138 +243,11 @@ public class RPL {
     
     public static RPL symToRPL(Symbol sym) {
 	RPL result = null;
-	if ((sym instanceof VarSymbol) &&
-		(sym.owner.kind == Kinds.MTH || sym.name.equals("this"))
-	    && (sym.flags() & Flags.FINAL) != 0) {
-	    // If the variable is a final local variable, use it as the RPL
-	    result = new RPL(List.<RPLElement>of(new RPLElement.VarRPLElement((VarSymbol) sym)));
-	} else {
-	    // Otherwise, use the owner region
-	    RPL owner = sym.type.getOwner();
-	    result = new RPL(owner.elts.append(RPLElement.STAR));
-	}
+	// Otherwise, use the owner region
+	RPL owner = sym.type.getOwner();
+	result = new RPL(owner.elts.append(RPLElement.STAR));
 	return result;	
     }
-
-    public RPL substForVar(VarSymbol from, RPL to) {
-	if (!(this.elts.head instanceof RPLElement.VarRPLElement)) return this;
-	RPLElement.VarRPLElement vrs = (RPLElement.VarRPLElement) this.elts.head;
-	if (vrs.vsym != from) return this;
-	return new RPL(to.elts.appendList(this.elts.tail));
-    }
-
-    public RPL substForVar(VarSymbol from, VarSymbol to) {
-	RPL toRPL = symToRPL(to);
-	return (toRPL == null) ? this : substForVar(from, toRPL);	
-    }
-
-    public RPL substForVars(List<VarSymbol> from, List<VarSymbol> to) {
-	RPL result = this;
-	while (from.nonEmpty()) {
-	    result = this.substForVar(from.head, to.head);
-	    if (result != this) {
-		break;
-	    }
-	    from = from.tail;
-	    to = to.tail;
-	}
-	return result;		
-    }
-    
-    public RPL substExpForVar(VarSymbol from, JCExpression to) {
-	RPL toRPL = exprToRPL(to);
-	return (toRPL == null) ? this : substForVar(from, toRPL);
-    }
-
-    public RPL substExpsForVars(List<VarSymbol> from, List<JCExpression> to) {
-	RPL result = this;
-	while (from.nonEmpty() && to.nonEmpty()) {
-	    result = this.substExpForVar(from.head, to.head);
-	    if (result != this) {
-		break;
-	    }
-	    from = from.tail;
-	    to = to.tail;
-	}
-	return result;	
-    }
-    
-    public RPL substIndices(List<VarSymbol> from, List<JCExpression> to) {
-	RPL result = this;
-	while (!from.isEmpty() && !to.isEmpty()) {
-	    result = result.substIndex(from.head, to.head);
-	    from = from.tail;
-	    to = to.tail;
-	}
-	return result;
-    }
-
-    public RPL substIndex(VarSymbol from, JCExpression to) {
-	ListBuffer<RPLElement> buf = ListBuffer.<RPLElement>lb();
-	for (RPLElement e : elts) {
-	    if (e instanceof ArrayIndexRPLElement) {
-		ArrayIndexRPLElement ai = (ArrayIndexRPLElement) e;
-		JCExpression subst = substIndex(ai.indexExp, from, to);
-		if (subst != ai.indexExp)
-		    e = new ArrayIndexRPLElement(subst);
-	    }
-	    buf.append(e);
-	}
-	return new RPL(buf.toList());
-    }
-
-    
-    protected JCExpression substIndex(JCExpression tree, VarSymbol from,
-	    JCExpression to) {
-	return (new SubstIndexVisitor(from, to)).substIndex(tree);
-    }
-
-    /**
-     * A simple visitor for substituting expressions for index variables.
-     * Note the following:
-     * 
-     *  1. We can't use TreeTranslator here, because we don't want to mess
-     *     up the actual AST used by the program!  So we have to replicate
-     *     every node that we want to modify.
-     *     
-     *  2. This simple visitor only handles singleton indices and (recursively)
-     *     binary expressions containing singleton indices.  However, that's
-     *     enough for now: because we can only disambiguate constants, negated
-     *     variables, and binary expressions in array typing, expanding this
-     *     visitor to do more would be pointless.  If and when we add more
-     *     robust expression disambiguation, we can expand this visitor as
-     *     necessary.
-     */
-    private static class SubstIndexVisitor extends JCTree.Visitor {
-	private VarSymbol from = null;
-	private JCExpression to = null;
-	public JCExpression result = null;
-	public SubstIndexVisitor(VarSymbol from, JCExpression to) {
-	    this.from = from;
-	    this.to = to;
-	}
-	public JCExpression substIndex(JCExpression tree) {
-	    result = tree;
-	    if (tree != null)
-		tree.accept(this);
-	    return result;
-	}
-        public void visitIdent(JCIdent tree) {
-	    if (tree.sym == from) {
-		result = to;
-	    }
-        }
-        public void visitBinary(JCBinary tree) {
-            JCExpression lhs = substIndex(tree.lhs);
-            JCExpression rhs = substIndex(tree.rhs);
-            if (lhs != tree.lhs || rhs != tree.rhs) {
-        	result = new JCBinary(tree.getTag(), lhs, rhs, tree.getOperator());
-        	result.pos = tree.pos;
-            }
-        }
-        @Override
-        public void visitTree(JCTree tree) {}
-    };
 
     /** Compute the capture of an RPL:
      *  - If the RPL is fully specified, then the capture is the same as the input
@@ -436,6 +283,17 @@ public class RPL {
 	
     }
     
+    public RPL asMemberOf(Types types, Type t) {
+	RPLElement elt = this.elts.head;
+	if (elt instanceof RPLParameterElement) {
+	    RPLParameterElement paramElt = 
+		    (RPLParameterElement) elt;
+	    Symbol owner = paramElt.sym.owner;
+	    return this.asMemberOf(types, t, owner);
+	}
+	return this;
+    }
+    
     /**
      * Conform the RPL to an enclosing environment.  An RPL may contain 
      * elements written in terms of local region names and/ or local variables
@@ -456,21 +314,6 @@ public class RPL {
 		new RPL(List.<RPLElement>of(new RPLCaptureParameter(includedIn)).
 			appendList(elts.tail));
 	}	
-	// If the RPL starts with a variable v that is out of scope, then
-	// replace the whole thing with R : *, where R is the owner parameter 
-	// of v's type, in this environment.  Note that if R itself is out of
-	// scope, the whole RPL may be deleted.
-	if (elts.head instanceof RPLElement.VarRPLElement) {
-	    RPLElement.VarRPLElement vrs = (RPLElement.VarRPLElement) elts.head;
-	    if (!rs.isInScope(vrs.vsym, env)) {
-		if (vrs.vsym.type instanceof ClassType) {
-		    ClassType ct = (ClassType) vrs.vsym.type;
-		    List<RPL> actuals = ct.getRegionActuals();
-		    RPL owner = actuals.isEmpty() ? RPLs.ROOT : actuals.head;
-			return new RPL(owner.elts.append(RPLElement.STAR).appendList(elts.tail)).inEnvironment(rs, env, pruneLocalEffects);
-		}		
-	    }
-	}
 	// Truncate an RPL containing a non-variable element E that is out of scope.  If
 	// E occurs in the first position, then the whole RPL is out of scope; return null.  
 	// Otherwise, replace E and all following elements with *.
@@ -488,22 +331,7 @@ public class RPL {
 		return null;
 		*/
 	}
-	// Otherwise, go through the elements and look for array index elements
-	// [e] where e is out of scope.  Replace every such [e] with [?].
-	ListBuffer<RPLElement> buf = ListBuffer.lb();
-	boolean added = false;
-	for (RPLElement elt : elts) {
-	    if (elt instanceof ArrayIndexRPLElement) {
-		ArrayIndexRPLElement ae = (ArrayIndexRPLElement) elt;
-		if (!rs.isInScope(ae.indexExp, env)) {
-		    // Replace elt with [?]
-		    elt = new ArrayIndexRPLElement(null);
-		    added = true;
-		}
-	    }
-	    buf.append(elt);
-	}
-	return added ? new RPL(buf.toList()) : this;
+	return this;
     }
     
     RPL truncateTo(RPLElement elt) {
@@ -552,13 +380,6 @@ public class RPL {
      */
     public static String toString(java.util.List<RPL> rpls) {
 	return rpls.toString();
-    }
-    
-    public boolean containsArrayAccess() {
-	for (RPLElement e : elts)
-	    if (e instanceof ArrayIndexRPLElement)
-		return true;
-	return false;
     }
     
 }

@@ -391,8 +391,7 @@ public class Resolve {
             while (formals.nonEmpty() && actuals.nonEmpty()) {
                 List<Type> bounds = types.subst(types.getBounds((TypeVar)formals.head),
                                                 pmt.tvars, typeargtypes);
-                bounds = types.substRPL(bounds, formals, actuals, 
-                	rpls.toParams(pmt.rvars), regionargs);
+                bounds = types.substRPLs(bounds, rpls.toParams(pmt.rvars), regionargs);
                 bounds = types.substRefGroups(bounds, pmt.gvars, refGroupArgs);
                 for (; bounds.nonEmpty(); bounds = bounds.tail)
                     if (!types.isSubtypeUnchecked(actuals.head, bounds.head, warn)) {
@@ -414,16 +413,14 @@ public class Resolve {
         	    ((ForAll) mt_old).gvars, mt);
             List<RegionParameterSymbol> formals = rpls.toParams(pmt.rvars);
             mt = pmt.qtype;
-            mt = types.substRPL(mt, pmt.tvars, typeargtypes,
-        	    formals, regionargs);
+            mt = types.substRPLs(mt, formals, regionargs);
             mt = types.substRefGroups(mt, pmt.gvars, refGroupArgs);
         } else if (mt_old.tag == FORALL){
             ForAll pmt = new ForAll(List.<Type>nil(), ((ForAll) mt_old).rvars,
         	    ((ForAll) mt_old).gvars, mt);
             List<RPL> rvars1 = pmt.rvars;
             rvars = rvars.appendList(rvars1);
-            mt = types.substRPL(pmt.qtype, pmt.tvars, typeargtypes,
-        	    rpls.toParams(pmt.rvars), rvars1);            
+            mt = types.substRPLs(pmt.qtype, rpls.toParams(pmt.rvars), rvars1);            
         }
 
         // find out whether we need to go the slow route via infer

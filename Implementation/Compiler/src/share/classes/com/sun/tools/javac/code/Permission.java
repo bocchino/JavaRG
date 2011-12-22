@@ -216,7 +216,7 @@ public abstract class Permission {
 		SubstVars<CopyPerm> 
 	{
 
-	    /** 'e' in 'copies e [...G1] to G2 */
+	    /** 'e' in 'copies e [...G1] to G2' */
 	    public final JCExpression exp;
 	    
 	    /** If this field is non-null, then this instance represents
@@ -401,9 +401,8 @@ public abstract class Permission {
 	     * (1) P1 is a simple perm 'copies e to G' or single tree perm
 	     * copies 'e...G1 to G2' and P1 equals P2; or
 	     * (2) P1 is a multiple tree perm 'copies e.?{\f}...G1 to G2', 
-	     * P2's expression is a field access e.f, P1 is equal to P2 
-	     * with its expression replaced by e, f is in the source group of P1, 
-	     * and f is not in the consumed perms of P1.
+	     * P2 has the form 'copies e.f...G1 to G2', f is in G1, and f 
+	     * is not in the consumed perms of P1.
 	     * 
 	     * For example:  
 	     * (1) copies x.?...G1 to G2 represents copies x.f...G1 to G2
@@ -435,24 +434,62 @@ public abstract class Permission {
 
 	}
     
+	/**
+	 * Class representing '(reads|writes) R [via e [...G]]'
+	 */
 	public static class EffectPerm extends EnvPerm 
-		implements SubstRefGroups<EffectPerm>,
-		AsMemberOf<EffectPerm>, AtCallSite<EffectPerm>
+		implements 
+		SubstRefGroups<EffectPerm>,
+		AsMemberOf<EffectPerm>, 
+		AtCallSite<EffectPerm>
 	{
-	
-	    public EffectPerm() {
-		super(RefGroup.NO_GROUP, RefGroup.NO_GROUP);
+	    /**
+	     * Is this a write effect?
+	     */
+	    boolean isWrite;
+	    
+	    /** 'R' in '(reads|writes) R [via e [...G]]' */
+	    public final RPL rpl;
+	    
+	    /** 
+	     * 'e' in '(reads|writes) R [via e [...G]] 
+	     * If this field is null, then there is no deref set.
+	     * */
+	    public final JCExpression exp;
+	    
+	    /** 
+	     * 'G' in '(reads|writes) R [via e [...G]]. 
+	     * If this field is null, then there is no tree group.
+	     */
+	    public final RefGroup treeGroup;
+
+	    public EffectPerm(boolean isWrite, RPL rpl, JCExpression exp, 
+		    RefGroup treeGroup) 
+	    {
+		super(treeGroup, RefGroup.NO_GROUP);
+		this.rpl = rpl;
+		this.exp = exp;
+		this.treeGroup = treeGroup;
 	    }
 	    
 	    public EffectPerm substRefGroups(List<RefGroup> from, 
 		    List<RefGroup> to) {
-		// TODO
-		throw new UnsupportedOperationException();
+		RefGroup treeGroup = (this.treeGroup == null) ?
+			null : this.treeGroup.substRefGroups(from, to);
+		if (this.treeGroup != treeGroup)
+		    return new EffectPerm(this.isWrite, this.rpl, this.exp, 
+			    treeGroup);
+		return this;
 	    }
 	    
 	    public EffectPerm asMemberOf(Types types, Type t) {
-		// TODO
-		throw new UnsupportedOperationException();
+		RPL rpl = this.rpl.asMemberOf(types, t);
+		RefGroup treeGroup = (this.treeGroup == null) ?
+			null : this.treeGroup.asMemberOf(types, t);
+		if (this.rpl != rpl || this.treeGroup != treeGroup)
+		    return new EffectPerm(this.isWrite, rpl, this.exp,
+			    treeGroup);
+		return this;
 	    }
 	    
 	    public EffectPerm atCallSite(Types types, JCMethodInvocation tree) {
@@ -519,8 +556,10 @@ public abstract class Permission {
 	 * Class representing a permission 'updates G'
 	 */
 	public static class UpdatedGroupPerm extends EnvPerm 
-		implements SubstRefGroups<UpdatedGroupPerm>,
-		AsMemberOf<UpdatedGroupPerm>, AtCallSite<UpdatedGroupPerm>
+		implements 
+		SubstRefGroups<UpdatedGroupPerm>,
+		AsMemberOf<UpdatedGroupPerm>, 
+		AtCallSite<UpdatedGroupPerm>
 	{
 	
 	    /** The updated group */	

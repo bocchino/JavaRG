@@ -2365,7 +2365,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 	/** Associated {@link RPLElement} -- set in {@link Attr} */
 	public RPLElement rplElt = null;
 	
-	/** An 'r' or 'C.r' RPL element (Root, Local, or a declared field or local region). */
+	/** 
+	 * An 'r' or 'C.r' RPL element 
+	 * (Root, Local, or a declared field or local region). 
+	 * */
 	public static final int NAME = 0;
 	/** A '*' RPL element. */
 	public static final int STAR = NAME + 1;
@@ -2560,6 +2563,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 	/** The group G in 'copies D to G'.
 	 */
 	public final JCIdent targetGroupID;
+	
+	/**
+	 * Internal representation of the copy perm
+	 */
 	public CopyPerm copyPerm;
 	
 	protected JRGCopyPerm(JRGDerefSet derefSet, JCIdent targetGroupID,
@@ -2595,11 +2602,17 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     public static class JRGEffectPerm extends JCTree implements EffectPermTree {
 
-	/** Region R in 'writes R' or 'writes R via D' */
+	/** Region R in '(reads|writes) R' or '(reads|writes) R via D' */
 	public DPJRegionPathList rpl;
-	/** Deref set D in 'writes R via D'.  Equals null if permission 
-	 *  is 'writes R'. */
+	
+	/** Deref set D in '(reads|writes) R via D'.  Equals null if permission 
+	 *  is '(reads|writes) R'. */
 	public JRGDerefSet derefSet;
+	
+	/**
+	 * Internal representation of the effect perm
+	 */
+	public EffectPerm effectPerm;
 	
 	protected JRGEffectPerm(DPJRegionPathList rpl, JRGDerefSet derefSet) {
 	    this.rpl = rpl;
