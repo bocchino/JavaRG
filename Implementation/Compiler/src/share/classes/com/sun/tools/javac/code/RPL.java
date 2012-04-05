@@ -3,17 +3,16 @@ package com.sun.tools.javac.code;
 import com.sun.tools.javac.code.RPLElement.RPLCaptureParameter;
 import com.sun.tools.javac.code.RPLElement.RPLParameterElement;
 import com.sun.tools.javac.code.RPLElement.UndetRPLParameterElement;
+import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
-import com.sun.tools.javac.code.Symbol.VarSymbol;
-import com.sun.tools.javac.code.Type.ClassType;
-import com.sun.tools.javac.code.Type.TypeVar;
+import com.sun.tools.javac.code.Translation.AsMemberOf;
+import com.sun.tools.javac.code.Translation.AtCallSite;
+import com.sun.tools.javac.code.Translation.SubstRPLs;
+import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.Resolve;
-import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.JCBinary;
-import com.sun.tools.javac.tree.JCTree.JCExpression;
-import com.sun.tools.javac.tree.JCTree.JCIdent;
+import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
@@ -21,7 +20,12 @@ import com.sun.tools.javac.util.ListBuffer;
  *  of RPL elements.  Various operations on RPLs, pairs of RPLs, and lists
  *  of RPLs required by the DPJ type system are supported.
  */
-public class RPL {
+public class RPL 
+	implements
+	SubstRPLs<RPL>,
+	AsMemberOf<RPL>,
+	AtCallSite<RPL>
+{
     
     
     ///////////////////////////////////////////////////////////////////////////
@@ -63,7 +67,7 @@ public class RPL {
      *  See Section 1.2.2 of the DPJ Tech Report
      */
     public boolean isNestedUnder(RPL that) {
-	// Deal with z regions and capture parameters by converting first element
+	// Deal capture parameters by converting first element
 	// to its upper bound
 	RPL upperBound = this.upperBound();
 	if (upperBound != this && upperBound.isNestedUnder(that))
@@ -139,8 +143,8 @@ public class RPL {
     }
     
     /**
-     * Is this RPL fully specified?  An RPL is fully specified if it contains
-     * no *.
+     * Is this RPL fully specified?  
+     * An RPL is fully specified if it contains no *.
      */
     
     public boolean isFullySpecified() {
@@ -149,8 +153,6 @@ public class RPL {
 	}
 	return true;
     }
-
-    
     
     /**
      * Compute an upper bound for this RPL
@@ -160,7 +162,6 @@ public class RPL {
 		!(elts.head instanceof RPLCaptureParameter))
 	    return this;
 	RPL upperBound = elts.head.upperBound();
-	//if (elts.size() == 1) return upperBound;
 	return new RPL(upperBound.elts.appendList(elts.tail));
     }
     
@@ -179,76 +180,18 @@ public class RPL {
 	return new RPL(buf.toList());
     }
     
-    public RPL substForParam(RegionParameterSymbol param, RPL rpl) {
-	if (!this.elts.head.equals(param)) {
-	    return this;
-	}
-	return new RPL(rpl.elts.appendList(this.elts.tail));
-    }
-
-    public RPL substForParams(List<RegionParameterSymbol> from,
-	             List<RPL> to) {
-	RPL result = this;
+    public RPL substRPLs(List<RegionParameterSymbol> from, 
+	    List<RPL> to) {
 	while (from.nonEmpty() && to.nonEmpty()) {
-	    result = this.substForParam(from.head, to.head);
-	    if (result != this) {
-		break;
+	    if (this.elts.head.equals(from.head)) {
+		return new RPL(to.head.elts.appendList(this.elts.tail));
 	    }
 	    from = from.tail;
 	    to = to.tail;
 	}
-	return result;
+	return this;
     }
     
-    /**
-     * Substitute for type region params
-     */
-    public RPL substForTRParams(Type from, Type to) {
-	if (!(from instanceof TypeVar)) return this;
-	List<RegionParameterSymbol> params = from.tsym.type.getRegionParams();
-	List<RPL> args = to.getRegionActuals();
-	return this.substForParams(params, args);
-    }
-
-    public RPL substForTRParams(List<Type> from, List<Type> to) {
-	RPL result = this;
-	while (from.nonEmpty() && to.nonEmpty()) {
-	    result = this.substForTRParams(from.head, to.head);
-	    if (result != this) {
-		break;
-	    }
-	    from = from.tail;
-	    to = to.tail;
-	}
-	return result;
-    }
-    
-    /**
-     * Do all the RPL parameter substitutions implied by the bindings of t
-     */
-    public RPL substForAllParams(Type t) {
-	RPL result = this.substForParams(t.getRegionParams(), t.getRegionActuals());
-	result = result.substForTRParams(t.tsym.type.getTypeArguments(),
-		t.getTypeArguments());
-	return result;
-    }
-    
-    public static RPL exprToRPL(JCExpression tree) {
-	Symbol sym = tree.getSymbol();
-	if (sym != null) return symToRPL(sym);
-	RPL owner = tree.type.getOwner();
-	RPL result = new RPL(owner.elts.append(RPLElement.STAR));
-	return result;
-    }
-    
-    public static RPL symToRPL(Symbol sym) {
-	RPL result = null;
-	// Otherwise, use the owner region
-	RPL owner = sym.type.getOwner();
-	result = new RPL(owner.elts.append(RPLElement.STAR));
-	return result;	
-    }
-
     /** Compute the capture of an RPL:
      *  - If the RPL is fully specified, then the capture is the same as the input
      *  - If the RPL is partially specified, then the capture is a fresh RPL consisting
@@ -273,10 +216,8 @@ public class RPL {
                 List<RegionParameterSymbol> from = owner.type.allrgnparams();
                 List<RPL> to = base.allrgnactuals();
                 if (from.nonEmpty()) {
-                    result = result.substForParams(from, to);
+                    result = result.substRPLs(from, to);
                 }
-                result = result.substForTRParams(owner.type.alltyparams(), 
-                	base.alltyparams());
             }
         }
 	return result;
@@ -293,7 +234,20 @@ public class RPL {
 	}
 	return this;
     }
-    
+
+    public RPL atCallSite(Types types, JCMethodInvocation tree) {
+	MethodSymbol methSym = tree.getMethodSymbol();
+	if (methSym != null) {
+	    MethodType methodType = (MethodType) tree.meth.type;
+	    RPL rpl = Translation.<RPL>accessElt(this, 
+		    types, tree.meth);
+	    rpl = rpl.substRPLs(methSym.rgnParams, 
+		    methodType.regionActuals);
+	    return rpl;
+	}
+	return this;
+    }
+
     /**
      * Conform the RPL to an enclosing environment.  An RPL may contain 
      * elements written in terms of local region names and/ or local variables
@@ -314,7 +268,7 @@ public class RPL {
 		new RPL(List.<RPLElement>of(new RPLCaptureParameter(includedIn)).
 			appendList(elts.tail));
 	}	
-	// Truncate an RPL containing a non-variable element E that is out of scope.  If
+	// Truncate an RPL containing an element E that is out of scope.  If
 	// E occurs in the first position, then the whole RPL is out of scope; return null.  
 	// Otherwise, replace E and all following elements with *.
 	for (RPLElement elt : elts) {
@@ -322,19 +276,11 @@ public class RPL {
 		return this.truncateTo(elt);
 	    if (pruneLocalEffects && elt.isLocalName())
 		return this.truncateTo(elt);
-	    /*
-	    if (elt instanceof StackRPLElement) {
-		StackRPLElement sre = (StackRPLElement) elt;
-		if (!rs.isInScope(sre.sym, env)) return null;
-	    }
-	    if (elt.isLocalName() && pruneLocalEffects)
-		return null;
-		*/
 	}
 	return this;
     }
     
-    RPL truncateTo(RPLElement elt) {
+    private RPL truncateTo(RPLElement elt) {
 	ListBuffer<RPLElement> buf = ListBuffer.lb();
 	List<RPLElement> list = elts;
 	while (list.nonEmpty() && list.head != elt) {

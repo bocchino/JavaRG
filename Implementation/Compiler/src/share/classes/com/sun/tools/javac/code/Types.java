@@ -2209,24 +2209,13 @@ public class Types {
                  from = from.tail, to = to.tail) {
                  if (t.tsym == from.head.tsym) {
                      Type result = to.head.withTypeVar(t);
-                     // If there are n region arguments to t, replace the first
-                     // n RPL arguments of result with those region args
                      List<RPL> tArgs = t.rplargs;
                      List<RPL> resultArgs = result.getRegionActuals();
-                     ListBuffer<RPL> buf = ListBuffer.lb();
-                     for (RPL arg : resultArgs) {
-                	 if (tArgs.nonEmpty()) {
-                	     buf.append(tArgs.head.substForTRParams(t,result));
-                	     tArgs = tArgs.tail;
-                	 } else {
-                	     buf.append(arg);
-                	 }
-                     }
                      if (result.tag == CLASS) {
                 	 ClassType ct = (ClassType) result;
                 	 result = new ClassType(ct.getEnclosingType(), ct.getTypeArguments(),
                 		 ct.getRegionParams(), 
-                		 buf.toList(), 
+                		 resultArgs,
                 		 ct.getRefGroupArguments(),
                 		 ct.tsym, ct.cellType);
                      } else if (result.tag == TYPEVAR && 
@@ -2235,7 +2224,7 @@ public class Types {
                 	 List<RegionParameterSymbol> params = tv.rplparams;
                 	 result = tv = new TypeVar(tv.tsym, tv.getUpperBound(), tv.lower);
                 	 tv.rplparams = params;
-                	 tv.rplargs = buf.toList();
+                	 tv.rplargs = resultArgs;
                      }
                      return result;
                  }

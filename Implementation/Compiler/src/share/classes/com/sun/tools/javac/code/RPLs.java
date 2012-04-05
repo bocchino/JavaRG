@@ -134,8 +134,8 @@ public class RPLs {
 	    List<RegionParameterSymbol> formals, List<RPL> actuals,
 	    List<Pair<RPL,RPL>> envConstraints) {
 	for (Pair<RPL,RPL> constraint : constraints) {
-	    if (!areDisjoint(constraint.fst.substForParams(formals, actuals), 
-		    constraint.snd.substForParams(formals, actuals),
+	    if (!areDisjoint(constraint.fst.substRPLs(formals, actuals), 
+		    constraint.snd.substRPLs(formals, actuals),
 		    envConstraints))
 		return false;
 	}
@@ -182,7 +182,7 @@ public class RPLs {
 		List<RPL> to) {
 	ListBuffer<RPL> buf = new ListBuffer<RPL>();
 	while (rpls.nonEmpty()) {
-	    buf.append(rpls.head.substForParams(from, to));
+	    buf.append(rpls.head.substRPLs(from, to));
 	    rpls = rpls.tail;
 	}
 	return buf.toList();
