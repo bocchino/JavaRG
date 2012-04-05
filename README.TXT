@@ -1,14 +1,10 @@
-Deterministic Parallel Java (DPJ)
-=================================
+Java with Reference Groups (JavaRG)
+===================================
 
-This directory and its subdirectories contain source code for the
-Deterministic Parallel Java system, which implements an extended
-version of Java that adds features for deterministic parallel
-programming.
+This repository contains the compiler, runtime, and benchmarks for the
+JavaRG research project.  Papers describing the project are in
+preparation.
 
-DPJ is open source software. You may freely distribute it under the 
-terms of the license agreement found in LICENSE.TXT.
-
-Please see the documentation provided in the Documentation directory 
-for further assistance with DPJ.  The DPJ Installation Manual
-provides instructions about how to install DPJ on your system.
+This repository is forked from the Deterministic Parallel Java (DPJ)
+repository on Github.  The license for the JavaRG code is the same as
+stated in the DPJ repository.
