@@ -81,6 +81,7 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Permission.EnvPerm.CopyPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.EffectPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
@@ -98,7 +99,6 @@ import com.sun.tools.javac.code.RefGroup.RefGroupParameter;
 import com.sun.tools.javac.code.RefGroups;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Source;
-import com.sun.tools.javac.code.Translation;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
@@ -112,6 +112,7 @@ import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
+import com.sun.tools.javac.code.Translation;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.ClassType;
@@ -642,6 +643,10 @@ public class Attr extends JCTree.Visitor {
     /** Visitor result: the computed type.
      */
     Type result;
+    
+    /** Visitor state: Whether effect is write
+     */
+    boolean isWrite;
 
     /** Visitor method: attribute a tree, catching any completion failure
      *  exceptions. Return the tree's type.
@@ -701,6 +706,13 @@ public class Attr extends JCTree.Visitor {
     CopyPerm attribCopyPerm(JRGCopyPerm tree, Env<AttrContext> env) {
 	attribTree(tree, env, NIL, Type.noType);
 	return tree.copyPerm;
+    }
+    
+    EffectPerm attribEffectPerm(JRGEffectPerm tree, Env<AttrContext> env,
+	    boolean isWrite) {
+	this.isWrite = isWrite;
+	attribTree(tree, env, NIL, Type.noType);
+	return tree.effectPerm;
     }
     
     RefGroup attribRefGroup(JCIdent tree, Env<AttrContext> env) {
@@ -791,6 +803,20 @@ public class Attr extends JCTree.Visitor {
 	}
 	return lb.toList();
     }
+
+    List<EffectPerm> attribEffectPerms(JRGMethodPerms tree,
+	    Env<AttrContext> env) {
+	if (tree.defaultEffectPerms)
+	    return List.of(EffectPerm.DEFAULT);
+	else {
+	    ListBuffer<EffectPerm> lb = ListBuffer.lb();
+	    for (JRGEffectPerm perm : tree.readEffectPerms)
+		lb.append(attribEffectPerm(perm, env, false));
+	    for (JRGEffectPerm perm : tree.writeEffectPerms)
+		lb.append(attribEffectPerm(perm, env, true));
+	    return lb.toList();
+	}
+    }
     
     public void attribMethodPerms(JRGMethodPerms tree, 
 	    MethodSymbol methodSymbol, Env<AttrContext> env) {
@@ -819,13 +845,16 @@ public class Attr extends JCTree.Visitor {
 	// Attribute copy perms	and add to env
 	{
 	    methodSymbol.copyPerms = attribCopyPerms(tree.copyPerms, env);
-	    for (CopyPerm copyPerm : methodSymbol.copyPerms) {
+	    for (CopyPerm copyPerm : methodSymbol.copyPerms)
 		env.info.scope.addCopyPerm(permissions, copyPerm);
-	    }
 	}
 	
 	// Attribute effect perms and add to env
-	// TODO
+	{
+	    methodSymbol.effectPerms = attribEffectPerms(tree, env);
+	    for (EffectPerm effectPerm : methodSymbol.effectPerms)
+		env.info.scope.addEffectPerm(permissions, effectPerm);
+	}
 	
 	// Attribute preserved groups and add to env
 	{
@@ -2003,25 +2032,28 @@ public class Attr extends JCTree.Visitor {
             MethodType methodType = (MethodType) tree.meth.type;
             // Fresh group perms
             List<FreshGroupPerm> freshGroupPerms = 
-        	    Translation.atCallSite(methSym.freshGroupPerms, types, tree);
+        	    Translation.atCallSite(methSym.freshGroupPerms, types, 
+        		    permissions, tree);
             chk.consumeEnvPerms(tree.pos(), freshGroupPerms, localEnv);
             // Copy perms
             List<CopyPerm> copyPerms =
-        	    Translation.atCallSite(methSym.copyPerms, types, tree);
-            copyPerms = Translation.substVarExprs(copyPerms, permissions, 
-        	    methSym.params(), tree.args);
+        	    Translation.atCallSite(methSym.copyPerms, types, 
+        		    permissions, tree);
             chk.consumeEnvPerms(tree.pos(), copyPerms, localEnv);
             // Effect perms
-            // TODO
+            List<EffectPerm> effectPerms =
+        	    Translation.atCallSite(methSym.effectPerms, types,
+        		    permissions, tree);
+            chk.requireEnvPerms(tree.pos(), effectPerms, localEnv);
             // Preserved group perms
             List<PreservedGroupPerm> preservedGroupPerms =
         	    Translation.atCallSite(methSym.preservedGroupPerms,
-        		    types, tree);
+        		    types, permissions, tree);
             chk.requireEnvPerms(tree.pos(), preservedGroupPerms, localEnv);
             // Updated group perms
             List<UpdatedGroupPerm> updatedGroupPerms =
         	    Translation.atCallSite(methSym.updatedGroupPerms,
-        		    types, tree);
+        		    types, permissions, tree);
             chk.requireEnvPerms(tree.pos(), updatedGroupPerms, localEnv);
         }
         
@@ -4196,8 +4228,21 @@ public class Attr extends JCTree.Visitor {
 	}
     }
     
+    public void visitEffectPerm(JRGEffectPerm tree) {
+	attribRPL(tree.rpl, env);
+	if (tree.derefSet != null)
+	    attribTree(tree.derefSet, env, NIL, Type.noType);
+	if (tree.derefSet == null)
+	    tree.effectPerm = new EffectPerm(isWrite, tree.rpl.rpl, 
+		    null, null);
+	else
+	    tree.effectPerm = new EffectPerm(isWrite, tree.rpl.rpl,
+		    tree.derefSet.root, tree.derefSet.refGroup);
+    }
+
     public void visitDerefSet(JRGDerefSet tree) {
-	attribTree(tree.root, env, VAR, Type.noType);
+	attribExpr(tree.root, env, Type.noType);
+	//attribTree(tree.root, env, VAR, Type.noType);
 	if (!permissions.isValidDerefExp(tree.root, types)) {
 	    log.error(tree.root.pos, "bad.exp.in.deref.set");
 	}
@@ -4205,30 +4250,5 @@ public class Attr extends JCTree.Visitor {
 	    tree.refGroup = attribRefGroup(tree.refGroupID, env);
     }
     
-    public void visitEffectPerm(JRGEffectPerm tree) {
-	/*
-	attribRPLs(tree.readEffectPerms);
-	attribRPLs(tree.writeEffectPerms);
-	tree.effects = new Effects();
-	if (tree.isPure) {
-	    // Nothing to do
-	} else if (tree.readEffectPerms.nonEmpty() ||
-		tree.writeEffectPerms.nonEmpty()) {
-	    for (DPJRegionPathList treeRPL : tree.readEffectPerms) {
-		tree.effects.add(new Effect.ReadEffect(rpls, treeRPL.rpl, 
-			false, false));
-	    }
-	    for (DPJRegionPathList treeRPL : tree.writeEffectPerms) {
-		    tree.effects.add(new Effect.WriteEffect(rpls, treeRPL.rpl, 
-			false, false));
-	    }
-	} else {
-	    // Default effect = writes Root : *
-	    tree.effects.add(new Effect.WriteEffect(rpls, 
-		    new RPL(List.<RPLElement>of(RPLElement.ROOT_ELEMENT, 
-			    RPLElement.STAR)), false, true));            
-	}            
-	*/
-    }
 
 }

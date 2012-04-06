@@ -36,15 +36,16 @@ public class Translation {
     public interface AtCallSite<T extends AtCallSite<T>> {
 	
 	/** 'this' at the call site */
-	public T atCallSite(Types types, JCMethodInvocation site);
+	public T atCallSite(Types types, Permissions permissions,
+		JCMethodInvocation site);
 	
     }
 
     /** Apply 'at call site' to a list of things */
     public static <T extends AtCallSite<T>> List<T>atCallSite(List<T> list,
-	    Types types, JCMethodInvocation site) {
+	    Types types, Permissions permissions, JCMethodInvocation site) {
 	ListBuffer<T> lb = ListBuffer.lb();
-	for (T elt : list) lb.append(elt.atCallSite(types, site));
+	for (T elt : list) lb.append(elt.atCallSite(types, permissions, site));
 	return lb.toList();
     }
         

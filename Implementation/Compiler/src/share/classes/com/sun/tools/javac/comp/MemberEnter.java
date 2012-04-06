@@ -691,7 +691,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         tree.sym = m;
         Env<AttrContext> localEnv = methodEnv(tree, env);
 
-        // Attribute type, RPL, and effect params, and 
+        // Attribute type, RPL, and ref group params, and 
         // compute the method type
         m.type = signature(tree.typarams, tree.paramInfo, tree.params,
                            tree.restype, tree.perms, tree.thrown, localEnv);
@@ -723,13 +723,12 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 rgnParams.append(param.sym);
             }
             m.rgnParams = rgnParams.toList();
-            // Set m.effectparams
+            // Set m.refGroupParams
             ListBuffer<RefGroup> refGroupParams = ListBuffer.lb();
             for (JCIdent param : tree.paramInfo.refGroupParams) {
         	refGroupParams.append(new RefGroupParameter(
         		(RefGroupParameterSymbol) param.sym));
             }
-            // Set m.refGroupParams
             m.refGroupParams = refGroupParams.toList();
         } else {
             m.refGroupParams = List.nil();

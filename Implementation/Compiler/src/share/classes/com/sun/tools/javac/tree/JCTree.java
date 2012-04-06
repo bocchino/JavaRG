@@ -2491,7 +2491,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
 	protected JRGMethodPerms(JRGRefPerm thisPerm, List<JCIdent> freshGroups,
 		List<JRGCopyPerm> copyPerms,boolean defaultEffectPerms,
-		List<JRGEffectPerm> readffectPerms, 
+		List<JRGEffectPerm> readEffectPerms, 
 		List<JRGEffectPerm> writeEffectPerms,
 		List<JCIdent> preservedGroups) {
 	    this.thisPerm = thisPerm;

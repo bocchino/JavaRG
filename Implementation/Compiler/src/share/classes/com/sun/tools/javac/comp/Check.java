@@ -1899,7 +1899,9 @@ public class Check {
 	    return success;
 	}
 	else if (perm instanceof EffectPerm) {
-	    // TODO
+	    EffectPerm effectPerm = (EffectPerm) perm;
+	    boolean success = requireEffectPerm(pos, effectPerm, env);
+	    return success;
 	}
 	else if (perm instanceof PreservedGroupPerm) {
 	    PreservedGroupPerm preservedGroupPerm =
@@ -1937,7 +1939,7 @@ public class Check {
      * This process may alter the permissions in the environment.  If
      * the needed permission can be generated in this way, this method
      * returns 'true', otherwise 'false.'
-     * permissions 
+     * 
      * @param pos
      * @param neededPerm
      * @param env
@@ -2101,8 +2103,12 @@ public class Check {
 	log.error(pos, "missing.perm", neededPerm);
 	return false;
     }
-
 	
+    boolean requireEffectPerm(DiagnosticPosition pos,
+	    EffectPerm neededPerm, Env<AttrContext> env) {
+	// TODO
+	return true;
+    }
     
 /* *************************************************************************
  * Check annotations

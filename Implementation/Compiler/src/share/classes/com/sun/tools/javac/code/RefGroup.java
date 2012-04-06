@@ -34,7 +34,8 @@ public abstract class RefGroup
 	return this;
     }
     
-    public RefGroup atCallSite(Types types, JCMethodInvocation tree) {
+    public RefGroup atCallSite(Types types, Permissions permissions,
+	    JCMethodInvocation tree) {
 	return this;
     }
     
@@ -121,7 +122,8 @@ public abstract class RefGroup
 	    return result;
 	}
 	
-	@Override public RefGroup atCallSite(Types types, JCMethodInvocation tree) {
+	@Override public RefGroup atCallSite(Types types, Permissions permissions,
+		JCMethodInvocation tree) {
 	    MethodSymbol methSym = tree.getMethodSymbol();
 	    if (methSym != null) {
 		MethodType methodType = (MethodType) tree.meth.type;

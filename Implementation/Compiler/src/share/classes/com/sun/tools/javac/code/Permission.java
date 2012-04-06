@@ -1,11 +1,12 @@
 package com.sun.tools.javac.code;
 
 import com.sun.tools.javac.code.Permission.RefPerm.LocallyUnique;
+import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Translation.AsMemberOf;
 import com.sun.tools.javac.code.Translation.AtCallSite;
 import com.sun.tools.javac.code.Translation.SubstRefGroups;
 import com.sun.tools.javac.code.Translation.SubstVars;
-import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
@@ -17,7 +18,6 @@ import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
-import com.sun.tools.javac.util.Pair;
 
 public abstract class Permission {
     
@@ -197,8 +197,10 @@ public abstract class Permission {
 			this : new FreshGroupPerm(refGroup);
 	    }
 
-	    public FreshGroupPerm atCallSite(Types types, JCMethodInvocation tree) {
-		RefGroup refGroup = this.refGroup.atCallSite(types, tree);
+	    public FreshGroupPerm atCallSite(Types types, Permissions permissions,
+		    JCMethodInvocation tree) {
+		RefGroup refGroup = this.refGroup.atCallSite(types, 
+			permissions, tree);
 		return (this.refGroup == refGroup) ?
 			this : new FreshGroupPerm(refGroup);
 	    }
@@ -321,14 +323,22 @@ public abstract class Permission {
 		return this;
 	    }
 	    
-	    public CopyPerm atCallSite(Types types, JCMethodInvocation tree) {
+	    public CopyPerm atCallSite(Types types, Permissions permissions, 
+		    JCMethodInvocation tree) {
 		RefGroup sourceGroup = (this.sourceGroup == null) ?
-			null : this.sourceGroup.atCallSite(types, tree);
-		RefGroup targetGroup = this.targetGroup.atCallSite(types, tree);
+			null : this.sourceGroup.atCallSite(types, permissions, tree);
+		RefGroup targetGroup = this.targetGroup.atCallSite(types, 
+			permissions, tree);
+		CopyPerm result = this;
 		if (this.sourceGroup != sourceGroup || this.targetGroup != targetGroup)
-		    return new CopyPerm(this.exp, this.consumedFields,
+		    result = new CopyPerm(this.exp, this.consumedFields,
 			    sourceGroup, targetGroup);
-		return this;
+		MethodSymbol methSym = tree.getMethodSymbol();
+		if (methSym != null) {
+	            result = result.substVarExprs(permissions, 
+	        	    methSym.params(), tree.args);
+		}
+		return result;
 	    }
 	    
 	    public CopyPerm substVarExprs(Permissions permissions, 
@@ -443,10 +453,16 @@ public abstract class Permission {
 		AsMemberOf<EffectPerm>, 
 		AtCallSite<EffectPerm>
 	{
+
+	    public static EffectPerm DEFAULT =
+		    new EffectPerm(true, new RPL(List.of(RPLElement.ROOT_ELEMENT, 
+			    RPLElement.STAR)),
+			    null, null);
+	    
 	    /**
 	     * Is this a write effect?
 	     */
-	    boolean isWrite;
+	    public boolean isWrite;
 	    
 	    /** 'R' in '(reads|writes) R [via e [...G]]' */
 	    public final RPL rpl;
@@ -458,7 +474,7 @@ public abstract class Permission {
 	    public final JCExpression exp;
 	    
 	    /** 
-	     * 'G' in '(reads|writes) R [via e [...G]]. 
+	     * 'G' in '(reads|writes) R [via e [...G]]
 	     * If this field is null, then there is no tree group.
 	     */
 	    public final RefGroup treeGroup;
@@ -467,6 +483,7 @@ public abstract class Permission {
 		    RefGroup treeGroup) 
 	    {
 		super(treeGroup, RefGroup.NO_GROUP);
+		this.isWrite = isWrite;
 		this.rpl = rpl;
 		this.exp = exp;
 		this.treeGroup = treeGroup;
@@ -492,13 +509,34 @@ public abstract class Permission {
 		return this;
 	    }
 	    
-	    public EffectPerm atCallSite(Types types, JCMethodInvocation tree) {
-		
-		
-		// TODO
-		throw new UnsupportedOperationException();
+	    public EffectPerm atCallSite(Types types, Permissions permissions,
+		    JCMethodInvocation tree) {
+		RPL rpl = this.rpl.atCallSite(types, permissions, tree);
+		RefGroup treeGroup = (this.treeGroup == null) ?
+			null : this.treeGroup.atCallSite(types, 
+				permissions, tree);
+		EffectPerm result = this;
+		if (this.rpl != rpl || this.treeGroup != treeGroup)
+		    result = new EffectPerm(this.isWrite, rpl, this.exp,
+			    treeGroup);
+		MethodSymbol methSym = tree.getMethodSymbol();
+		if (methSym != null) {
+	            result = result.substVarExprs(permissions, 
+	        	    methSym.params(), tree.args);
+		}
+		return result;
 	    }
 	    
+	    public EffectPerm substVarExprs(Permissions permissions, 
+		    List<VarSymbol> from, List<JCExpression> to) {
+		JCExpression newExp = permissions.substVars(exp, from, to);
+		if (newExp != exp) {
+		    return new EffectPerm(this.isWrite, this.rpl,
+			    newExp, this.treeGroup);
+		}
+		return this;
+	    }
+
 	}
     
 	/**
@@ -545,8 +583,9 @@ public abstract class Permission {
 	    }
 	    
 	    public PreservedGroupPerm atCallSite(Types types, 
-		    JCMethodInvocation tree) {
-		RefGroup refGroup = this.refGroup.atCallSite(types, tree);
+		    Permissions permissions, JCMethodInvocation tree) {
+		RefGroup refGroup = this.refGroup.atCallSite(types, 
+			permissions, tree);
 		return (this.refGroup == refGroup) ?
 			this : new PreservedGroupPerm(refGroup);
 	    }
@@ -586,8 +625,9 @@ public abstract class Permission {
 	    }
 
 	    public UpdatedGroupPerm atCallSite(Types types, 
-		    JCMethodInvocation tree) {
-		RefGroup refGroup = this.refGroup.atCallSite(types, tree);
+		    Permissions permissions, JCMethodInvocation tree) {
+		RefGroup refGroup = this.refGroup.atCallSite(types,
+			permissions, tree);
 		return (this.refGroup == refGroup) ?
 			this : new UpdatedGroupPerm(refGroup);
 	    }

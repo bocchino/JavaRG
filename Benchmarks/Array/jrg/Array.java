@@ -3,10 +3,10 @@
  */
 public class Array<region R,refgroup G> {
 
-    public interface Data<region R> {
-	public void updateParallel() 
+    public static abstract class Data<region R> {
+	public abstract void updateParallel() 
 	    writes R via this;
-	public void updateSequential();
+	public abstract void updateSequential();
     }
 
     private arrayclass Rep {

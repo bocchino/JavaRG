@@ -235,14 +235,16 @@ public class RPL
 	return this;
     }
 
-    public RPL atCallSite(Types types, JCMethodInvocation tree) {
+    public RPL atCallSite(Types types, Permissions permissions,
+	    JCMethodInvocation tree) {
 	MethodSymbol methSym = tree.getMethodSymbol();
 	if (methSym != null) {
 	    MethodType methodType = (MethodType) tree.meth.type;
 	    RPL rpl = Translation.<RPL>accessElt(this, 
 		    types, tree.meth);
-	    rpl = rpl.substRPLs(methSym.rgnParams, 
-		    methodType.regionActuals);
+	    if (methSym.rgnParams != null)
+		rpl = rpl.substRPLs(methSym.rgnParams, 
+			methodType.regionActuals);
 	    return rpl;
 	}
 	return this;

@@ -25,13 +25,12 @@
 
 package com.sun.tools.javac.code;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
 
 import com.sun.tools.javac.code.Permission.EnvPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.CopyPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.EffectPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
@@ -407,6 +406,18 @@ public class Scope {
 		return false;
 	}
 	envPerms.add(perm);	
+	return true;
+    }
+    
+    public boolean addEffectPerm(Permissions permissions,
+	    EffectPerm perm) {
+	if (perm.treeGroup != null) {
+	    PreservedGroupPerm preservedGroupPerm =
+		    new PreservedGroupPerm(perm.treeGroup);
+	    if (!addPreservedGroupPerm(permissions, preservedGroupPerm))
+		return false;
+	}
+	envPerms.add(perm);
 	return true;
     }
 

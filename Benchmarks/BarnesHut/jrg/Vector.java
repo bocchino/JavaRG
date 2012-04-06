@@ -23,7 +23,7 @@ public class Vector<region R> {
     }
 
     public <region Ru>void SETV(Vector<Ru> u) 
-	writes R via this, R via Ru
+	writes R via this, R via u
     {
 	for (int i = 0; i < Constants.NDIM; i++) 					
 	    elts[i] = u.elts[i]; 						
