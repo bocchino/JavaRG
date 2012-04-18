@@ -4148,13 +4148,6 @@ public class Attr extends JCTree.Visitor {
 			// or a local name, then prepend the implicit 'Root :'
 			buf.append(RPLElement.ROOT_ELEMENT);
 		    }
-		    /*
-		    if (elt.rplElt.isLocalName()) {
-			// If RPL starts with a local region name, then it
-			// implicitly starts with 'Root : Local :'
-			buf.append(RPLElement.LOCAL_ELEMENT);
-		    }
-		    */
 		} else {
 		    // Otherwise ...
 		    if (elt.rplElt == RPLElement.ROOT_ELEMENT) {
@@ -4242,7 +4235,6 @@ public class Attr extends JCTree.Visitor {
 
     public void visitDerefSet(JRGDerefSet tree) {
 	attribExpr(tree.root, env, Type.noType);
-	//attribTree(tree.root, env, VAR, Type.noType);
 	if (!permissions.isValidDerefExp(tree.root, types)) {
 	    log.error(tree.root.pos, "bad.exp.in.deref.set");
 	}
