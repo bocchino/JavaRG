@@ -1014,10 +1014,10 @@ public class Types {
             ClassType cs = (ClassType) s;
             ClassType ct = (ClassType) t;
             s = new ClassType(cs.outer_field, cs.typarams_field, 
-        	    List.<RegionParameterSymbol>nil(),
+        	    List.<RPL>nil(),
         	    List.<RPL>nil(), cs.allRefGroups(), cs.tsym, ct.cellType);
             t = new ClassType(ct.outer_field, ct.typarams_field, 
-        	    List.<RegionParameterSymbol>nil(),
+        	    List.<RPL>nil(),
         	    List.<RPL>nil(), ct.allRefGroups(), ct.tsym, ct.cellType);
         }
 
@@ -1581,7 +1581,7 @@ public class Types {
                     if (base != null) {
                 	List<Type> fromTypes = owner.type.alltyparams();
                 	List<Type> toTypes = base.alltyparams();
-                	List<RegionParameterSymbol> from = owner.type.allrgnparams();
+                	List<RPL> from = owner.type.allrgnparams();
                         List<RPL> to = base.allrgnactuals();
                         result = substRPLs(result, from, to);
                     }
@@ -1818,7 +1818,7 @@ public class Types {
                         }
 
                         List<RPL> rgnactuals = classBound(t).allrgnactuals();
-                        List<RegionParameterSymbol> rgnformals = t.tsym.type.allrgnparams();
+                        List<RPL> rgnformals = t.tsym.type.allrgnparams();
                         t.supertype_field = substRPLs(t.supertype_field, rgnformals, rgnactuals);
 
                         List<RefGroup> actualRefGroups = classBound(t).allRefGroups();
@@ -2035,7 +2035,8 @@ public class Types {
                 Type outer1 = classBound(t.getEnclosingType());
                 if (outer1 != t.getEnclosingType())
                     return new ClassType(outer1, t.getTypeArguments(), 
-                	    t.getRegionParams(), t.getRefGroupArguments(), t.tsym, t.cellType);
+                	    t.getRegionParams(), 
+                	    t.getRefGroupArguments(), t.tsym, t.cellType);
                 else
                     return t;
             }
@@ -2221,7 +2222,7 @@ public class Types {
                      } else if (result.tag == TYPEVAR && 
                 	     !(result instanceof CapturedType)) {
                 	 TypeVar tv = (TypeVar) result;
-                	 List<RegionParameterSymbol> params = tv.rplparams;
+                	 List<RPL> params = tv.rplparams;
                 	 result = tv = new TypeVar(tv.tsym, tv.getUpperBound(), tv.lower);
                 	 tv.rplparams = params;
                 	 tv.rplargs = resultArgs;
@@ -2308,26 +2309,26 @@ public class Types {
      * corresponding RPL in `to' in 't'.
      */
     public List<Type> substRPLs(List<Type> ts, 
-	    List<RegionParameterSymbol> from, 
+	    List<RPL> from, 
 	    List<RPL> to) {
 	return new SubstRPLs(from, to).substRPL(ts);
     }
-    public Type substRPLs(Type t, List<RegionParameterSymbol> from, 
+    public Type substRPLs(Type t, List<RPL> from, 
 	    List<RPL> to) {
 	return new SubstRPLs(from, to).substRPL(t);
     }
     
     private class SubstRPLs extends UnaryVisitor<Type> {
-	List<RegionParameterSymbol> from;
+	List<RPL> from;
         List<RPL> to;
 
-        public SubstRPLs(List<RegionParameterSymbol> from, List<RPL> to) {
+        public SubstRPLs(List<RPL> from, List<RPL> to) {
             this.from = from;
             this.to = to;
         }
         
         public SubstRPLs(List<Type> fromTypes, List<Type> toTypes,
-        	List<RegionParameterSymbol> from, List<RPL> to) {
+        	List<RPL> from, List<RPL> to) {
             this.from = from;
             this.to = to;
         }
@@ -2510,7 +2511,8 @@ public class Types {
                 	Translation.substRefGroups(refGroupArgs, from, to);
                 Type outer = t.getEnclosingType();
                 Type outerSubst = substRefGroups(outer);
-                return new ClassType(outerSubst, typeArgsSubst, t.getRegionParams(), 
+                return new ClassType(outerSubst, typeArgsSubst, 
+                	t.getRegionParams(), 
                 	t.getRegionActuals(), refGroupArgsSubst, t.tsym, 
                 	(t.cellType == null) ? null : substRefGroups(t.cellType));
             } else {
@@ -2603,7 +2605,7 @@ public class Types {
     }
 
     public List<Type> substBoundsRPL(List<Type> tvars,
-            List<RegionParameterSymbol> from,
+            List<RPL> from,
             List<RPL> to) {
 	if (tvars.isEmpty())
 	    return tvars;
@@ -2658,7 +2660,7 @@ public class Types {
 
     // <editor-fold defaultstate="collapsed" desc="hasSameBounds">
 
-    public TypeVar substBoundRPL(TypeVar t, List<RegionParameterSymbol> from, List<RPL> to) {
+    public TypeVar substBoundRPL(TypeVar t, List<RPL> from, List<RPL> to) {
         Type bound1 = substRPLs(t.getUpperBound(), from, to);
         if (bound1 == t.getUpperBound())
             return t;
@@ -2949,7 +2951,7 @@ public class Types {
             }
             assert(act1.isEmpty() && act2.isEmpty() && typarams.isEmpty());
             return new ClassType(class1.getEnclosingType(), merged.toList(), 
-        	    List.<RegionParameterSymbol>nil() /* Incorrect // DPJ */, 
+        	    List.<RPL>nil() /* Incorrect // DPJ */, 
         	    List.<RefGroup>nil(), class1.tsym, class1.cellType);
         }
 
@@ -3368,7 +3370,8 @@ public class Types {
             return erasure(t); // some "rare" type involved
 
         if (captured)
-            return new ClassType(cls.getEnclosingType(), S, cls.rgnparams_field, 
+            return new ClassType(cls.getEnclosingType(), S, 
+        	    cls.rgnparams_field, 
         	    cls.groupparams_field, cls.tsym, cls.cellType);
         else
             return t;

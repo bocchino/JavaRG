@@ -180,10 +180,9 @@ public class RPL
 	return new RPL(buf.toList());
     }
     
-    public RPL substRPLs(List<RegionParameterSymbol> from, 
-	    List<RPL> to) {
+    public RPL substRPLs(List<RPL> from, List<RPL> to) {
 	while (from.nonEmpty() && to.nonEmpty()) {
-	    if (this.elts.head.equals(from.head)) {
+	    if (this.elts.head.equals(from.head.elts.head)) {
 		return new RPL(to.head.elts.appendList(this.elts.tail));
 	    }
 	    from = from.tail;
@@ -213,7 +212,7 @@ public class RPL
 	if (owner.type.hasRegionParams()) {
             Type base = types.asOuterSuper(t, owner);
             if (base != null) {
-                List<RegionParameterSymbol> from = owner.type.allrgnparams();
+                List<RPL> from = owner.type.allrgnparams();
                 List<RPL> to = base.allrgnactuals();
                 if (from.nonEmpty()) {
                     result = result.substRPLs(from, to);

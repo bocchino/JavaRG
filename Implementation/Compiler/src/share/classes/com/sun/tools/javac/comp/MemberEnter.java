@@ -717,10 +717,10 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
         if (tree.paramInfo != null) {
             // Set m.rgnParams
-            ListBuffer<RegionParameterSymbol> rgnParams = ListBuffer.lb();
+            ListBuffer<RPL> rgnParams = ListBuffer.lb();
             for (DPJRegionParameter param : tree.paramInfo.rplParams) {
                 assert(param.sym != null);
-                rgnParams.append(param.sym);
+                rgnParams.append(new RPL(new RPLParameterElement(param.sym)));
             }
             m.rgnParams = rgnParams.toList();
             // Set m.refGroupParams
@@ -1056,7 +1056,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 interfaceTrees =
                     interfaceTrees.prepend(make.Type(new ClassType(syms.comparableType.getEnclosingType(),
                                                                    List.of(c.type),
-                                                                   List.<RegionParameterSymbol>nil(),
+                                                                   List.<RPL>nil(),
                                                                    List.<RefGroup>nil(),
                                                                    syms.comparableType.tsym, null)));
                 // add interface Serializable

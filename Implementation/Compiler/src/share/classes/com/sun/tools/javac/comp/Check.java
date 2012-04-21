@@ -911,7 +911,7 @@ public class Check {
 	    if (tree.type.tag == CLASS) {
 		List<Type> formals = tree.type.tsym.type.getTypeArguments();
 		List<Type> actuals = tree.type.getTypeArguments();
-		List<RegionParameterSymbol> rplformals = 
+		List<RPL> rplformals = 
 		    tree.type.tsym.type.getRegionParams();
 		List<RPL> rplactuals = tree.type.getRegionActuals();
 		List<JCExpression> args = tree.typeArgs;
@@ -1276,7 +1276,8 @@ public class Check {
 	List<Type> otvars = ot.getTypeArguments();
 	Type mtres = mt.getReturnType();
 	Type otres = types.subst(ot.getReturnType(), otvars, mtvars);
-	otres = types.substRPLs(otres, ot.getRegionParams(), mt.getRegionActuals());
+	otres = types.substRPLs(otres, ot.getRegionParams(), 
+		mt.getRegionActuals());
 	otres = types.substRefGroups(otres, ot.getRefGroupArguments(), 
 		mt.getRefGroupArguments());
 

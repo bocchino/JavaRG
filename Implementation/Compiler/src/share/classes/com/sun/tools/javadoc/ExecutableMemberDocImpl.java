@@ -278,8 +278,8 @@ public abstract class ExecutableMemberDocImpl
 	    return List.nil();
 	}
 	ListBuffer<RPL> lb = ListBuffer.lb();
-	for (RegionParameterSymbol rsym : sym.type.getRegionParams()) {
-	    lb.append(new RPL(new RPLParameterElement(rsym)));
+	for (RPL rpl : sym.type.getRegionParams()) {
+	    lb.append(rpl);
 	}
 	return lb.toList();
     }

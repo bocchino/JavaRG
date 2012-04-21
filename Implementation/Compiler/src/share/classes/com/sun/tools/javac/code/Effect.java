@@ -50,7 +50,7 @@ public abstract class Effect {
 	return new Effects(e);
     }
 
-    public Effect substForParams(List<RegionParameterSymbol> from, List<RPL> to) {
+    public Effect substForParams(List<RPL> from, List<RPL> to) {
 	return this;
     }
     
@@ -204,7 +204,7 @@ public abstract class Effect {
 	}
 	
 	@Override
-	public Effect substForParams(List<RegionParameterSymbol> from, List<RPL> to) {
+	public Effect substForParams(List<RPL> from, List<RPL> to) {
 	    return new ReadEffect(rpls, rpl.substRPLs(from, to), 
 		    this.isAtomic(), this.isNonint());
 	}
@@ -314,7 +314,7 @@ public abstract class Effect {
 	}
 	
 	@Override
-	public Effect substForParams(List<RegionParameterSymbol> from, List<RPL> to) {
+	public Effect substForParams(List<RPL> from, List<RPL> to) {
 	    return new WriteEffect(rpls, rpl.substRPLs(from, to), 
 		    this.isAtomic(), this.isNonint());
 	}
@@ -434,7 +434,7 @@ public abstract class Effect {
 	}
 	
 	@Override
-	public Effect substForParams(List<RegionParameterSymbol> from, List<RPL> to) {
+	public Effect substForParams(List<RPL> from, List<RPL> to) {
 	    return new InvocationEffect(rpls, methSym, withEffects.substForRegionParams(from, to));
 	}
 	

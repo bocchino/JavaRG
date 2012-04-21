@@ -40,8 +40,9 @@ import java.util.Map;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 
-import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.RPL;
+import com.sun.tools.javac.code.RPLElement.RPLParameterElement;
 import com.sun.tools.javac.code.RPLs;
 import com.sun.tools.javac.code.RefGroup;
 import com.sun.tools.javac.code.RefGroup.RefGroupParameter;
@@ -442,10 +443,10 @@ public class Enter extends JCTree.Visitor {
 
 	// Attribute and enter RPL and group parameters.
 	if (tree.paramInfo != null) {
-	    ListBuffer<RegionParameterSymbol> rplparams = ListBuffer.lb();
+	    ListBuffer<RPL> rplparams = ListBuffer.lb();
 	    for (DPJRegionParameter param : tree.paramInfo.rplParams) {
 		classEnter(param, localEnv);
-		rplparams.append(param.sym);
+		rplparams.append(new RPL(new RPLParameterElement(param.sym)));
 	    }
 	    ct.rgnparams_field = rplparams.toList();
 	    ListBuffer<RefGroup> refGroupParams = ListBuffer.lb();
@@ -497,10 +498,10 @@ public class Enter extends JCTree.Visitor {
 	}
 	
 	// Attribute and enter any region params declared in this type param
-	ListBuffer<RegionParameterSymbol> rplparams = ListBuffer.lb();
+	ListBuffer<RPL> rplparams = ListBuffer.lb();
 	for (DPJRegionParameter param : tree.rplparams) {
 	    classEnter(param, env);
-	    rplparams.append(param.sym);
+	    rplparams.append(new RPL(new RPLParameterElement(param.sym)));
 	}
 	a.rplparams = rplparams.toList();
 	result = a;

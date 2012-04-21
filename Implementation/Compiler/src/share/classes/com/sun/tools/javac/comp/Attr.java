@@ -348,7 +348,8 @@ public class Attr extends JCTree.Visitor {
         	if (cs.constraints != null) {
         	    // Check that disjointness constraints on region args are satisfied
         	    if (!rpls.disjointnessConstraintsAreSatisfied(cs.constraints.disjointRPLs, 
-        		    ct.getRegionParams(), ct.getRegionActuals(), 
+        		    ct.getRegionParams(), 
+        		    ct.getRegionActuals(), 
         		    parentEnv.info.constraints.disjointRPLs)) {
         		enter.log.warning(tree, "rpl.constraints");
         	    }
@@ -1263,7 +1264,7 @@ public class Attr extends JCTree.Visitor {
 	effectPerms = Translation.substVarSymbols(effectPerms, permissions,
 		from.params, to.params);
 	effectPerms = Translation.substRPLs(effectPerms, from.rgnParams, 
-		RPLs.paramsToRPLs(to.rgnParams));
+		to.rgnParams);
 	effectPerms = Translation.substRefGroups(effectPerms, 
 		from.refGroupParams, to.refGroupParams);
 	for (EffectPerm perm : effectPerms)
@@ -1968,7 +1969,7 @@ public class Attr extends JCTree.Visitor {
                               List.<Type>of(new WildcardType(types.erasure(qualifier),
                                                                BoundKind.EXTENDS,
                                                                syms.boundClass)),
-                              List.<RegionParameterSymbol>nil(),
+                              List.<RPL>nil(),
                               List.<RefGroup>nil(),
                               restype.tsym, ((ClassType) restype).cellType);
             }
@@ -3046,7 +3047,7 @@ public class Attr extends JCTree.Visitor {
                         ? List.of(types.erasure(site))
                         : List.<Type>nil();
                     t = new ClassType(t.getEnclosingType(), typeargs, 
-                	    List.<RegionParameterSymbol>nil(), 
+                	    List.<RPL>nil(), 
                 	    List.<RefGroup>nil(), t.tsym, 
                 	    ((ClassType) t).cellType);
                     return new VarSymbol(
@@ -3088,7 +3089,7 @@ public class Attr extends JCTree.Visitor {
                     Type t = syms.classType;
                     Type arg = types.boxedClass(site).type;
                     t = new ClassType(t.getEnclosingType(), List.of(arg), 
-                	    List.<RegionParameterSymbol>nil(), 
+                	    List.<RPL>nil(), 
                 	    List.<RefGroup>nil(), t.tsym, null);
                     return new VarSymbol(
                         STATIC | PUBLIC | FINAL, names._class, t, site.tsym);
@@ -3146,11 +3147,11 @@ public class Attr extends JCTree.Visitor {
                     // We recover generic outer type later in visitTypeApply.
                     if (owntype.tsym.type.getTypeArguments().nonEmpty() ||
                 	    owntype.tsym.type.getRegionParams().nonEmpty()) {
-                	List<RegionParameterSymbol> regionParams = 
-                	    owntype.getRegionParams();
+                	List<RPL> regionParams = owntype.getRegionParams();
                         owntype = types.erasure(owntype);
                         // Don't erase the region params!
-                        ((ClassType) owntype).rgnparams_field = regionParams;
+                        ((ClassType) owntype).rgnparams_field = 
+                        	regionParams;
                         // Put the default region of ROOT in for each param position.
                         // If this type is subject to a region apply, the ROOT's will
                         // get replaced.  Otherwise, we have a type instantiated
@@ -3181,7 +3182,7 @@ public class Attr extends JCTree.Visitor {
                         if (normOuter != ownOuter)
                             owntype = new ClassType(
                                 normOuter, List.<Type>nil(), 
-                                List.<RegionParameterSymbol>nil(), 
+                                List.<RPL>nil(), 
                                 List.<RefGroup>nil(), owntype.tsym, 
                                 ((ClassType) owntype).cellType);
                     }
@@ -3565,7 +3566,7 @@ public class Attr extends JCTree.Visitor {
         	functortype.tsym.type.getTypeArguments();
 
             // Get the formal region params
-            List<RegionParameterSymbol> rplFormals =
+            List<RPL> rplFormals =
         	functortype.tsym.type.getRegionParams();
 
             // Get the formal ref group params

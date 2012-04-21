@@ -505,7 +505,7 @@ public abstract class Permission {
 		this.treeGroup = treeGroup;
 	    }
 	    
-	    public EffectPerm substRPLs(List<RegionParameterSymbol> from,
+	    public EffectPerm substRPLs(List<RPL> from,
 		    List<RPL> to) {
 		RPL rpl = this.rpl.substRPLs(from, to);
 		if (this.rpl != rpl)

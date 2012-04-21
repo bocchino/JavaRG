@@ -760,7 +760,7 @@ public abstract class Symbol implements Element {
             this(
                 flags,
                 name,
-                new ClassType(Type.noType, null, List.<RegionParameterSymbol>nil(), 
+                new ClassType(Type.noType, null, List.<RPL>nil(), 
                 	List.<RefGroup>nil(), null, null),
                 owner);
             this.type.tsym = this;
@@ -792,7 +792,7 @@ public abstract class Symbol implements Element {
             if (erasure_field == null)
                 erasure_field = new ClassType(types.erasure(type.getEnclosingType()),
                                               List.<Type>nil(),
-                                              List.<RegionParameterSymbol>nil(),
+                                              List.<RPL>nil(),
                                               List.<RefGroup>nil(),
                                               this, ((ClassType) type).cellType);
             return erasure_field;
@@ -1103,7 +1103,7 @@ public abstract class Symbol implements Element {
         	ClassType ownerType = (ClassType) owner.type;
         	ClassType erasedType = 
         	    new ClassType(ownerType.outer_field, List.<Type>nil(), 
-        		    List.<RegionParameterSymbol>nil(), 
+        		    List.<RPL>nil(), 
         		    List.<RPL>nil(), List.<RefGroup>nil(), 
         		    owner.type.tsym, ((ClassType) owner.type).cellType);
         	erasedType.DPJerased = true;
@@ -1282,7 +1282,7 @@ public abstract class Symbol implements Element {
         public List<Type> typarams = null;
         
         /** The region parameters of the method. // DPJ */
-        public List<RegionParameterSymbol> rgnParams = List.nil();
+        public List<RPL> rgnParams = List.nil();
         
         /** The disjointness constraints on the region params */
         public Constraints constraints = null;
