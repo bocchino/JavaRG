@@ -1347,16 +1347,15 @@ public class Check {
 	    Env<AttrContext> mEnv = baseEnv.dup(tree, 
 		    baseEnv.info.dup(baseEnv.info.scope.dupUnshared()));
 	    attr.addRefGroupParamsToScope(other, oEnv.info.scope, origin.type);
-	    attr.addMethodPermsToScope(other, oEnv.info.scope, origin.type, m.params);
+	    attr.addMethodPermsToScope(other, m, origin.type, oEnv.info.scope);
 	    attr.addRefGroupParamsToScope(m, mEnv.info.scope, origin.type);
-	    attr.addMethodPermsToScope(m, mEnv.info.scope, origin.type, 
-        	List.<VarSymbol>nil());
+	    attr.addMethodPermsToScope(m, m, origin.type, mEnv.info.scope);
 	    //System.out.println("Upper env perms: " + oEnv.info.scope.envPerms);
 	    //System.out.println("Lower env perms: " + mEnv.info.scope.envPerms);
 
 	    DiagnosticPosition pos = TreeInfo.diagnosticPositionFor(m, tree);
 	    if (!consumeEnvPerms(pos, mEnv.info.scope.envPerms, oEnv)) {
-		System.err.print("Error(s) occurred overriding method in class " + 
+		System.err.println("Error(s) occurred overriding method in class " + 
 			other.owner.type);
 	    }
 	}
@@ -1947,7 +1946,7 @@ public class Check {
      */
     boolean requireCopyPerm(DiagnosticPosition pos,
 	    CopyPerm neededPerm, Env<AttrContext> env) {
-	System.out.flush();
+	//System.out.flush();
 	//System.out.println("envPerms="+env.info.scope.envPerms);
 	Scope scope = env.info.scope;
 	// If needed perm is already there, we're done
@@ -2106,9 +2105,18 @@ public class Check {
 	
     boolean requireEffectPerm(DiagnosticPosition pos,
 	    EffectPerm neededPerm, Env<AttrContext> env) {
-	// TODO
-	return true;
-    }
+	Scope scope = env.info.scope;
+	for (EnvPerm perm : scope.envPerms) {
+	    if (perm instanceof EffectPerm) {
+		EffectPerm effectPerm = (EffectPerm) perm;
+		if (neededPerm.isIncludedIn(effectPerm))
+		    return true;
+	    }
+	}
+	log.error(pos, "missing.perm", neededPerm);
+	System.out.println("envPerms="+scope.envPerms);
+	return false;
+   }
     
 /* *************************************************************************
  * Check annotations

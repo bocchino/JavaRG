@@ -314,6 +314,7 @@ public class Attr extends JCTree.Visitor {
 	        }
 	        else if ((m.flags_field & STATIC) == 0) {
 	            m.thisPerm = RefPerm.SHARED;
+	            // TODO: Add default for effect perms
 	        }
 	        
 	        // Restore parent env
@@ -325,7 +326,7 @@ public class Attr extends JCTree.Visitor {
 	
 	@Override
 	public void visitClassDef(JCClassDecl tree) {
-
+	    
 	    // Attribute and set the region param constraints here.
 	    Env<AttrContext> env = enter.typeEnvs.get(tree.sym);
 	    // Ignore local inner classes
@@ -1202,8 +1203,7 @@ public class Attr extends JCTree.Visitor {
                 }
                 
                 // Add method permissions to localEnv scope
-                addMethodPermsToScope(m, localEnv.info.scope, 
-                	m.owner.type, List.<VarSymbol>nil());
+                addMethodPermsToScope(m, m, m.owner.type, localEnv.info.scope);
                 
                 // Attribute method body.
                 attribStat(tree.body, localEnv);
@@ -1235,32 +1235,43 @@ public class Attr extends JCTree.Visitor {
     }
     
     /**
-     * Add all the permissions declared in m to scope, after translation
-     * of m (1) as a member of ownerType and (2) by substituting 'newParams'
-     * for m's params.
+     * Add all the permissions declared in 'from' to scope, after translation
+     * of m (1) as a member of ownerType and (2) by substituting for
+     * params in 'to'.
      */
-    public void addMethodPermsToScope(MethodSymbol m, Scope scope,
-	    Type ownerType, List<VarSymbol> newParams) {
+    public void addMethodPermsToScope(MethodSymbol from, MethodSymbol to,
+	    Type ownerType, Scope scope) {
 	
 	// Add fresh group perms
 	for (FreshGroupPerm perm : 
-	    Translation.asMemberOf(m.freshGroupPerms, types, ownerType))
+	    Translation.asMemberOf(from.freshGroupPerms, types, ownerType))
 	    scope.addFreshGroupPerm(permissions, perm);
 
 	// Add copy perms
 	List<CopyPerm> copyPerms = 
-		Translation.asMemberOf(m.copyPerms, types, ownerType);
+		Translation.asMemberOf(from.copyPerms, types, ownerType);
 	copyPerms = Translation.substVarSymbols(copyPerms, permissions,
-		m.params, newParams);
+		from.params, to.params);
+	copyPerms = Translation.substRefGroups(copyPerms, 
+		from.refGroupParams, to.refGroupParams);
 	for (CopyPerm perm : copyPerms)
 	    scope.addCopyPerm(permissions, perm);
 
 	// Add effect perms
-	// TODO
+	List<EffectPerm> effectPerms =
+		Translation.asMemberOf(from.effectPerms, types, ownerType);
+	effectPerms = Translation.substVarSymbols(effectPerms, permissions,
+		from.params, to.params);
+	effectPerms = Translation.substRPLs(effectPerms, from.rgnParams, 
+		RPLs.paramsToRPLs(to.rgnParams));
+	effectPerms = Translation.substRefGroups(effectPerms, 
+		from.refGroupParams, to.refGroupParams);
+	for (EffectPerm perm : effectPerms)
+	    scope.addEffectPerm(permissions, perm);
 	
 	// Add preserved group perms
 	for (PreservedGroupPerm perm : 
-	    Translation.asMemberOf(m.preservedGroupPerms, types, ownerType))
+	    Translation.asMemberOf(from.preservedGroupPerms, types, ownerType))
 	    scope.addPreservedGroupPerm(permissions, perm);
 
 	// Default:  Update if no perm specified
@@ -2041,10 +2052,13 @@ public class Attr extends JCTree.Visitor {
         		    permissions, tree);
             chk.consumeEnvPerms(tree.pos(), copyPerms, localEnv);
             // Effect perms
+            // TODO: Defer this to an effect checking pass
+            /*
             List<EffectPerm> effectPerms =
         	    Translation.atCallSite(methSym.effectPerms, types,
         		    permissions, tree);
             chk.requireEnvPerms(tree.pos(), effectPerms, localEnv);
+            */
             // Preserved group perms
             List<PreservedGroupPerm> preservedGroupPerms =
         	    Translation.atCallSite(methSym.preservedGroupPerms,

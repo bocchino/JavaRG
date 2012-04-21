@@ -1261,7 +1261,7 @@ public abstract class Symbol implements Element {
         public List<CopyPerm> copyPerms = List.nil();
         
         /** The effect permissions of the method */
-	public List<EffectPerm> effectPerms = List.nil();
+	public List<EffectPerm> effectPerms = List.of(EffectPerm.UNKNOWN);
 
 	/** The preserved group permissions of the method */
 	public List<PreservedGroupPerm> preservedGroupPerms = List.nil();
@@ -1282,7 +1282,7 @@ public abstract class Symbol implements Element {
         public List<Type> typarams = null;
         
         /** The region parameters of the method. // DPJ */
-        public List<RegionParameterSymbol> rgnParams = null;
+        public List<RegionParameterSymbol> rgnParams = List.nil();
         
         /** The disjointness constraints on the region params */
         public Constraints constraints = null;

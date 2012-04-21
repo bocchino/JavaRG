@@ -142,6 +142,7 @@ public class Permissions {
     /**
      * e must be chain of field or array access
      */
+    // TODO: Check that groups are consistent
     public boolean isValidDerefExp(JCExpression e, Types types) {
 	if (e instanceof JCIdent)
 	    return true;

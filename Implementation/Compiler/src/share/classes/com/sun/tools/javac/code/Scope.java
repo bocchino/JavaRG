@@ -37,9 +37,12 @@ import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.Symbol.RefGroupSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.comp.AttrContext;
+import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 /** A scope represents an area of visibility in a Java program. The
  *  Scope class is a container for symbols which provides
@@ -129,6 +132,7 @@ public class Scope {
         this.owner = owner;
         this.table = table;
         this.envPerms = envPerms;
+        if (envPerms == null) throw new NullPointerException();
         this.sharedVarPerms = varPerms;
         this.lockedGroups = lockedGroups;
 	this.hashMask = table.length - 1;
@@ -690,7 +694,7 @@ public class Scope {
 	public static final Entry[] emptyTable = new Entry[0];
 
 	public DelegatedScope(Scope outer) {
-	    super(outer, outer.owner, emptyTable, null, 
+	    super(outer, outer.owner, emptyTable, new HashSet<EnvPerm>(), 
 		    new HashSet<VarSymbol>(), null, false);
 	    delegatee = outer;
 	}

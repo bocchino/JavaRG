@@ -2,9 +2,11 @@ package com.sun.tools.javac.code;
 
 import com.sun.tools.javac.code.Permission.RefPerm.LocallyUnique;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Translation.AsMemberOf;
 import com.sun.tools.javac.code.Translation.AtCallSite;
+import com.sun.tools.javac.code.Translation.SubstRPLs;
 import com.sun.tools.javac.code.Translation.SubstRefGroups;
 import com.sun.tools.javac.code.Translation.SubstVars;
 import com.sun.tools.javac.comp.Attr;
@@ -449,15 +451,23 @@ public abstract class Permission {
 	 */
 	public static class EffectPerm extends EnvPerm 
 		implements 
+		SubstRPLs<EffectPerm>,
 		SubstRefGroups<EffectPerm>,
 		AsMemberOf<EffectPerm>, 
-		AtCallSite<EffectPerm>
+		AtCallSite<EffectPerm>,
+		SubstVars<EffectPerm>
 	{
 
 	    public static EffectPerm DEFAULT =
 		    new EffectPerm(true, new RPL(List.of(RPLElement.ROOT_ELEMENT, 
 			    RPLElement.STAR)),
 			    null, null);
+	    
+	    public static EffectPerm UNKNOWN =
+		    new EffectPerm(false, new RPL(List.of(RPLElement.ROOT_ELEMENT,
+			    RPLElement.STAR)), null, null) {
+		public String toString() { return "UNKNOWN"; }
+	    };
 	    
 	    /**
 	     * Is this a write effect?
@@ -468,7 +478,7 @@ public abstract class Permission {
 	    public final RPL rpl;
 	    
 	    /** 
-	     * 'e' in '(reads|writes) R [via e [...G]] 
+	     * 'e' in '(reads|writes) R [via e [...G]]'
 	     * If this field is null, then there is no deref set.
 	     * */
 	    public final JCExpression exp;
@@ -479,6 +489,12 @@ public abstract class Permission {
 	     */
 	    public final RefGroup treeGroup;
 
+	    /**
+	     * Was the tree part of this permission (if any) used to establish
+	     * noninterference?
+	     */
+	    public boolean usedInTreeComparison;
+	    
 	    public EffectPerm(boolean isWrite, RPL rpl, JCExpression exp, 
 		    RefGroup treeGroup) 
 	    {
@@ -487,6 +503,15 @@ public abstract class Permission {
 		this.rpl = rpl;
 		this.exp = exp;
 		this.treeGroup = treeGroup;
+	    }
+	    
+	    public EffectPerm substRPLs(List<RegionParameterSymbol> from,
+		    List<RPL> to) {
+		RPL rpl = this.rpl.substRPLs(from, to);
+		if (this.rpl != rpl)
+		    return new EffectPerm(this.isWrite, rpl, 
+			    this.exp, this.treeGroup);
+		return this;
 	    }
 	    
 	    public EffectPerm substRefGroups(List<RefGroup> from, 
@@ -535,6 +560,55 @@ public abstract class Permission {
 			    newExp, this.treeGroup);
 		}
 		return this;
+	    }
+	    
+	    public EffectPerm substVarSymbols(Permissions permissions,
+		    List<VarSymbol> from, List<VarSymbol> to) {
+		ListBuffer<JCExpression> lb = ListBuffer.lb();
+		for (VarSymbol var : to) {
+		    lb.append(permissions.maker.Ident(var));
+		}
+		return substVarExprs(permissions, from, lb.toList());
+	    }
+	    
+	    @Override public int hashCode() {
+		String groupString = (treeGroup == null) ?
+			"" : treeGroup.toString();
+		return (rpl.toString() + groupString).hashCode() << 3 + 2;
+	    }
+	    
+	    /**
+	     * Is this included in e?
+	     */
+	    public boolean isIncludedIn(EffectPerm e) {
+		// Anything is included in an unknown permission, and vice versa
+		if (e==EffectPerm.UNKNOWN) return true;
+		if (this==EffectPerm.UNKNOWN) return true;
+		// Write can't be included in read
+		if (this.isWrite && !e.isWrite) return false;
+		// RPLs must be included
+		if (!(this.rpl.isIncludedIn(e.rpl))) return false;
+		// If this has no deref set, then e must not either
+		if (this.exp==null) return e.exp==null;
+		// if (e.D=/=null) return this.D included in e.D
+		// if (!this.usedInTreeComparison) return true
+		// return (leftmost position of this.e is a locally unique variable)
+		return true;
+	    }	    
+	    
+	    @Override public String toString() {
+		StringBuffer sb = new StringBuffer();
+		sb.append(isWrite ? "writes " : "reads ");
+		sb.append(rpl);
+		if (exp != null) {
+		    sb.append(" via ");
+		    sb.append(exp);
+		    if (treeGroup != null) {
+			sb.append("...");
+			sb.append(treeGroup);
+		    }
+		}
+		return sb.toString();
 	    }
 
 	}

@@ -50,9 +50,9 @@ public abstract class Node {
      *           and other required info
      * @return
      */
-    protected abstract <region Rhg> boolean subdivp(Node p, double dsq, 
-						    double tolsq, HGStruct<Rhg> hg) 
+    protected abstract <region Rhg__> boolean subdivp(Node p, double dsq, 
+						    double tolsq, HGStruct<Rhg__> hg) 
 	reads Masses, Positions
-	writes Rhg via hg;
+	writes Rhg__ via hg;
 
 }
