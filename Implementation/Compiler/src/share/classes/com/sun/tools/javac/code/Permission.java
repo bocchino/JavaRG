@@ -337,13 +337,13 @@ public abstract class Permission {
 			    sourceGroup, targetGroup);
 		MethodSymbol methSym = tree.getMethodSymbol();
 		if (methSym != null) {
-	            result = result.substVarExprs(permissions, 
+	            result = result.substVars(permissions, 
 	        	    methSym.params(), tree.args);
 		}
 		return result;
 	    }
 	    
-	    public CopyPerm substVarExprs(Permissions permissions, 
+	    public CopyPerm substVars(Permissions permissions, 
 		    List<VarSymbol> from, List<JCExpression> to) {
 		JCExpression newExp = permissions.substVars(exp, from, to);
 		if (newExp != exp) {
@@ -351,15 +351,6 @@ public abstract class Permission {
 			    sourceGroup, targetGroup);
 		}
 		return this;
-	    }
-	    
-	    public CopyPerm substVarSymbols(Permissions permissions,
-		    List<VarSymbol> from, List<VarSymbol> to) {
-		ListBuffer<JCExpression> lb = ListBuffer.lb();
-		for (VarSymbol var : to) {
-		    lb.append(permissions.maker.Ident(var));
-		}
-		return substVarExprs(permissions, from, lb.toList());
 	    }
 	    
 	    @Override public String toString() {
@@ -461,11 +452,11 @@ public abstract class Permission {
 	    public static EffectPerm DEFAULT =
 		    new EffectPerm(true, new RPL(List.of(RPLElement.ROOT_ELEMENT, 
 			    RPLElement.STAR)),
-			    null, null);
+			    DerefSet.NONE);
 	    
 	    public static EffectPerm UNKNOWN =
 		    new EffectPerm(false, new RPL(List.of(RPLElement.ROOT_ELEMENT,
-			    RPLElement.STAR)), null, null) {
+			    RPLElement.STAR)), DerefSet.NONE) {
 		public String toString() { return "UNKNOWN"; }
 	    };
 	    
@@ -477,17 +468,11 @@ public abstract class Permission {
 	    /** 'R' in '(reads|writes) R [via e [...G]]' */
 	    public final RPL rpl;
 	    
-	    /** 
-	     * 'e' in '(reads|writes) R [via e [...G]]'
-	     * If this field is null, then there is no deref set.
-	     * */
-	    public final JCExpression exp;
-	    
-	    /** 
-	     * 'G' in '(reads|writes) R [via e [...G]]
-	     * If this field is null, then there is no tree group.
+	    /**
+	     * 'D' in '(reads|writes) R [via D]'
+	     * If there is no deref set, then this field equals DerefSet.NONE
 	     */
-	    public final RefGroup treeGroup;
+	    public final DerefSet derefSet;
 
 	    /**
 	     * Was the tree part of this permission (if any) used to establish
@@ -495,86 +480,68 @@ public abstract class Permission {
 	     */
 	    public boolean usedInTreeComparison;
 	    
-	    public EffectPerm(boolean isWrite, RPL rpl, JCExpression exp, 
-		    RefGroup treeGroup) 
-	    {
-		super(treeGroup, RefGroup.NO_GROUP);
+	    /**
+	     * Does this effect permission have a deref set?
+	     */
+	    public boolean hasDerefSet() {
+		return this.derefSet != DerefSet.NONE;
+	    }
+	    
+	    public EffectPerm(boolean isWrite, RPL rpl, DerefSet derefSet) {
+		super(derefSet.treeGroup, RefGroup.NO_GROUP);
 		this.isWrite = isWrite;
 		this.rpl = rpl;
-		this.exp = exp;
-		this.treeGroup = treeGroup;
+		this.derefSet = derefSet;
 	    }
 	    
 	    public EffectPerm substRPLs(List<RPL> from,
 		    List<RPL> to) {
 		RPL rpl = this.rpl.substRPLs(from, to);
 		if (this.rpl != rpl)
-		    return new EffectPerm(this.isWrite, rpl, 
-			    this.exp, this.treeGroup);
+		    return new EffectPerm(this.isWrite, rpl, this.derefSet);
 		return this;
 	    }
 	    
 	    public EffectPerm substRefGroups(List<RefGroup> from, 
 		    List<RefGroup> to) {
-		RefGroup treeGroup = (this.treeGroup == null) ?
-			null : this.treeGroup.substRefGroups(from, to);
-		if (this.treeGroup != treeGroup)
-		    return new EffectPerm(this.isWrite, this.rpl, this.exp, 
-			    treeGroup);
+		DerefSet derefSet =
+			this.derefSet.substRefGroups(from, to);
+		if (this.derefSet != derefSet)
+		    return new EffectPerm(this.isWrite, this.rpl, derefSet);
 		return this;
 	    }
 	    
+	    public EffectPerm substVars(Permissions permissions, 
+		    List<VarSymbol> from, List<JCExpression> to) {
+		DerefSet derefSet = this.derefSet.substVars(permissions, from, to);
+		if (derefSet != this.derefSet) {
+		    return new EffectPerm(this.isWrite, this.rpl,
+			    derefSet);
+		}
+		return this;
+	    }
+	    	    
 	    public EffectPerm asMemberOf(Types types, Type t) {
 		RPL rpl = this.rpl.asMemberOf(types, t);
-		RefGroup treeGroup = (this.treeGroup == null) ?
-			null : this.treeGroup.asMemberOf(types, t);
-		if (this.rpl != rpl || this.treeGroup != treeGroup)
-		    return new EffectPerm(this.isWrite, rpl, this.exp,
-			    treeGroup);
+		DerefSet derefSet = this.derefSet.asMemberOf(types, t);
+		if (this.rpl != rpl || this.derefSet != derefSet)
+		    return new EffectPerm(this.isWrite, rpl, derefSet);
 		return this;
 	    }
 	    
 	    public EffectPerm atCallSite(Types types, Permissions permissions,
 		    JCMethodInvocation tree) {
 		RPL rpl = this.rpl.atCallSite(types, permissions, tree);
-		RefGroup treeGroup = (this.treeGroup == null) ?
-			null : this.treeGroup.atCallSite(types, 
-				permissions, tree);
-		EffectPerm result = this;
-		if (this.rpl != rpl || this.treeGroup != treeGroup)
-		    result = new EffectPerm(this.isWrite, rpl, this.exp,
-			    treeGroup);
-		MethodSymbol methSym = tree.getMethodSymbol();
-		if (methSym != null) {
-	            result = result.substVarExprs(permissions, 
-	        	    methSym.params(), tree.args);
-		}
-		return result;
-	    }
-	    
-	    public EffectPerm substVarExprs(Permissions permissions, 
-		    List<VarSymbol> from, List<JCExpression> to) {
-		JCExpression newExp = permissions.substVars(exp, from, to);
-		if (newExp != exp) {
-		    return new EffectPerm(this.isWrite, this.rpl,
-			    newExp, this.treeGroup);
-		}
+		DerefSet derefSet = this.derefSet.atCallSite(types, 
+			permissions, tree);
+		if (this.rpl != rpl || this.derefSet != derefSet)
+		    return new EffectPerm(this.isWrite, rpl, 
+			    derefSet);
 		return this;
 	    }
 	    
-	    public EffectPerm substVarSymbols(Permissions permissions,
-		    List<VarSymbol> from, List<VarSymbol> to) {
-		ListBuffer<JCExpression> lb = ListBuffer.lb();
-		for (VarSymbol var : to) {
-		    lb.append(permissions.maker.Ident(var));
-		}
-		return substVarExprs(permissions, from, lb.toList());
-	    }
-	    
 	    @Override public int hashCode() {
-		String groupString = (treeGroup == null) ?
-			"" : treeGroup.toString();
-		return (rpl.toString() + groupString).hashCode() << 3 + 2;
+		return (derefSet.toString()).hashCode() << 3 + 2;
 	    }
 	    
 	    /**
@@ -582,17 +549,16 @@ public abstract class Permission {
 	     */
 	    public boolean isIncludedIn(EffectPerm e) {
 		// Anything is included in an unknown permission, and vice versa
-		if (e==EffectPerm.UNKNOWN) return true;
-		if (this==EffectPerm.UNKNOWN) return true;
+		if (this==EffectPerm.UNKNOWN || e==EffectPerm.UNKNOWN) return true;
 		// Write can't be included in read
 		if (this.isWrite && !e.isWrite) return false;
 		// RPLs must be included
 		if (!(this.rpl.isIncludedIn(e.rpl))) return false;
 		// If this has no deref set, then e must not either
-		if (this.exp==null) return e.exp==null;
-		// if (e.D=/=null) return this.D included in e.D
-		// if (!this.usedInTreeComparison) return true
-		// return (leftmost position of this.e is a locally unique variable)
+		if (!this.hasDerefSet()) return !e.hasDerefSet();
+		// TODO: if (e.hasDerefSet()) return this.D included in e.D
+		if (!this.usedInTreeComparison) return true;
+		// TODO: return (leftmost position of this.e is a locally unique variable)
 		return true;
 	    }	    
 	    
@@ -600,13 +566,9 @@ public abstract class Permission {
 		StringBuffer sb = new StringBuffer();
 		sb.append(isWrite ? "writes " : "reads ");
 		sb.append(rpl);
-		if (exp != null) {
+		if (derefSet != DerefSet.NONE) {
 		    sb.append(" via ");
-		    sb.append(exp);
-		    if (treeGroup != null) {
-			sb.append("...");
-			sb.append(treeGroup);
-		    }
+		    sb.append(derefSet);
 		}
 		return sb.toString();
 	    }

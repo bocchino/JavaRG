@@ -415,9 +415,10 @@ public class Scope {
     
     public boolean addEffectPerm(Permissions permissions,
 	    EffectPerm perm) {
-	if (perm.treeGroup != null) {
+	if (perm.preservedGroup != null && 
+		perm.preservedGroup != RefGroup.NO_GROUP) {
 	    PreservedGroupPerm preservedGroupPerm =
-		    new PreservedGroupPerm(perm.treeGroup);
+		    new PreservedGroupPerm(perm.preservedGroup);
 	    if (!addPreservedGroupPerm(permissions, preservedGroupPerm))
 		return false;
 	}

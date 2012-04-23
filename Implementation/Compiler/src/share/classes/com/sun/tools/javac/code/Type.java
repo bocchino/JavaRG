@@ -797,7 +797,7 @@ public class Type implements PrimitiveType {
             }
             return groupparams_field;
         }
-        
+
         public List<RPL> getRegionParams() {
             if (rgnparams_field == null) {
         	complete();

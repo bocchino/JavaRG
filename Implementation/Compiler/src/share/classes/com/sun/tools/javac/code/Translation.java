@@ -1,5 +1,6 @@
 package com.sun.tools.javac.code;
 
+import com.sun.tools.javac.code.Permission.EnvPerm.EffectPerm;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
@@ -121,12 +122,8 @@ public class Translation {
     public interface SubstVars<T extends SubstVars<T>> {
 	
 	/** 'this' after substituting 'to' expressions for 'from' vars */
-	public T substVarExprs(Permissions permissions, 
+	public T substVars(Permissions permissions, 
 		List<VarSymbol> from, List<JCExpression> to);
-	
-	/** 'this' after substituting 'to' vars for 'from' vars */
-	public T substVarSymbols(Permissions permissions,
-		List<VarSymbol> from, List<VarSymbol> to);
 	
     }
     
@@ -135,17 +132,27 @@ public class Translation {
 	    Permissions permissions, List<VarSymbol> from,
 	    List<JCExpression> to) {
 	ListBuffer<T> lb = ListBuffer.lb();
-	for (T elt : list) lb.append(elt.substVarExprs(permissions, from, to));
+	for (T elt : list) lb.append(elt.substVars(permissions, from, to));
 	return lb.toList();
     }
     
+    /** 'this' after substituting 'to' vars for 'from' vars */
+    public static <T extends SubstVars<T>> T substVarSymbols(T elt,
+	    Permissions permissions, List<VarSymbol> from, 
+	    List<VarSymbol> to) {
+	ListBuffer<JCExpression> lb = ListBuffer.lb();
+	for (VarSymbol var : to) {
+	    lb.append(permissions.maker.Ident(var));
+	}
+	return elt.substVars(permissions, from, lb.toList());
+    }
+
     public static <T extends SubstVars<T>> List<T>substVarSymbols(List<T> list,
 	    Permissions permissions, List<VarSymbol> from,
 	    List<VarSymbol> to) {
 	ListBuffer<T> lb = ListBuffer.lb();
-	for (T elt : list) lb.append(elt.substVarSymbols(permissions, from, to));
+	for (T elt : list) lb.append(substVarSymbols(elt, permissions, from, to));
 	return lb.toList();
     }
-    
 }
     

@@ -77,6 +77,7 @@ import com.sun.source.tree.TreeVisitor;
 import com.sun.source.util.SimpleTreeVisitor;
 import com.sun.tools.javac.code.BoundKind;
 import com.sun.tools.javac.code.Constraints;
+import com.sun.tools.javac.code.DerefSet;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
@@ -2040,6 +2041,7 @@ public class Attr extends JCTree.Visitor {
         }
         
         // Check that the required environment permissions are available
+        // Effect perms are checked in a separate pass
         if (methSym != null) {
             MethodType methodType = (MethodType) tree.meth.type;
             // Fresh group perms
@@ -2052,14 +2054,6 @@ public class Attr extends JCTree.Visitor {
         	    Translation.atCallSite(methSym.copyPerms, types, 
         		    permissions, tree);
             chk.consumeEnvPerms(tree.pos(), copyPerms, localEnv);
-            // Effect perms
-            // TODO: Defer this to an effect checking pass
-            /*
-            List<EffectPerm> effectPerms =
-        	    Translation.atCallSite(methSym.effectPerms, types,
-        		    permissions, tree);
-            chk.requireEnvPerms(tree.pos(), effectPerms, localEnv);
-            */
             // Preserved group perms
             List<PreservedGroupPerm> preservedGroupPerms =
         	    Translation.atCallSite(methSym.preservedGroupPerms,
@@ -4242,10 +4236,10 @@ public class Attr extends JCTree.Visitor {
 	    attribTree(tree.derefSet, env, NIL, Type.noType);
 	if (tree.derefSet == null)
 	    tree.effectPerm = new EffectPerm(isWrite, tree.rpl.rpl, 
-		    null, null);
+		    DerefSet.NONE);
 	else
 	    tree.effectPerm = new EffectPerm(isWrite, tree.rpl.rpl,
-		    tree.derefSet.root, tree.derefSet.refGroup);
+		    new DerefSet(tree.derefSet.root, tree.derefSet.refGroup));
     }
 
     public void visitDerefSet(JRGDerefSet tree) {
@@ -4255,6 +4249,8 @@ public class Attr extends JCTree.Visitor {
 	}
 	if (tree.refGroupID != null)
 	    tree.refGroup = attribRefGroup(tree.refGroupID, env);
+	else
+	    tree.refGroup = RefGroup.NO_GROUP;
     }
     
 
