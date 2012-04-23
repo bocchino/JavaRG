@@ -547,18 +547,23 @@ public abstract class Permission {
 	    /**
 	     * Is this included in e?
 	     */
-	    public boolean isIncludedIn(EffectPerm e) {
+	    public boolean isIncludedIn(EffectPerm e, Attr attr, 
+		    Env<AttrContext> env) {
 		// Anything is included in an unknown permission, and vice versa
 		if (this==EffectPerm.UNKNOWN || e==EffectPerm.UNKNOWN) return true;
 		// Write can't be included in read
 		if (this.isWrite && !e.isWrite) return false;
 		// RPLs must be included
 		if (!(this.rpl.isIncludedIn(e.rpl))) return false;
-		// If this has no deref set, then e must not either
-		if (!this.hasDerefSet()) return !e.hasDerefSet();
-		// TODO: if (e.hasDerefSet()) return this.D included in e.D
-		if (!this.usedInTreeComparison) return true;
-		// TODO: return (leftmost position of this.e is a locally unique variable)
+		// If e has deref set, then this.D must be included in e.D
+		if (e.hasDerefSet()) return this.hasDerefSet() &&
+			    this.derefSet.isIncludedIn(e.derefSet, attr, env);
+		// If this was used in tree comparison, and we are including it
+		// in something with no deref set, then it must be a tree root
+		if (this.usedInTreeComparison) {
+		    // TODO: return (leftmost position of this.e is a locally unique variable)
+		    return true;
+		}
 		return true;
 	    }	    
 	    
