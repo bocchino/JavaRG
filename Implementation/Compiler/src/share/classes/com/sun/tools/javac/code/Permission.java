@@ -43,6 +43,10 @@ public abstract class Permission {
 	    return this;
 	}
 	
+	public boolean isLocallyUnique() {
+	    return this instanceof LocallyUnique;
+	}
+	
 	public static final RefPerm NO_PERM = new RefPerm() {
 	    @Override public String toString() {
 		return "[no permission]";
@@ -560,10 +564,9 @@ public abstract class Permission {
 			    this.derefSet.isIncludedIn(e.derefSet, attr, env);
 		// If this was used in tree comparison, and we are including it
 		// in something with no deref set, then it must be a tree root
-		if (this.usedInTreeComparison) {
-		    // TODO: return (leftmost position of this.e is a locally unique variable)
-		    return true;
-		}
+		if (this.usedInTreeComparison)
+		    return this.derefSet.isTreeRoot(attr,  env);
+		// Otherwise we are OK
 		return true;
 	    }	    
 	    

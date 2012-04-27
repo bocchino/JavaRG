@@ -40,8 +40,7 @@ import com.sun.tools.javac.code.Effects;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.Effect.ReadEffect;
-import com.sun.tools.javac.code.Effect.WriteEffect;
+import com.sun.tools.javac.code.Effect.MemoryEffect;
 import com.sun.tools.javac.code.RPLElement.RPLParameterElement;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
@@ -212,8 +211,8 @@ public abstract class ExecutableMemberDocImpl
 	if (readRPLs == null) {
 	    ListBuffer<RPL> lb = ListBuffer.lb();
 	    for (Effect e : effects()) {
-		if (e instanceof ReadEffect)
-		    lb.append(((ReadEffect) e).rpl);
+		if (e instanceof MemoryEffect)
+		    lb.append(((MemoryEffect) e).perm.rpl);
 	    }
 	    readRPLs = lb.toList();
 	}
@@ -228,8 +227,10 @@ public abstract class ExecutableMemberDocImpl
 	if (writeRPLs == null) {
 	    ListBuffer<RPL> lb = ListBuffer.lb();
 	    for (Effect e : effects()) {
-		if (e instanceof WriteEffect)
-		    lb.append(((WriteEffect) e).rpl);
+		if (e instanceof MemoryEffect) {
+		    MemoryEffect me = (MemoryEffect) e;
+		    if (me.isWrite()) lb.append(me.perm.rpl);
+		}
 	    }
 	    writeRPLs = lb.toList();
 	}

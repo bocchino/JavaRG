@@ -128,7 +128,7 @@ public class Translation {
     }
     
     /** Apply var-expr substitution to a list of things */
-    public static <T extends SubstVars<T>> List<T>substVarExprs(List<T> list,
+    public static <T extends SubstVars<T>> List<T>substVars(List<T> list,
 	    Permissions permissions, List<VarSymbol> from,
 	    List<JCExpression> to) {
 	ListBuffer<T> lb = ListBuffer.lb();

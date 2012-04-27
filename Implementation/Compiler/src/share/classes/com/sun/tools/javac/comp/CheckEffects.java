@@ -6,24 +6,22 @@ import static com.sun.tools.javac.code.Kinds.TYP;
 import static com.sun.tools.javac.code.TypeTags.CLASS;
 import static com.sun.tools.javac.code.TypeTags.TYPEVAR;
 
+import com.sun.tools.javac.code.DerefSet;
 import com.sun.tools.javac.code.Effect;
+import com.sun.tools.javac.code.Effect.MemoryEffect;
 import com.sun.tools.javac.code.Effects;
 import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Permission.EnvPerm.EffectPerm;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLs;
 import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.code.Effect.InvocationEffect;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.OperatorSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ArrayType;
-import com.sun.tools.javac.code.Type.ClassType;
+import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.JRGPardo;
-import com.sun.tools.javac.tree.JCTree.JRGForLoop;
-import com.sun.tools.javac.tree.JCTree.DPJNegationExpression;
 import com.sun.tools.javac.tree.JCTree.JCArrayAccess;
 import com.sun.tools.javac.tree.JCTree.JCAssert;
 import com.sun.tools.javac.tree.JCTree.JCAssign;
@@ -61,6 +59,8 @@ import com.sun.tools.javac.tree.JCTree.JCTypeCast;
 import com.sun.tools.javac.tree.JCTree.JCUnary;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JCWhileLoop;
+import com.sun.tools.javac.tree.JCTree.JRGForLoop;
+import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
@@ -129,34 +129,26 @@ public class CheckEffects extends EnvScanner { // DPJ
 	return (owner.kind == MTH) && (owner.name == names.init);
     }
     
-    /** Are we in an atomic statement? */
-    private boolean inAtomic;
-    
-    /** Are we in a nonint statement? */
-    private boolean inNonint;
-    
     /**
      * Compute interference between sets of statements
      * @param stats
      * @return
      */
-    private boolean statementsInterfere(List<JCStatement> stats,
-	    boolean atomicOK) {
+    private boolean statementsInterfere(List<JCStatement> stats) {
 	if (stats.size() > 1)
-	    return statementsInterfere(stats.head, stats.tail, atomicOK);
+	    return statementsInterfere(stats.head, stats.tail);
 	return false;
     }
     
-    private boolean statementsInterfere(JCStatement stat, List<JCStatement> stats,
-	    boolean atomicOK) {
+    private boolean statementsInterfere(JCStatement stat, List<JCStatement> stats) {
 	for (JCStatement stat2 : stats) {
 	    Effects effects1 = stat.effects.inEnvironment(rs, childEnvs.head, false);
 	    Effects effects2 = stat2.effects.inEnvironment(rs, childEnvs.head, false);
 	    if (!Effects.noninterferingEffects(effects1, effects2,
-			childEnvs.head.info.constraints, atomicOK))
+			childEnvs.head.info.constraints))
 		return true;
 	}
-	if (statementsInterfere(stats, atomicOK))
+	if (statementsInterfere(stats))
 	    return true;
 	return false;
     }
@@ -268,12 +260,12 @@ public class CheckEffects extends EnvScanner { // DPJ
     private void addReadEffect(JCExpression from, JCTreeWithEffects to) {
 	RPL access = accessedRPL(from, false);
 	if (access != null)
-	    to.effects.add(new Effect.ReadEffect(rpls, access, 
-		    inAtomic, inNonint));
+	    to.effects.add(MemoryEffect.readEffect(rpls, access, 
+		    DerefSet.NONE));
 	access = accessedRPL(from, true);
 	if (access != null && inConstructor(parentEnv))
-	    to.getConstructorEffects().add(new Effect.ReadEffect(rpls, access, 
-		    inAtomic, inNonint));
+	    to.getConstructorEffects().add(MemoryEffect.readEffect(rpls,
+		    access, DerefSet.NONE));
     }
     
     /**
@@ -298,12 +290,12 @@ public class CheckEffects extends EnvScanner { // DPJ
     private void addWriteEffect(JCExpression from, JCTreeWithEffects to) {
 	RPL access = accessedRPL(from, false);
 	if (access != null)
-	    to.effects.add(new Effect.WriteEffect(rpls, access, 
-		    inAtomic, inNonint));
+	    to.effects.add(MemoryEffect.writeEffect(rpls, access, 
+		    DerefSet.NONE)); 
 	access = accessedRPL(from, true);
 	if (access != null)
-	    to.getConstructorEffects().add(new Effect.WriteEffect(rpls, access, 
-		    inAtomic, inNonint));
+	    to.getConstructorEffects().add(MemoryEffect.writeEffect(rpls, access,
+		    DerefSet.NONE));
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -628,8 +620,7 @@ public class CheckEffects extends EnvScanner { // DPJ
 	    tree.setConstructorEffects(tree.body.getConstructorEffects());
 	boolean interfere = false;
 	if (tree.body instanceof JCBlock) {
-	    interfere = statementsInterfere(((JCBlock) tree.body).stats,
-		    false);
+	    interfere = statementsInterfere(((JCBlock) tree.body).stats);
 	}
 	if (interfere) {
 	    log.warning(tree.pos(), "interference.cobegin");

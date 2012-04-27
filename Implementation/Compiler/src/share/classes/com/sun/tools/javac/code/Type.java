@@ -65,7 +65,6 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.TypeVisitor;
 
-import com.sun.tools.javac.code.Effect.VariableEffect;
 import com.sun.tools.javac.code.RPLElement.RPLParameterElement;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
@@ -1145,10 +1144,6 @@ public class Type implements PrimitiveType {
             return List.nil();
         }
         
-        public List<VariableEffect> getEffectVariables() {
-            return List.nil();
-        }
-
 	public TypeSymbol asElement() {
 	    return null;
 	}
@@ -1408,10 +1403,6 @@ public class Type implements PrimitiveType {
             return List.convert(TypeVar.class, getTypeArguments());
         }
 
-        public List<VariableEffect> getEffectVariables() {
-            return List.convert(VariableEffect.class, getRefGroupArguments());
-        }
-        
         public List<RPL> getRegionParams() {
             return getRegionActuals();
         }

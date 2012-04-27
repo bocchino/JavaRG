@@ -4,10 +4,13 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import com.sun.tools.javac.code.Effect.VariableEffect;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
-import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Translation.AsMemberOf;
+import com.sun.tools.javac.code.Translation.AtCallSite;
+import com.sun.tools.javac.code.Translation.SubstRPLs;
+import com.sun.tools.javac.code.Translation.SubstRefGroups;
+import com.sun.tools.javac.code.Translation.SubstVars;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
@@ -20,12 +23,18 @@ import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCTreeWithEffects;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import com.sun.tools.javac.util.Pair;
 
 /**
  * A collection class representing a set of effects.
  */
-public class Effects implements Iterable<Effect> {
+public class Effects implements 
+	Iterable<Effect>,
+	SubstRPLs<Effects>,
+	SubstRefGroups<Effects>,
+	AsMemberOf<Effects>,
+	AtCallSite<Effects>,
+	SubstVars<Effects>
+{
     private Set<Effect> effects = new HashSet<Effect>();
     
     public static final Effects UNKNOWN = new Effects();
@@ -34,16 +43,6 @@ public class Effects implements Iterable<Effect> {
     
     public Effects(Effect effect) {
 	add(effect);
-    }
-    
-    /** If this effect collection represents a single effect variable, extract the
-     *  variable; otherwise return null.
-     */
-    public VariableEffect asVariableEffect() {
-	if (effects.size() != 1) return null;
-	Effect effect = effects.iterator().next();
-	return (effect instanceof VariableEffect) ?
-		(VariableEffect) effect : null;
     }
     
     public void add(Effect effect) {
@@ -64,104 +63,51 @@ public class Effects implements Iterable<Effect> {
 	return effects.isEmpty();
     }
     
-    /** @return an arbitrary effect from this set, or <code>null</code> if it is empty */
-    public Effect first() {
-	Iterator<Effect> it = effects.iterator();
-	if (it.hasNext())
-	    return it.next();
-	else
-	    return null;
+    public Effects substRPLs(List<RPL> from, List<RPL> to) {
+	Effects result = new Effects();
+	for (Effect e : effects) {
+	    result.add(e.substRPLs(from, to));
+	}
+	return result;
     }
     
-    /** @return a new Effects set that is a duplicate of this one without the given Effect */
-    public Effects without(Effect e) {
+    public Effects substRefGroups(List<RefGroup> from, List<RefGroup> to) {
 	Effects result = new Effects();
-	for (Effect effect : effects)
-	    if (!effect.equals(e))
-		result.add(effect);
+	for (Effect e : effects)
+	    result.add(e.substRefGroups(from, to));
+	return result;
+    }
+    
+    public Effects asMemberOf(Types types, Type t) {
+	Effects memberEffects = new Effects();
+	for (Effect e : effects) {
+	    memberEffects.add(e.asMemberOf(types, t));
+	}
+	return memberEffects;
+    }
+    
+    public Effects atCallSite(Types types, Permissions perms,
+	    JCMethodInvocation site) {
+	Effects result = new Effects();
+	for (Effect e : effects)
+	    result.add(e.atCallSite(types, perms, site));
+	return result;
+    }
+    
+    public Effects substVars(Permissions perms, List<VarSymbol> from,
+	    List<JCExpression> to) {
+	Effects result = new Effects();
+	for (Effect e : effects)
+	    result.add(e.substVars(perms, from, to));
 	return result;
     }
 
-    
-    /**
-     * Do all the RPL and effect parameter substitutions implied by the bindings of t
-     */
-    public Effects substForAllParams(Type t) {
-	Effects result = new Effects();
-	for (Effect e : effects) {
-	    result.addAll(e.substForAllParams(t));
-	}
-	return result;
-    }
-    
-    /** @return a new Effects set where instances of the given RegionParameterSymbols
-     * have been replaced respectively with the given RPLs */
-    public Effects substForRegionParams(List<RPL> from, List<RPL> to) {
-	Effects result = new Effects();
-	for (Effect e : effects) {
-	    result.add(e.substForParams(from, to));
-	}
-	return result;
-    }
-    
-    public Effects substForTRParams(List<Type> from, List<Type> to) {
-	Effects result = new Effects();
-	for (Effect e : effects) {
-	    result.add(e.substForTRParams(from, to));
-	}
-	return result;	
-    }
-    
-    public static List<Effects> substForParams(List<Effects> list, 
-		List<RPL> from, List<RPL> to) {
-	ListBuffer<Effects> buf = ListBuffer.lb();
-	for (Effects effects : list) {
-	    buf.append(effects.substForRegionParams(from, to));
-	}
-	return buf.toList();
-    }
-
-    public Effects substForEffectVars(List<Effects> from, List<Effects> to) {
-	Effects result = new Effects();
-	for (Effect e : effects) {
-	    result.addAll(e.substForEffectVars(from, to));
-	}
-	return result;
-    }
-    
-    public static List<Effects> substForEffectVars(List<Effects> effects, 
-		List<Effects> from, List<Effects> to) {
-	ListBuffer<Effects> buf = new ListBuffer<Effects>();
-	while (effects.nonEmpty()) {
-	    buf.append(effects.head.substForEffectVars(from, to));
-	    effects = effects.tail;
-	}
-	return buf.toList();
-    }
-
-    
-    public Effects substForVars(List<VarSymbol> from, List<VarSymbol> to) {
-	Effects result = new Effects();
-	for (Effect e : effects) {
-	    result.add(e.substForVars(from, to));
-	}
-	return result;
-    }
-    
-    public Effects substExpsForVars(List<VarSymbol> from, List<JCExpression> to) {
-	Effects result = new Effects();
-	for (Effect e : effects) {
-	    result.add(e.substExpsForVars(from, to));
-	}
-	return result;		
-    }
-    
     public Iterator<Effect> iterator() {
 	return effects.iterator();
     }
     
     @Override public String toString() {	
-	return trim().effects.toString();
+	return effects.toString();
     }
     
     @Override
@@ -179,101 +125,28 @@ public class Effects implements Iterable<Effect> {
     /** @return true iff every Effect in this set is a subeffect of at least one 
      * Effect in the given set 
      */
-    public boolean areSubeffectsOf(Effects otherEffects) {
+    public boolean areSubeffectsOf(Effects otherEffects,
+	    Attr attr, Env<AttrContext> env) {
         if (effects.isEmpty()) return true;
         if (effects == UNKNOWN || otherEffects == UNKNOWN) return true;
-        
-        Effect e = this.first();
-        if (!e.isSubeffectOf(otherEffects)) {
-            return false;
-        } else {
-            return this.without(e).areSubeffectsOf(otherEffects);    
+
+        for (Effect e : this.effects) {
+            if (!e.isSubeffectOf(otherEffects, attr, env)) {
+        	return false;
+            }
         }
+        return true;
     }
 
     /** @return a set of Effects in this set that are <b>not</b> subeffects 
      * of at least one Effect in the given set 
      */
-    public Effects missingFrom(Effects otherEffects) {
+    public Effects missingFrom(Effects otherEffects, Attr attr,
+	    Env<AttrContext> env) {
 	Effects result = new Effects();
 	for (Effect e : effects)
-	    if (!e.isSubeffectOf(otherEffects))
+	    if (!e.isSubeffectOf(otherEffects, attr, env))
 	        result.add(e);
-	return result;
-    }
-    
-    /**
-     * The effects as a member of t
-     */
-    public Effects asMemberOf(Types types, Type t, Symbol owner) {
-	Effects memberEffects = new Effects();
-	for (Effect e : effects) {
-	    memberEffects.addAll(e.asMemberOf(types, t, owner));
-	}
-	return memberEffects;
-    }
-
-    /**
-     * Translate effects from method signature context to method use context.  This
-     * is used both for declared effects and for method effect constraints.
-     * @return Translated effects
-     */    
-    public Effects translateMethodEffects(JCMethodInvocation tree, 
-	    Types types, Attr attr, Env<AttrContext> env) {
-	
-	MethodSymbol sym = tree.getMethodSymbol();
-	
-	Effects result = this;
-	if (sym != null) {
-	    if (tree.meth instanceof JCFieldAccess) {
-        	JCFieldAccess fa = (JCFieldAccess) tree.meth;
-        	// Translate to subclass and substitute for class 
-        	// region and effect params
-        	if (fa.selected.type instanceof ClassType) {
-        	    ClassType ct = (ClassType) fa.selected.type;
-        	    result = 
-        		result.asMemberOf(types, ct.tsym.type, sym.owner);
-        	    if (ct.getRegionActuals().size() == 
-        		ct.tsym.type.getRegionParams().size()) {
-        		result = 
-        		    result.substForRegionParams(
-        			ct.tsym.type.getRegionParams(),
-        			ct.getRegionActuals());
-        	    }
-        	    //result = 
-        	    //result.substForEffectVars(ct.tsym.type.getEffectArguments(),
-        	    //ct.getEffectArguments());
-        	}
-        	// Substitute for actual arg expressions
-        	result = result.substExpsForVars(sym.params, tree.args);
-            } else if (tree.meth instanceof JCIdent) {
-        	// Translate to subclass
-        	result = result.asMemberOf(types, env.enclClass.sym.type,
-        		sym.owner);
-            }
-
-            MethodSymbol methSym = tree.getMethodSymbol();
-            if (tree.mtype != null) {
-        	// Substitute for method region params
-        	if (sym.rgnParams != null) {
-        	    result = result.substForRegionParams(sym.rgnParams, 
-        		    tree.mtype.regionActuals);
-        	}
-        	// Substitute for type region params
-        	if (sym.typarams != null) {
-        		result = result.substForTRParams(sym.typarams,
-        			tree.mtype.typeactuals);
-        	}
-        	if (methSym != null) {
-        	    List<Type> paramtypes = methSym.type.getParameterTypes();
-        	    ListBuffer<Type> argtypes = ListBuffer.lb();
-        	    for (JCExpression arg : tree.getArguments())
-        		argtypes.append(arg.type);
-        	    result = result.substForTRParams(paramtypes, argtypes.toList());
-        	}
-            }
-            
-	}
 	return result;
     }
     
@@ -303,111 +176,26 @@ public class Effects implements Iterable<Effect> {
     }
     
     /**
-     * Return an effect set given by the argument effect set, occurring
-     * in an atomic statement.
-     */
-    public Effects inAtomic() {
-	Effects newEffects = new Effects();
-	boolean changed = false;
-	for (Effect e : effects) {
-	    Effect newEffect = e.inAtomic();
-	    newEffects.add(newEffect);
-	    if (newEffect != e) changed = true;
-	}
-	return changed ? newEffects : this;	
-    }
-    
-    /**
-     * Return an effect set given by the argument effect set, occurring
-     * in a nonint statement.
-     */
-    public Effects inNonint() {
-	Effects newEffects = new Effects();
-	boolean changed = false;
-	for (Effect e : effects) {
-	    Effect newEffect = e.inNonint();
-	    newEffects.add(newEffect);
-	    if (newEffect != e) changed = true;
-	}
-	return changed ? newEffects : this;
-    }
-
-    /**
-     * Capture all effects
-     */
-    public Effects capture() {
-	Effects capturedEffects = new Effects();
-	boolean changed = false;
-	for (Effect e : effects) {
-	    Effect capturedEffect = e.capture();
-	    capturedEffects.add(capturedEffect);
-	    if (capturedEffect != e) changed = true;
-	}
-	return changed ? capturedEffects : this;
-    }
-    
-    /**
      * Check whether two effect sets are noninterfering
      */
-    public static boolean noninterferingEffects(Effects effects1, Effects effects2, 
-	    Constraints constraints, boolean atomicOK) {
-        if (effects1.isEmpty()) return true;
-        Effect e = effects1.first();
-        boolean result = e.isNoninterferingWith(effects2, constraints, atomicOK);
-        if (result) {
-           effects1 = effects1.without(e);
-           result = noninterferingEffects(effects1, effects2,
-        	   constraints, atomicOK);
-        }
-        return result;
-    }
-    
-    /**
-     * Check whether noninterference constraints are satisfied
-     */
-    public static boolean nonintConstraintsAreSatisfied(List<Pair<Effects,Effects>> constraints,
-	    Type t, Constraints envConstraints) {
-	for (Pair<Effects,Effects> constraint : constraints) {
-	    Effects first = constraint.fst.substForAllParams(t);
-	    Effects second = constraint.snd.substForAllParams(t);
-	    if (!noninterferingEffects(first, second, envConstraints, false)) {
+    public static boolean noninterferingEffects(Effects effects1, 
+	    Effects effects2, Constraints constraints) {
+	for (Effect e: effects1) {
+	    if (!e.isNoninterferingWith(effects2, constraints))
 		return false;
-	    }
 	}
-	return true;
-    }
-
-    public static boolean nonintConstraintsAreSatisfied(List<Pair<Effects,Effects>> constraints,
-	    JCMethodInvocation tree, 
-	    List<RPL> rplFormals, List<RPL> rplActuals,
-	    List<Effects> effectFormals, List<Effects> effectActuals, 
-	    Types types, Attr attr, Env<AttrContext> env) {
-	Constraints envConstraints = env.info.constraints;
-	for (Pair<Effects,Effects> constraint : constraints) {
-	    Effects first = constraint.fst.translateMethodEffects(tree, types, attr, env);
-	    first = first.substForRegionParams(rplFormals, rplActuals);
-	    first = first.substForEffectVars(effectFormals, effectActuals);
-	    Effects second = constraint.snd.translateMethodEffects(tree, types, attr, env);
-	    second = second.substForRegionParams(rplFormals, rplActuals);
-	    second = second.substForEffectVars(effectFormals, effectActuals);
-	    if (!noninterferingEffects(first, second, envConstraints, false)) {
-		System.out.println(first + " interferes with " +second);
-		return false;
-	    }
-	}
-
 	return true;
     }
     
     /** Trim effects to minimal set
      */
-    public Effects trim() {
+    public Effects trim(Attr attr, Env<AttrContext> env) {
 	Effects newEffects = new Effects();
 	newEffects.effects.addAll(this.effects);
 	boolean changed = false;
 	for (Effect e : effects) {
 	    newEffects.effects.remove(e);
-	    if (e.isSubeffectOf(newEffects)) {
+	    if (e.isSubeffectOf(newEffects, attr, env)) {
 		changed = true;
 	    } else {
 		newEffects.effects.add(e);
@@ -415,5 +203,5 @@ public class Effects implements Iterable<Effect> {
 	}
 	return changed ? newEffects : this;
     }
-    
+
 }
