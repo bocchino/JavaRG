@@ -40,8 +40,8 @@ import static com.sun.tools.javac.code.Flags.PUBLIC;
 import static com.sun.tools.javac.code.Flags.STATIC;
 import static com.sun.tools.javac.code.Flags.SYNTHETIC;
 import static com.sun.tools.javac.code.Flags.VARARGS;
-import static com.sun.tools.javac.code.Kinds.ABSENT_REF_GROUP;
 import static com.sun.tools.javac.code.Kinds.ABSENT_MTH;
+import static com.sun.tools.javac.code.Kinds.ABSENT_REF_GROUP;
 import static com.sun.tools.javac.code.Kinds.ABSENT_REGION;
 import static com.sun.tools.javac.code.Kinds.ABSENT_TYP;
 import static com.sun.tools.javac.code.Kinds.ABSENT_VAR;
@@ -68,7 +68,6 @@ import static com.sun.tools.javac.code.TypeTags.TYPEVAR;
 
 import javax.lang.model.element.ElementVisitor;
 
-import com.sun.tools.javac.code.Effects;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLElement;
 import com.sun.tools.javac.code.RPLs;
@@ -80,6 +79,7 @@ import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
+import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
 import com.sun.tools.javac.code.Symbol.RegionNameSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
@@ -1400,16 +1400,30 @@ public class Resolve {
 	return (sym1 == sym);
     }
     
+    public boolean isInScope(RefGroupNameSymbol sym, Env<AttrContext> env) {
+	Symbol sym1 = findRefGroup(env, sym.name);
+	return (sym1 == sym);
+    }
+    
     public boolean isInScope(Symbol sym, Env<AttrContext> env) {
 	if (sym instanceof VarSymbol)
 	    return isInScope((VarSymbol) sym, env);
 	else if (sym instanceof RegionNameSymbol)
 	    return isInScope((RegionNameSymbol) sym, env);
+	else if (sym instanceof RefGroupNameSymbol)
+	    return isInScope((RefGroupNameSymbol) sym, env);
 	return true;
     }
     
     public boolean isInScope(RPLElement elt, Env<AttrContext> env) {
 	Symbol sym = elt.getSymbol();
+	if (sym != null) return isInScope(sym, env);
+	return true;
+    }
+    
+    public boolean isInScope(RefGroup group, Env<AttrContext> env) {
+	if (group == RefGroup.NO_GROUP) return true;
+	Symbol sym = group.getSymbol();
 	if (sym != null) return isInScope(sym, env);
 	return true;
     }

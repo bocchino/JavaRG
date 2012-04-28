@@ -55,8 +55,8 @@ public class Effects implements
     }
 
     public void addAllEffects(List<? extends JCTreeWithEffects> list) {
-	for (List<? extends JCTreeWithEffects> l = list; l.tail != null; l = l.tail)
-	    this.addAll(l.head.effects);
+	for (JCTreeWithEffects tree : list)
+	    this.addAll(tree.effects);
     }
 
     public boolean isEmpty() {

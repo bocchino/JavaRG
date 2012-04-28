@@ -12,6 +12,7 @@ import com.sun.tools.javac.code.Translation.SubstVars;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
+import com.sun.tools.javac.comp.Resolve;
 import com.sun.tools.javac.tree.JCTree.JCArrayAccess;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
@@ -544,8 +545,18 @@ public abstract class Permission {
 		return this;
 	    }
 	    
-	    @Override public int hashCode() {
+	    @Override 
+	    public int hashCode() {
 		return (derefSet.toString()).hashCode() << 3 + 2;
+	    }
+	    
+	    public EffectPerm inEnvironment(Resolve rs, Env<AttrContext> env, 
+			boolean pruneLocalEffects) {
+		RPL newRPL = rpl.inEnvironment(rs, env, pruneLocalEffects);
+		DerefSet newDerefSet = derefSet.inEnvironment(rs, env);
+		if (this.rpl != newRPL || this.derefSet != newDerefSet)
+		    return new EffectPerm(this.isWrite, newRPL, newDerefSet);
+		return this;
 	    }
 	    
 	    /**

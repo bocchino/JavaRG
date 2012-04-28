@@ -154,15 +154,8 @@ public abstract class Effect implements
 	@Override
 	public Effect inEnvironment(Resolve rs, Env<AttrContext> env, 
 		boolean pruneLocalEffects) {
-	    // TODO
-	    return this;
-	    /*
-	    RPL newRPL = rpl.inEnvironment(rs, env, pruneLocalEffects);
-	    if (newRPL == null) return null;
-	    return newRPL.equals(rpl) ? this : 
-		new MemoryEffect(rpls, newRPL, MemoryEffect.Kind.READ, 
-			this.isAtomic());
-			*/
+	    return new MemoryEffect(rpls, this.perm.inEnvironment(rs, env, 
+		    pruneLocalEffects));
 	}
 
 	public String toString() {

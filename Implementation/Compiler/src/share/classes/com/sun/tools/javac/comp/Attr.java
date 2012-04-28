@@ -226,7 +226,7 @@ public class Attr extends JCTree.Visitor {
     final Name.Table names;
     final Log log;
     final protected Symtab syms;
-    final Resolve rs;
+    public final Resolve rs;
     final Check chk;
     final MemberEnter memberEnter;
     final TreeMaker make;
