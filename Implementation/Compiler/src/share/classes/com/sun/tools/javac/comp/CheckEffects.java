@@ -7,11 +7,12 @@ import static com.sun.tools.javac.code.TypeTags.CLASS;
 import static com.sun.tools.javac.code.TypeTags.TYPEVAR;
 
 import com.sun.tools.javac.code.DerefSet;
-import com.sun.tools.javac.code.Effect;
+import com.sun.tools.javac.code.Effect.InvocationEffect;
 import com.sun.tools.javac.code.Effect.MemoryEffect;
 import com.sun.tools.javac.code.Effects;
+import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Permission.EnvPerm.EffectPerm;
+import com.sun.tools.javac.code.Permissions;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLs;
 import com.sun.tools.javac.code.Symbol;
@@ -62,6 +63,7 @@ import com.sun.tools.javac.tree.JCTree.JCWhileLoop;
 import com.sun.tools.javac.tree.JCTree.JRGForLoop;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
+import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Log;
@@ -95,6 +97,8 @@ public class CheckEffects extends EnvScanner { // DPJ
     private final Resolve rs;
     private final RPLs rpls;
     private final Attr attr;
+    private final TreeMaker maker;
+    private final Permissions permissions;
     private       Lint lint;
 
     public static CheckEffects instance(Context context) {
@@ -115,6 +119,8 @@ public class CheckEffects extends EnvScanner { // DPJ
 	rs = Resolve.instance(context);
 	rpls = RPLs.instance(context);
 	attr = Attr.instance(context);
+	maker = TreeMaker.instance(context);
+	permissions = Permissions.instance(context);
     }
 
     /**
@@ -258,14 +264,15 @@ public class CheckEffects extends EnvScanner { // DPJ
      * @param to
      */    
     private void addReadEffect(JCExpression from, JCTreeWithEffects to) {
+	DerefSet derefSet = getDerefSetFor(from);
 	RPL access = accessedRPL(from, false);
 	if (access != null)
 	    to.effects.add(MemoryEffect.readEffect(rpls, access, 
-		    DerefSet.NONE));
+		    derefSet));
 	access = accessedRPL(from, true);
 	if (access != null && inConstructor(parentEnv))
 	    to.getConstructorEffects().add(MemoryEffect.readEffect(rpls,
-		    access, DerefSet.NONE));
+		    access, derefSet));
     }
     
     /**
@@ -288,16 +295,43 @@ public class CheckEffects extends EnvScanner { // DPJ
      * @param to
      */
     private void addWriteEffect(JCExpression from, JCTreeWithEffects to) {
+	DerefSet derefSet = getDerefSetFor(from);
 	RPL access = accessedRPL(from, false);
 	if (access != null)
 	    to.effects.add(MemoryEffect.writeEffect(rpls, access, 
-		    DerefSet.NONE)); 
+		    derefSet)); 
 	access = accessedRPL(from, true);
 	if (access != null)
-	    to.getConstructorEffects().add(MemoryEffect.writeEffect(rpls, access,
-		    DerefSet.NONE));
+	    to.getConstructorEffects().add(MemoryEffect.writeEffect(rpls, 
+		    access, derefSet));
     }
 
+    /**
+     * Get the deref set, if any, associated with a variable access
+     */
+    private DerefSet getDerefSetFor(JCExpression e) {
+	DerefSet derefSet = DerefSet.NONE;
+	if (e instanceof JCIdent) {
+	    JCIdent id = (JCIdent) e;
+	    if (id.sym.owner!=null && !id.sym.isLocal()) {
+		JCExpression thisExp = 
+			maker.Ident(rs.findIdent(parentEnv, names._this, Kinds.VAR));
+		derefSet = new DerefSet(thisExp);
+	    }
+	}
+	else if (e instanceof JCFieldAccess) {
+	    JCFieldAccess fa = (JCFieldAccess) e;
+	    derefSet = new DerefSet(fa.selected);
+	}
+	else if (e instanceof JCArrayAccess) {
+	    JCArrayAccess aa = (JCArrayAccess) e;
+	    derefSet = new DerefSet(aa.indexed);
+	}
+	if (!derefSet.isValid(attr, parentEnv, types))
+	    derefSet = DerefSet.NONE;	
+	return derefSet;
+    }
+    
     ///////////////////////////////////////////////////////////////////////////
     // Visitor Methods
     ///////////////////////////////////////////////////////////////////////////
@@ -306,6 +340,7 @@ public class CheckEffects extends EnvScanner { // DPJ
     public void visitMethodDef(JCMethodDecl tree) {
 	super.visitMethodDef(tree);
 	MethodSymbol m = tree.sym;
+	Effects declaredEffects = Effects.makeEffectsFrom(rpls, m.effectPerms);
 	Effects actualEffects = Effects.UNKNOWN;
 	if (tree.body != null) {
 	    if (!inConstructor(childEnvs.head)) {
@@ -316,13 +351,11 @@ public class CheckEffects extends EnvScanner { // DPJ
 		    tree.body.getConstructorEffects().inEnvironment(rs, childEnvs.head, true);
 	    }
 	}
-	/*
-	if (!actualEffects.areSubeffectsOf(m.effects)) {
+	if (!actualEffects.areSubeffectsOf(declaredEffects, attr, parentEnv)) {
 	    System.err.println("Effect summary does not cover " + 
-		    actualEffects.missingFrom(m.effects));
-	    log.error(tree.effects.pos(), "bad.effect.summary");
+		    actualEffects.missingFrom(declaredEffects, attr, parentEnv));
+	    log.error(tree.perms.pos(), "bad.effect.summary");
 	}
-	*/
     }
 	
     @Override
@@ -559,20 +592,18 @@ public class CheckEffects extends EnvScanner { // DPJ
 	}
 
 	// Accumulate the effect of invoking m
-	MethodSymbol sym = tree.getMethodSymbol();
-	
 	/*
+	// TODO: Substitute for this
+	// Handle unique permissions properly
+	MethodSymbol sym = tree.getMethodSymbol();
 	if (sym != null) {
-	    Effects effects = 
-		sym.effects.translateMethodEffects(tree, types, attr, parentEnv);
-            
-            InvocationEffect ie = new InvocationEffect(rpls, sym, effects);
-            if (inNonint) {
-        	ie = (InvocationEffect) ie.inNonint();
-            } else if (inAtomic) {
-        	ie = (InvocationEffect) ie.inAtomic();
-            }
-            
+	    System.out.print("sym="+sym+", ");
+	    System.out.print("effectPerms="+sym.effectPerms+", ");
+	    Effects effects =
+		    Effects.makeEffectsFrom(rpls, sym.effectPerms);
+	    effects = effects.atCallSite(types, permissions, tree);
+	    System.out.println("effects="+effects);
+	    InvocationEffect ie = new InvocationEffect(rpls, sym, effects);
 	    tree.effects.add(ie);
 	    if (inConstructor(parentEnv))
 		tree.getConstructorEffects().add(ie);
@@ -595,11 +626,13 @@ public class CheckEffects extends EnvScanner { // DPJ
     @Override public void visitNewClass(JCNewClass tree) {
 	super.visitNewClass(tree);
 	// Effects for new T(e1, ... en)
-	// Only effects are those of evaluating e1, ..., en
+	// Effects of evaluating e1, ..., en
 	for (JCExpression arg : tree.args) {
 	    // TODO:  Handle RPL arguments to constructor
 	    addAllWithRead(arg, tree);
 	}
+	// Effects of invoking constructor
+	// TODO
     }
     
     @Override public void visitTypeApply(JCTypeApply tree) {

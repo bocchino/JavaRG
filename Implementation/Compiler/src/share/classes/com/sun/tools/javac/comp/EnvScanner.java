@@ -207,7 +207,6 @@ public abstract class EnvScanner extends TreeScanner {
 	    List<Pair<RPL,RPL>> constraints = buf.toList();
 	    parentEnv.info.constraints.disjointRPLs =
 		parentEnv.info.constraints.disjointRPLs.appendList(constraints);
-	    //parentEnv.info.constraintsOld = parentEnv.info.constraints.disjointRPLs;
 	}
 
 	// Enter all type parameters into the local method scope.

@@ -2421,7 +2421,7 @@ public class Attr extends JCTree.Visitor {
 	    Env<AttrContext> env) {
 	Symbol sym = tree.getSymbol();
 	VarSymbol varSym = null;
-	RefPerm refPerm = null;
+	RefPerm refPerm = RefPerm.SHARED;
 	if (sym instanceof VarSymbol) {
 	    varSym = (VarSymbol) sym;
 	    refPerm = Translation.accessElt(env.info.scope.getRefPermFor(varSym),

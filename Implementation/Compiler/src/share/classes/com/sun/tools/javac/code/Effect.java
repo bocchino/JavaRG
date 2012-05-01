@@ -100,6 +100,11 @@ public abstract class Effect implements
 	    return new MemoryEffect(rpls, new EffectPerm(true, rpl, derefSet));
 	}
 
+	public static MemoryEffect makeEffectFrom(RPLs rpls,
+		EffectPerm perm) {
+	    return new MemoryEffect(rpls, perm);
+	}
+	
 	public boolean isWrite() {
 	    return perm.isWrite;
 	}

@@ -465,6 +465,11 @@ public abstract class Permission {
 		public String toString() { return "UNKNOWN"; }
 	    };
 	    
+	    public static EffectPerm NONE =
+		    new EffectPerm(false, null, DerefSet.NONE) {
+		public String toString() { return "NONE"; }
+	    };
+	    
 	    /**
 	     * Is this a write effect?
 	     */
@@ -553,6 +558,8 @@ public abstract class Permission {
 	    public EffectPerm inEnvironment(Resolve rs, Env<AttrContext> env, 
 			boolean pruneLocalEffects) {
 		RPL newRPL = rpl.inEnvironment(rs, env, pruneLocalEffects);
+		if (newRPL == RPL.NONE)
+		    return EffectPerm.NONE;
 		DerefSet newDerefSet = derefSet.inEnvironment(rs, env);
 		if (this.rpl != newRPL || this.derefSet != newDerefSet)
 		    return new EffectPerm(this.isWrite, newRPL, newDerefSet);
@@ -566,6 +573,10 @@ public abstract class Permission {
 		    Env<AttrContext> env) {
 		// Anything is included in an unknown permission, and vice versa
 		if (this==EffectPerm.UNKNOWN || e==EffectPerm.UNKNOWN) return true;
+		// None is included in anything
+		if (this==EffectPerm.NONE) return true;
+		// Nothing is included in None
+		if (e==EffectPerm.NONE) return false; 
 		// Write can't be included in read
 		if (this.isWrite && !e.isWrite) return false;
 		// RPLs must be included

@@ -4,25 +4,23 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.code.Effect.MemoryEffect;
+import com.sun.tools.javac.code.Permission.EnvPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.EffectPerm;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Translation.AsMemberOf;
 import com.sun.tools.javac.code.Translation.AtCallSite;
 import com.sun.tools.javac.code.Translation.SubstRPLs;
 import com.sun.tools.javac.code.Translation.SubstRefGroups;
 import com.sun.tools.javac.code.Translation.SubstVars;
-import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.Resolve;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
-import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
-import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCTreeWithEffects;
 import com.sun.tools.javac.util.List;
-import com.sun.tools.javac.util.ListBuffer;
 
 /**
  * A collection class representing a set of effects.
@@ -43,6 +41,14 @@ public class Effects implements
     
     public Effects(Effect effect) {
 	add(effect);
+    }
+    
+    public static Effects makeEffectsFrom(RPLs rpls, List<EffectPerm> perms) {
+	Effects effects = new Effects();
+	for (EffectPerm perm : perms) {
+	    effects.add(MemoryEffect.makeEffectFrom(rpls, perm));
+	}
+	return effects;
     }
     
     public void add(Effect effect) {

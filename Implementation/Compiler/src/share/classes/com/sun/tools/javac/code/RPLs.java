@@ -36,7 +36,6 @@ public class RPLs {
 
     /** Single, global RPL for Root */
     public static final RPL ROOT = new RPL(RPLElement.ROOT_ELEMENT);
-;
 
     /**
      * Disjoint RPLs.  See Section 3.2 of the Tech Report

@@ -27,6 +27,8 @@ public class RPL
 	AtCallSite<RPL>
 {
     
+    /** No RPL */
+    public static final RPL NONE = new RPL();
     
     ///////////////////////////////////////////////////////////////////////////
     // Fields
@@ -254,7 +256,7 @@ public class RPL
      * elements written in terms of local region names and/ or local variables
      * that are no longer in scope.  If so, we need to either (1) replace the RPL 
      * with a more general RPL whose elements are in scope; or (2) delete the
-     * RPL (i.e., return null), if all regions it represents are out of scope.
+     * RPL (i.e., return NONE), if all regions it represents are out of scope.
      */
     public RPL inEnvironment(Resolve rs, Env<AttrContext> env, boolean pruneLocalEffects) {
 	// If the RPL is a capture parameter, compute its bound in the enclosing
@@ -263,7 +265,7 @@ public class RPL
 	    RPLCaptureParameter capture = (RPLCaptureParameter) elts.head;
 	    RPL includedIn = capture.includedIn.inEnvironment(rs, env, pruneLocalEffects);
 	    // If bound is out of scope, so is capture parameter
-	    if (includedIn == null) return null;
+	    if (includedIn == RPL.NONE) return RPL.NONE;
 	    // Otherwise return new parameter only if bound changed
 	    return (includedIn == capture.includedIn) ? this :
 		new RPL(List.<RPLElement>of(new RPLCaptureParameter(includedIn)).
@@ -288,7 +290,7 @@ public class RPL
 	    buf.append(list.head);
 	    list = list.tail;
 	}
-	if (buf.isEmpty()) return null;
+	if (buf.isEmpty()) return RPL.NONE;
 	buf.append(RPLElement.STAR);
 	return new RPL(buf.toList());
     }
