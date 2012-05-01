@@ -27,17 +27,36 @@
 
 package com.sun.tools.javac.comp;
 
-import com.sun.tools.javac.code.*;
-import com.sun.tools.javac.tree.*;
-import com.sun.tools.javac.util.*;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import static com.sun.tools.javac.code.Flags.INTERFACE;
+import static com.sun.tools.javac.code.Flags.PRIVATE;
+import static com.sun.tools.javac.code.Flags.PUBLIC;
+import static com.sun.tools.javac.code.Flags.STATIC;
 
-import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.tree.JCTree.*;
-
-import static com.sun.tools.javac.code.Flags.*;
-import static com.sun.tools.javac.code.Kinds.*;
-import static com.sun.tools.javac.code.TypeTags.*;
+import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Symtab;
+import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.code.TypeTags;
+import com.sun.tools.javac.code.Types;
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCClassDecl;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import com.sun.tools.javac.tree.JCTree.JCExpression;
+import com.sun.tools.javac.tree.JCTree.JCExpressionStatement;
+import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
+import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
+import com.sun.tools.javac.tree.JCTree.JCNewClass;
+import com.sun.tools.javac.tree.JCTree.JCStatement;
+import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
+import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
+import com.sun.tools.javac.tree.JCTree.JRGForLoop;
+import com.sun.tools.javac.tree.JCTree.JRGPardo;
+import com.sun.tools.javac.tree.JCTree.JRGRefPerm.PermKind;
+import com.sun.tools.javac.tree.TreeMaker;
+import com.sun.tools.javac.tree.TreeScanner;
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Name;
 
 /** This pass implements boilerplate FJTask parallelization
  * transformations for DPJ programs.
@@ -163,7 +182,7 @@ public class FJTaskHarness extends TreeScanner {
 	    tree.defs = tree.defs.append(make.MethodDef(
     		    make.Modifiers(PUBLIC | STATIC), 
     		    names.fromString("main"),
-    		    make.RefPerm(null),
+    		    make.RefPerm(),
     		    make.TypeIdent(TypeTags.VOID), null,
     		    List.<JCTypeParameter>nil(), params, null, thrown,
     		    make.Block(0, block), null));

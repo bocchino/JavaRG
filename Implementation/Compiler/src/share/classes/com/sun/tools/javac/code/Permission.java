@@ -30,7 +30,7 @@ public abstract class Permission {
 {
 	
 	public RefGroup getRefGroup() {
-	    return RefGroup.NO_GROUP;
+	    return RefGroup.NONE;
 	}
 	
 	/**
@@ -48,18 +48,41 @@ public abstract class Permission {
 	    return this instanceof LocallyUnique;
 	}
 	
-	public static final RefPerm NO_PERM = new RefPerm() {
+	public boolean isShared() {
+	    return this == SHARED;
+	}
+	
+	public boolean isLeaf() {
+	    return this == LEAF;
+	}
+	
+	public static final RefPerm NONE = new RefPerm() {
 	    @Override public String toString() {
 		return "[no permission]";
 	    }
 	};
-	
+
+	/**
+	 * Object representing the SHARED ref perm
+	 */
 	public static final RefPerm SHARED = new RefPerm() {
 	    @Override public String toString() {
 		return "shared";
 	    }
 	};
+	
+	/**
+	 * Object representing the LEAF ref perm
+	 */
+	public static final RefPerm LEAF = new LocallyUnique(RefGroup.LEAF) {
+	    @Override public String toString() {
+		return "leaf";
+	    }
+	};
 	    
+	/**
+	 * Object representing an erroneous ref perm
+	 */
 	public static final RefPerm ERROR = new RefPerm() {
 	    @Override public String toString() {
 		return "error";
@@ -171,7 +194,7 @@ public abstract class Permission {
 	    public final RefGroup refGroup;
 	
 	    public FreshGroupPerm(RefGroup refGroup) {
-		super(refGroup, RefGroup.NO_GROUP);
+		super(refGroup, RefGroup.NONE);
 		this.refGroup = refGroup;
 	    }
 	
@@ -244,7 +267,7 @@ public abstract class Permission {
 	
 	    private CopyPerm(JCExpression exp, List<Name> consumedFields,
 		    RefGroup sourceGroup, RefGroup targetGroup) {
-		super(sourceGroup, RefGroup.NO_GROUP);
+		super(sourceGroup, RefGroup.NONE);
 		this.exp = exp;
 		this.consumedFields = consumedFields;
 		this.sourceGroup = sourceGroup;
@@ -254,7 +277,7 @@ public abstract class Permission {
 	    /** Create a permission 'copies e to G' */
 	    public static CopyPerm simplePerm(JCExpression exp,
 		    RefGroup targetGroup) {
-		return new CopyPerm(exp, null, RefGroup.NO_GROUP, targetGroup);
+		return new CopyPerm(exp, null, RefGroup.NONE, targetGroup);
 	    }
 
 	    /** Create a permission 'copies e...G1 to G2' */
@@ -281,7 +304,7 @@ public abstract class Permission {
 	    public boolean isLinear() { return true; }
 	    
 	    public boolean isTreePerm() {
-		return sourceGroup != RefGroup.NO_GROUP;
+		return sourceGroup != RefGroup.NONE;
 	    }
 	    
 	    public boolean isMultipleTreePerm() {
@@ -367,7 +390,7 @@ public abstract class Permission {
 			sb.append(field);
 		    }
 		}
-		if (sourceGroup != RefGroup.NO_GROUP) {
+		if (sourceGroup != RefGroup.NONE) {
 		    sb.append("...");
 		    sb.append(sourceGroup);
 		}
@@ -465,7 +488,7 @@ public abstract class Permission {
 	    };
 	    
 	    public static EffectPerm NONE =
-		    new EffectPerm(false, null, DerefSet.NONE) {
+		    new EffectPerm(false, new RPL(), DerefSet.NONE) {
 		public String toString() { return "NONE"; }
 	    };
 	    
@@ -497,7 +520,7 @@ public abstract class Permission {
 	    }
 	    
 	    public EffectPerm(boolean isWrite, RPL rpl, DerefSet derefSet) {
-		super(derefSet.treeGroup, RefGroup.NO_GROUP);
+		super(derefSet.treeGroup, RefGroup.NONE);
 		this.isWrite = isWrite;
 		this.rpl = rpl;
 		this.derefSet = derefSet;
@@ -551,7 +574,26 @@ public abstract class Permission {
 	    
 	    @Override 
 	    public int hashCode() {
-		return (derefSet.toString()).hashCode() << 3 + 2;
+		int code = rpl.hashCode() + derefSet.hashCode();
+		if (isWrite) ++code;
+		if (usedInTreeComparison) ++code;
+		return (code << 3) + 2;
+	    }
+	    
+	    @Override
+	    public boolean equals(Object o) {
+		if (o instanceof EffectPerm) {
+		    EffectPerm effectPerm = (EffectPerm) o;
+		    if (this.isWrite != effectPerm.isWrite)
+			return false;
+		    if (!this.rpl.equals(effectPerm.rpl))
+			return false;
+		    if (!this.derefSet.equals(effectPerm.derefSet))
+			return false;
+		    return this.usedInTreeComparison == 
+			    effectPerm.usedInTreeComparison;
+		}
+		return false;
 	    }
 	    
 	    public EffectPerm inEnvironment(Resolve rs, Env<AttrContext> env, 
@@ -616,7 +658,7 @@ public abstract class Permission {
 	    public final RefGroup refGroup;
 	    	
 	    public PreservedGroupPerm(RefGroup refGroup) {
-		super(refGroup, RefGroup.NO_GROUP);
+		super(refGroup, RefGroup.NONE);
 		this.refGroup = refGroup;
 	    }
 	
@@ -671,7 +713,7 @@ public abstract class Permission {
 	    public final RefGroup refGroup;
 	
 	    public UpdatedGroupPerm(RefGroup refGroup) {
-		super(RefGroup.NO_GROUP, refGroup);
+		super(RefGroup.NONE, refGroup);
 		this.refGroup = refGroup;
 	    }
 

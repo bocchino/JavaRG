@@ -606,7 +606,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitRefPerm(RefPermTree node, P p) {
 	JRGRefPerm t = (JRGRefPerm) node;
 	JCIdent group = copy(t.group, p);
-	return M.at(t.pos).RefPerm(group);
+	return M.at(t.pos).RefPerm(t.permKind, group);
     }
 
     public JCTree visitMethodPerms(MethodPermsTree node, P p) {

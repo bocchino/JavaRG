@@ -42,9 +42,15 @@ public abstract class RefGroup
 	return this;
     }
     
-    public static final RefGroup NO_GROUP = new RefGroup() {
+    public static final RefGroup NONE = new RefGroup() {
 	@Override public String toString() {
-	    return "[no group]";
+	    return "NONE";
+	}
+    };
+    
+    public static final RefGroup LEAF = new RefGroup() {
+	@Override public String toString() {
+	    return "LEAF";
 	}
     };
     

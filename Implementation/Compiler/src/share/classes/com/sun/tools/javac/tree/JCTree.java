@@ -103,7 +103,6 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Permission.EnvPerm.CopyPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.EffectPerm;
-import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLElement;
@@ -121,6 +120,7 @@ import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.code.TypeTags;
 import com.sun.tools.javac.comp.Attr;
+import com.sun.tools.javac.tree.JCTree.JRGRefPerm.PermKind;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
@@ -2435,18 +2435,32 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         
     public static class JRGRefPerm extends JCExpression implements RefPermTree {
 
-	/** Group G in 'unique(G)'; set to 'null' if permission is 'shared' */
-	public JCIdent group;
+	public enum PermKind { UNIQUE, SHARED, LEAF };
+	
+	/** The kind of the ref perm */
+	public final PermKind permKind;
+	
+	/** Group G in 'unique(G)' */
+	public final JCIdent group;
 	
 	/** Internal representation */
 	public RefPerm refPerm;
 	
-	public JRGRefPerm(JCIdent group) {
+	public JRGRefPerm(PermKind permKind, JCIdent group) {
+	    this.permKind = permKind;
 	    this.group = group;
 	}
 
+	public boolean isUnique() {
+	    return permKind == PermKind.UNIQUE;
+	}
+	
 	public boolean isShared() {
-	    return group == null;
+	    return permKind == PermKind.SHARED;
+	}
+	
+	public boolean isLeaf() {
+	    return permKind == PermKind.LEAF;
 	}
 	
 	@Override
@@ -2940,7 +2954,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         DPJRegionDecl RegionDecl(JCModifiers mods, Name name);
         JRGPardo Pardo(JCBlock body);
         JCWildcard Wildcard(TypeBoundKind kind, JCTree type);
-        JRGRefPerm RefPerm(JCIdent group);
+        JRGRefPerm RefPerm(PermKind permKind, JCIdent group);
+        JRGRefPerm RefPerm();
         JRGMethodPerms MethodPerms(JRGRefPerm thisPerm, List<JCIdent> freshGroups,
         	List<JRGCopyPerm> copyPerms, boolean defaultEffectPerms,
         	List<JRGEffectPerm> readEffectPerms, 

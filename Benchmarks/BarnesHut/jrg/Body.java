@@ -56,7 +56,7 @@ public class Body extends Node {
     <region Rhg>void hackgrav(HGStruct<Rhg> hg, 
 			      double rsize, Node root) 
 	reads Masses, Positions
-	writes Forces via this, Rhg via hg 
+	writes Forces via this, Rhg via hg
     {	
         double szsq;
         szsq = rsize * rsize;
@@ -66,7 +66,7 @@ public class Body extends Node {
         /* stash resulting pot. and */
         phi = hg.phi0;
         /* acceleration in body p   */
-        acc.SETV(hg.acc0);
+        this.acc.SETV(hg.acc0);
     }
 
     /**

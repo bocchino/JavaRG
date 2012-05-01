@@ -171,7 +171,7 @@ public abstract class Effect implements
 	
 	@Override
 	public int hashCode() {
-	    return 3 * this.perm.hashCode();
+	    return 3 * this.toString().hashCode();
 	}
 	
 	public boolean equals(Object o) {

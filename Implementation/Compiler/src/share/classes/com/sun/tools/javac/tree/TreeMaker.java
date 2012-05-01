@@ -125,6 +125,7 @@ import com.sun.tools.javac.tree.JCTree.JRGParamInfo;
 import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
 import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
+import com.sun.tools.javac.tree.JCTree.JRGRefPerm.PermKind;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.JCTree.TypeBoundKind;
 import com.sun.tools.javac.util.Context;
@@ -292,7 +293,7 @@ public class TreeMaker implements JCTree.Factory {
     public JCVariableDecl VarDef(JCModifiers mods, Name name, 
 	    JRGRefPerm refPerm, JCExpression vartype, 
 	    DPJRegionPathList rpl, JCExpression init) {
-	if (refPerm == null) refPerm = RefPerm(null);
+	if (refPerm == null) refPerm = RefPerm();
         JCVariableDecl tree = new JCVariableDecl(mods, name, 
         	refPerm, vartype, rpl, init, null);
         tree.pos = pos;
@@ -635,8 +636,14 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
     
-    public JRGRefPerm RefPerm(JCIdent group) {
-	JRGRefPerm tree = new JRGRefPerm(group);
+    public JRGRefPerm RefPerm(PermKind permKind, JCIdent group) {
+	JRGRefPerm tree = new JRGRefPerm(permKind, group);
+	tree.pos = pos;
+	return tree;
+    }
+    
+    public JRGRefPerm RefPerm() {
+	JRGRefPerm tree = new JRGRefPerm(PermKind.SHARED, null);
 	tree.pos = pos;
 	return tree;
     }
@@ -880,7 +887,7 @@ public class TreeMaker implements JCTree.Factory {
             new JCVariableDecl(
                 Modifiers(v.flags(), Annotations(v.getAnnotationMirrors())),
                 v.name,
-                RefPerm(null), // FIXME
+                RefPerm(), // FIXME
                 Type(v.type),
                 null, // FIXME
                 init,
@@ -994,7 +1001,7 @@ public class TreeMaker implements JCTree.Factory {
             new JCMethodDecl(
                 Modifiers(m.flags(), Annotations(m.getAnnotationMirrors())),
                 m.name,
-                RefPerm(null),
+                RefPerm(),
                 Type(mtype.getReturnType()),
                 null, // DPJ FIXME
                 TypeParams(mtype.getTypeArguments()),

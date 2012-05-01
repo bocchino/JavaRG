@@ -89,7 +89,6 @@ import static com.sun.tools.javac.parser.Token.SUPER;
 import static com.sun.tools.javac.parser.Token.THROWS;
 import static com.sun.tools.javac.parser.Token.TRUE;
 import static com.sun.tools.javac.parser.Token.UNIQUE;
-import static com.sun.tools.javac.parser.Token.UPDATES;
 import static com.sun.tools.javac.parser.Token.VOID;
 import static com.sun.tools.javac.parser.Token.WHILE;
 import static com.sun.tools.javac.parser.Token.WRITES;
@@ -103,7 +102,6 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.TypeTags;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.JRGParamInfo;
 import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
@@ -142,7 +140,9 @@ import com.sun.tools.javac.tree.JCTree.JRGDerefSet;
 import com.sun.tools.javac.tree.JCTree.JRGEffectPerm;
 import com.sun.tools.javac.tree.JCTree.JRGForLoop;
 import com.sun.tools.javac.tree.JCTree.JRGMethodPerms;
+import com.sun.tools.javac.tree.JCTree.JRGParamInfo;
 import com.sun.tools.javac.tree.JCTree.JRGRefPerm;
+import com.sun.tools.javac.tree.JCTree.JRGRefPerm.PermKind;
 import com.sun.tools.javac.tree.JCTree.TypeBoundKind;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
@@ -2904,26 +2904,25 @@ public class Parser {
     }
 
     /** RefPermOpt = [ RefPerm ]
-     *  RefPerm = UNIQUE "(" Ident ")"
+     *  RefPerm = UNIQUE "(" Ident ")" | LEAF
      */
     JRGRefPerm refPermOpt() {
 	JCIdent group = null;
 	int pos = S.pos();
-	if (tokenIsIdent("borrowed")) {
-	    // TODO:  Handle this properly
-	    S.nextToken();
-	}
+	PermKind permKind = PermKind.SHARED;
 	if (S.token() == UNIQUE) {
 	    S.nextToken();
-	    // TODO:  Handle non-local unique properly
-	    // Right now it's translated as shared
 	    if (S.token() == LPAREN) {
 		accept(LPAREN);
 		group = ident();
 		accept(RPAREN);
+		permKind = permKind.UNIQUE;
+	    }
+	    else {
+		permKind = PermKind.LEAF;
 	    }
 	}
-	return toP(F.at(pos).RefPerm(group));
+	return toP(F.at(pos).RefPerm(permKind, group));
     }
     
     /** EnumDeclaration = ENUM Ident [IMPLEMENTS TypeList] EnumBody

@@ -1990,7 +1990,7 @@ public class Check {
 		// Otherwise, e must be in some group G1
 		sourceGroup = 
 			attr.getRefPermFor(neededPerm.exp, env).getRefGroup();
-		if (sourceGroup == RefGroup.NO_GROUP) return false;
+		if (sourceGroup == RefGroup.NONE) return false;
 		// Require 'copies e...G1 to G2'
 		generatorPerm = CopyPerm.singleTreePerm(neededPerm.exp, 
 		    sourceGroup, neededPerm.targetGroup);

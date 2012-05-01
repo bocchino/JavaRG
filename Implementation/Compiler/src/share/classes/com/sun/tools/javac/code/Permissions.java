@@ -111,14 +111,14 @@ public class Permissions {
 	for (EnvPerm oldPerm : oldSet) {
 	    // If the new perm requires perm 'updates G',
 	    // then kill all old perms requiring 'preserves G'
-	    if (newPerm.updatedGroup != RefGroup.NO_GROUP) {
+	    if (newPerm.updatedGroup != RefGroup.NONE) {
 		if (!oldPerm.preservesGroup(newPerm.updatedGroup)) {
 		    newSet.add(oldPerm);
 		}
 	    }  
 	    // If the new perm requires perm 'preserves G',
 	    // then kill all old perms requiring 'updates G'
-	    if (newPerm.preservedGroup != RefGroup.NO_GROUP){
+	    if (newPerm.preservedGroup != RefGroup.NONE){
 		if (!oldPerm.updatesGroup(newPerm.preservedGroup))
 		    newSet.add(oldPerm);
 	    }

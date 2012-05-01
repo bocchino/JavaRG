@@ -403,7 +403,7 @@ public class Scope {
     
     public boolean addCopyPerm(Permissions permissions, 
 	    CopyPerm perm) {
-	if (perm.sourceGroup != RefGroup.NO_GROUP) {
+	if (perm.sourceGroup != RefGroup.NONE) {
 	    PreservedGroupPerm preservedGroupPerm =
 		    new PreservedGroupPerm(perm.sourceGroup);
 	    if (!addPreservedGroupPerm(permissions, preservedGroupPerm))
@@ -416,7 +416,7 @@ public class Scope {
     public boolean addEffectPerm(Permissions permissions,
 	    EffectPerm perm) {
 	if (perm.preservedGroup != null && 
-		perm.preservedGroup != RefGroup.NO_GROUP) {
+		perm.preservedGroup != RefGroup.NONE) {
 	    PreservedGroupPerm preservedGroupPerm =
 		    new PreservedGroupPerm(perm.preservedGroup);
 	    if (!addPreservedGroupPerm(permissions, preservedGroupPerm))

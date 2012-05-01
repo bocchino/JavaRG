@@ -592,8 +592,6 @@ public class CheckEffects extends EnvScanner { // DPJ
 	}
 
 	// Accumulate the effect of invoking m
-	// TODO: Handle leaf group permissions properly
-	/*
 	MethodSymbol sym = tree.getMethodSymbol();
 	if (sym != null) {
 	    //System.out.print("sym="+sym+", ");
@@ -602,12 +600,10 @@ public class CheckEffects extends EnvScanner { // DPJ
 		    Effects.makeEffectsFrom(rpls, sym.effectPerms);
 	    effects = effects.atCallSite(rs, parentEnv, tree);
 	    InvocationEffect ie = new InvocationEffect(rpls, sym, effects);
-	    System.out.println("effect="+ie);
 	    tree.effects.add(ie);
 	    if (inConstructor(parentEnv))
 		tree.getConstructorEffects().add(ie);
 	}
-	*/
     }
     
     @Override

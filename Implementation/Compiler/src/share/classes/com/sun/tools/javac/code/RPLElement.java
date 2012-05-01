@@ -263,6 +263,11 @@ public abstract class RPLElement {
 	
 	@Override
 	public boolean isLocalName() { return true; }
+	
+	@Override
+	public int hashCode() {
+	    return this.sym.hashCode();
+	}
     }
 
 }

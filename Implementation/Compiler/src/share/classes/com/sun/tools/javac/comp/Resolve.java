@@ -94,9 +94,11 @@ import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCArrayAccess;
 import com.sun.tools.javac.tree.JCTree.JCBinary;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
+import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCLiteral;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -1399,12 +1401,20 @@ public class Resolve {
      */
     public boolean isInScope(JCExpression expr, Env<AttrContext> env) {
 	if (expr instanceof JCLiteral) return true;
-	if (expr instanceof JCIdent) {
+	else if (expr instanceof JCIdent) {
 	    JCIdent ident = (JCIdent) expr;
 	    if (!(ident.sym instanceof VarSymbol)) return false;
 	    return isInScope((VarSymbol) ident.sym, env);
 	}
-	if (expr instanceof JCBinary) {
+	else if (expr instanceof JCFieldAccess) {
+	    JCFieldAccess fa = (JCFieldAccess) expr;
+	    return isInScope(fa.selected, env);
+	}
+	else if (expr instanceof JCArrayAccess) {
+	    JCArrayAccess aa = (JCArrayAccess) expr;
+	    return isInScope(aa.indexed, env);
+	}
+	else if (expr instanceof JCBinary) {
 	    JCBinary binary = (JCBinary) expr;
 	    return isInScope(binary.lhs, env) && isInScope(binary.rhs, env);
 	}
@@ -1450,7 +1460,7 @@ public class Resolve {
     }
     
     public boolean isInScope(RefGroup group, Env<AttrContext> env) {
-	if (group == RefGroup.NO_GROUP) return true;
+	if (group == RefGroup.NONE || group == RefGroup.LEAF) return true;
 	Symbol sym = group.getSymbol();
 	if (sym != null) return isInScope(sym, env);
 	return true;

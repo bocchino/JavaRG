@@ -60,16 +60,15 @@ public class Array<region R,refgroup G> {
     {
 	for each i in rep pardo {
 		if (rep[i] != null) {
-		    rep[i].updateParallel();
+		    this.rep[i].updateParallel();
 		}
 	    }
     }
 
     void updateAllSequential() 
-	writes R via this...G
     {
 	for each i in rep {
-		rep[i].updateSequential();
+		this.rep[i].updateSequential();
 	    }
     }
 

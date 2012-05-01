@@ -724,12 +724,15 @@ public class Attr extends JCTree.Visitor {
 	    return new RefGroupName((RefGroupNameSymbol) tree.sym);
 	if (tree.sym instanceof RefGroupParameterSymbol)
 	    return new RefGroupParameter((RefGroupParameterSymbol) tree.sym);
-	return RefGroup.NO_GROUP;
+	return RefGroup.NONE;
     }
     
     RefPerm attribRefPerm(JRGRefPerm tree, Env<AttrContext> env) {
-	if (tree.group == null) {
+	if (tree.isShared()) {
 	    tree.refPerm = RefPerm.SHARED;
+	}
+	else if (tree.isLeaf()) {
+	    tree.refPerm = RefPerm.LEAF;
 	}
 	else {
 	    RefGroup refGroup = attribRefGroup(tree.group, env);
@@ -4250,7 +4253,7 @@ public class Attr extends JCTree.Visitor {
 	if (tree.refGroupID != null)
 	    tree.refGroup = attribRefGroup(tree.refGroupID, env);
 	else
-	    tree.refGroup = RefGroup.NO_GROUP;
+	    tree.refGroup = RefGroup.NONE;
     }
     
 

@@ -540,7 +540,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         JCMethodDecl values = make.
             MethodDef(make.Modifiers(Flags.PUBLIC|Flags.STATIC),
                       names.values,
-                      make.RefPerm(null),
+                      make.RefPerm(),
                       valuesType,
                       null,
                       List.<JCTypeParameter>nil(),
@@ -555,7 +555,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         JCMethodDecl valueOf = make.
             MethodDef(make.Modifiers(Flags.PUBLIC|Flags.STATIC),
                       names.valueOf,
-                      make.RefPerm(null),
+                      make.RefPerm(),
                       make.Type(tree.sym.type),
                       null,
                       List.<JCTypeParameter>nil(),
@@ -577,7 +577,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         JCMethodDecl ordinal = make.at(tree.pos).
             MethodDef(make.Modifiers(Flags.PUBLIC|Flags.FINAL),
                       names.ordinal,
-                      make.RefPerm(null),
+                      make.RefPerm(),
                       make.Type(syms.intType),
                       null,
                       List.<JCTypeParameter>nil(),
@@ -592,7 +592,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         JCMethodDecl name = make.
             MethodDef(make.Modifiers(Flags.PUBLIC|Flags.FINAL),
                       names._name,
-                      make.RefPerm(null),
+                      make.RefPerm(),
                       make.Type(syms.stringType),
                       null,
                       List.<JCTypeParameter>nil(),
@@ -1138,7 +1138,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 JCTree constrDef = make.MethodDef(
                     make.Modifiers(ctorFlags),
                     names.init,
-                    make.RefPerm(null),
+                    make.RefPerm(),
                     null,
                     null,
                     make.TypeParams(List.<Type>nil()),
@@ -1312,7 +1312,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         JCTree result = make.MethodDef(
             make.Modifiers(flags),
             names.init,
-            make.RefPerm(null),
+            make.RefPerm(),
             null,
             null, // DPJ FIXME
             make.TypeParams(typarams),
