@@ -204,10 +204,9 @@ public abstract class Permission {
 			this : new FreshGroupPerm(refGroup);
 	    }
 
-	    public FreshGroupPerm atCallSite(Types types, Permissions permissions,
+	    public FreshGroupPerm atCallSite(Resolve rs, Env<AttrContext> env,
 		    JCMethodInvocation tree) {
-		RefGroup refGroup = this.refGroup.atCallSite(types, 
-			permissions, tree);
+		RefGroup refGroup = this.refGroup.atCallSite(rs, env, tree);
 		return (this.refGroup == refGroup) ?
 			this : new FreshGroupPerm(refGroup);
 	    }
@@ -330,19 +329,19 @@ public abstract class Permission {
 		return this;
 	    }
 	    
-	    public CopyPerm atCallSite(Types types, Permissions permissions, 
+	    public CopyPerm atCallSite(Resolve rs, Env<AttrContext> env,
 		    JCMethodInvocation tree) {
 		RefGroup sourceGroup = (this.sourceGroup == null) ?
-			null : this.sourceGroup.atCallSite(types, permissions, tree);
-		RefGroup targetGroup = this.targetGroup.atCallSite(types, 
-			permissions, tree);
+			null : this.sourceGroup.atCallSite(rs, env, tree);
+		RefGroup targetGroup = this.targetGroup.atCallSite(rs, env, tree);
 		CopyPerm result = this;
 		if (this.sourceGroup != sourceGroup || this.targetGroup != targetGroup)
 		    result = new CopyPerm(this.exp, this.consumedFields,
 			    sourceGroup, targetGroup);
 		MethodSymbol methSym = tree.getMethodSymbol();
 		if (methSym != null) {
-	            result = result.substVars(permissions, 
+		    // TODO: Substitute for this
+	            result = result.substVars(rs.getPermissions(), 
 	        	    methSym.params(), tree.args);
 		}
 		return result;
@@ -539,11 +538,11 @@ public abstract class Permission {
 		return this;
 	    }
 	    
-	    public EffectPerm atCallSite(Types types, Permissions permissions,
+	    public EffectPerm atCallSite(Resolve rs, Env<AttrContext> env,
 		    JCMethodInvocation tree) {
-		RPL rpl = this.rpl.atCallSite(types, permissions, tree);
-		DerefSet derefSet = this.derefSet.atCallSite(types, 
-			permissions, tree);
+		RPL rpl = this.rpl.atCallSite(rs, env, tree);
+		DerefSet derefSet = this.derefSet.atCallSite(rs, 
+			env, tree);
 		if (this.rpl != rpl || this.derefSet != derefSet)
 		    return new EffectPerm(this.isWrite, rpl, 
 			    derefSet);
@@ -648,10 +647,9 @@ public abstract class Permission {
 		    new PreservedGroupPerm(refGroup);
 	    }
 	    
-	    public PreservedGroupPerm atCallSite(Types types, 
-		    Permissions permissions, JCMethodInvocation tree) {
-		RefGroup refGroup = this.refGroup.atCallSite(types, 
-			permissions, tree);
+	    public PreservedGroupPerm atCallSite(Resolve rs, Env<AttrContext> env,
+		    JCMethodInvocation tree) {
+		RefGroup refGroup = this.refGroup.atCallSite(rs, env, tree);
 		return (this.refGroup == refGroup) ?
 			this : new PreservedGroupPerm(refGroup);
 	    }
@@ -690,10 +688,9 @@ public abstract class Permission {
 		    new UpdatedGroupPerm(refGroup);
 	    }
 
-	    public UpdatedGroupPerm atCallSite(Types types, 
-		    Permissions permissions, JCMethodInvocation tree) {
-		RefGroup refGroup = this.refGroup.atCallSite(types,
-			permissions, tree);
+	    public UpdatedGroupPerm atCallSite(Resolve rs, Env<AttrContext> env,
+		    JCMethodInvocation tree) {
+		RefGroup refGroup = this.refGroup.atCallSite(rs, env, tree);
 		return (this.refGroup == refGroup) ?
 			this : new UpdatedGroupPerm(refGroup);
 	    }

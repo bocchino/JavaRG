@@ -1,8 +1,9 @@
 package com.sun.tools.javac.code;
 
-import com.sun.tools.javac.code.Permission.EnvPerm.EffectPerm;
-import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.comp.AttrContext;
+import com.sun.tools.javac.comp.Env;
+import com.sun.tools.javac.comp.Resolve;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
@@ -37,16 +38,16 @@ public class Translation {
     public interface AtCallSite<T extends AtCallSite<T>> {
 	
 	/** 'this' at the call site */
-	public T atCallSite(Types types, Permissions permissions,
+	public T atCallSite(Resolve rs, Env<AttrContext> env,
 		JCMethodInvocation site);
 	
     }
 
     /** Apply 'at call site' to a list of things */
     public static <T extends AtCallSite<T>> List<T>atCallSite(List<T> list,
-	    Types types, Permissions permissions, JCMethodInvocation site) {
+	    Resolve rs, Env<AttrContext> env, JCMethodInvocation site) {
 	ListBuffer<T> lb = ListBuffer.lb();
-	for (T elt : list) lb.append(elt.atCallSite(types, permissions, site));
+	for (T elt : list) lb.append(elt.atCallSite(rs, env, site));
 	return lb.toList();
     }
         
@@ -60,7 +61,7 @@ public class Translation {
 	return elt;
     }
     
-    /** Perform 'selectElt' on a list of things */
+    /** Perform 'accessElt' on a list of things */
     public static <T extends AsMemberOf<T>> List<T>accessElts(List<T> elts,
 	    Types types, JCExpression tree) {
 	if (tree instanceof JCFieldAccess) {
@@ -153,6 +154,27 @@ public class Translation {
 	ListBuffer<T> lb = ListBuffer.lb();
 	for (T elt : list) lb.append(substVarSymbols(elt, permissions, from, to));
 	return lb.toList();
+    }
+    
+    /**
+     * Substitute for 'this' at method invocation     
+     */
+    public static <T extends SubstVars<T>> T substForThis(T elt, 
+	    JCExpression selectExp, Resolve rs, Env<AttrContext> env,
+	    Symbol thisSym) {
+	// Compute the implied argument to 'this'
+        JCExpression thisArg = null;
+        if (selectExp instanceof JCFieldAccess) {
+            thisArg = ((JCFieldAccess) selectExp).selected;
+        }
+        else {
+            thisArg = rs.getTreeMaker().Ident(rs.findThis(env));
+        }
+        // Substitute it
+	if (thisSym instanceof VarSymbol)
+	    return elt.substVars(rs.getPermissions(),
+		    List.of((VarSymbol) thisSym), List.of(thisArg));
+	return elt;
     }
 }
     

@@ -161,6 +161,11 @@ public abstract class Symbol implements Element {
     /** A cache for the type erasure of this symbol.
      */
     public Type erasure_field;
+    
+    /**
+     * The symbol, if any, associated with 'this' for this symbol
+     */
+    public Symbol thisSym;
 
     /** Construct a symbol with given kind, flags, name, type and owner.
      */
@@ -745,7 +750,7 @@ public abstract class Symbol implements Element {
         /** the constant pool of the class
          */
         public Pool pool;
-
+        
         public ClassSymbol(long flags, Name name, Type type, Symbol owner) {
             super(flags, name, type, owner);
             this.members_field = null;

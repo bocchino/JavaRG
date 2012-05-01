@@ -2046,23 +2046,23 @@ public class Attr extends JCTree.Visitor {
             MethodType methodType = (MethodType) tree.meth.type;
             // Fresh group perms
             List<FreshGroupPerm> freshGroupPerms = 
-        	    Translation.atCallSite(methSym.freshGroupPerms, types, 
-        		    permissions, tree);
+        	    Translation.atCallSite(methSym.freshGroupPerms, rs, 
+        		    localEnv, tree);
             chk.consumeEnvPerms(tree.pos(), freshGroupPerms, localEnv);
             // Copy perms
             List<CopyPerm> copyPerms =
-        	    Translation.atCallSite(methSym.copyPerms, types, 
-        		    permissions, tree);
+        	    Translation.atCallSite(methSym.copyPerms, rs, 
+        		    localEnv, tree);
             chk.consumeEnvPerms(tree.pos(), copyPerms, localEnv);
             // Preserved group perms
             List<PreservedGroupPerm> preservedGroupPerms =
         	    Translation.atCallSite(methSym.preservedGroupPerms,
-        		    types, permissions, tree);
+        		    rs, localEnv, tree);
             chk.requireEnvPerms(tree.pos(), preservedGroupPerms, localEnv);
             // Updated group perms
             List<UpdatedGroupPerm> updatedGroupPerms =
         	    Translation.atCallSite(methSym.updatedGroupPerms,
-        		    types, permissions, tree);
+        		    rs, localEnv, tree);
             chk.requireEnvPerms(tree.pos(), updatedGroupPerms, localEnv);
         }
         

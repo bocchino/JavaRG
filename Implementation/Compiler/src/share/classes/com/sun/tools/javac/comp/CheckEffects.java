@@ -352,9 +352,9 @@ public class CheckEffects extends EnvScanner { // DPJ
 	    }
 	}
 	if (!actualEffects.areSubeffectsOf(declaredEffects, attr, parentEnv)) {
-	    System.err.println("Effect summary does not cover " + 
-		    actualEffects.missingFrom(declaredEffects, attr, parentEnv));
 	    log.error(tree.perms.pos(), "bad.effect.summary");
+	    System.err.println("Missing " + 
+		    actualEffects.missingFrom(declaredEffects, attr, parentEnv));
 	}
     }
 	
@@ -592,18 +592,17 @@ public class CheckEffects extends EnvScanner { // DPJ
 	}
 
 	// Accumulate the effect of invoking m
+	// TODO: Handle leaf group permissions properly
 	/*
-	// TODO: Substitute for this
-	// Handle unique permissions properly
 	MethodSymbol sym = tree.getMethodSymbol();
 	if (sym != null) {
-	    System.out.print("sym="+sym+", ");
-	    System.out.print("effectPerms="+sym.effectPerms+", ");
+	    //System.out.print("sym="+sym+", ");
+	    //System.out.print("effectPerms="+sym.effectPerms+", ");
 	    Effects effects =
 		    Effects.makeEffectsFrom(rpls, sym.effectPerms);
-	    effects = effects.atCallSite(types, permissions, tree);
-	    System.out.println("effects="+effects);
+	    effects = effects.atCallSite(rs, parentEnv, tree);
 	    InvocationEffect ie = new InvocationEffect(rpls, sym, effects);
+	    System.out.println("effect="+ie);
 	    tree.effects.add(ie);
 	    if (inConstructor(parentEnv))
 		tree.getConstructorEffects().add(ie);

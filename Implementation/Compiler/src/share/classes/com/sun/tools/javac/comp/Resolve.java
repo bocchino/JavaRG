@@ -68,6 +68,7 @@ import static com.sun.tools.javac.code.TypeTags.TYPEVAR;
 
 import javax.lang.model.element.ElementVisitor;
 
+import com.sun.tools.javac.code.Permissions;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLElement;
 import com.sun.tools.javac.code.RPLs;
@@ -99,6 +100,7 @@ import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCLiteral;
 import com.sun.tools.javac.tree.TreeInfo;
+import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.FatalError;
 import com.sun.tools.javac.util.JCDiagnostic;
@@ -129,8 +131,10 @@ public class Resolve {
     ClassReader reader;
     TreeInfo treeinfo;
     Types types;
+    Permissions permissions;
     RPLs rpls;
     Attr attr;
+    TreeMaker maker;
     public final boolean boxingEnabled; // = source.allowBoxing();
     public final boolean varargsEnabled; // = source.allowVarargs();
     private final boolean debugResolve;
@@ -169,8 +173,10 @@ public class Resolve {
         reader = ClassReader.instance(context);
         treeinfo = TreeInfo.instance(context);
         types = Types.instance(context);
+        permissions = Permissions.instance(context);
         rpls = RPLs.instance(context);
         attr = Attr.instance(context);
+        maker = TreeMaker.instance(context);
         Source source = Source.instance(context);
         boxingEnabled = source.allowBoxing();
         varargsEnabled = source.allowVarargs();
@@ -188,6 +194,14 @@ public class Resolve {
     final ResolveError methodNotFound;
     final ResolveError typeNotFound;
 
+/* ************************************************************************
+ * Getters for helper classes
+ *************************************************************************/
+
+    public Types getTypes() { return types; }
+    public Permissions getPermissions() { return permissions; }
+    public TreeMaker getTreeMaker() { return maker; }
+    
 /* ************************************************************************
  * Identifier resolution
  *************************************************************************/
@@ -624,6 +638,13 @@ public class Resolve {
                                 name));
     }
 
+    /**
+     * Find symbol for 'this' in env
+     */
+    public Symbol findThis(Env<AttrContext> env) {
+	return findVar(env, names._this);
+    }
+    
     /** Find unqualified variable or field with given name.
      *  Synthetic fields always skipped.
      *  @param env     The current environment.
@@ -1364,6 +1385,13 @@ public class Resolve {
             else if (sym.kind < bestSoFar.kind) bestSoFar = sym;
         }
         return bestSoFar;
+    }
+    
+    /**
+     * Find ident in type, specialized to 'this'
+     */
+    public Symbol findThisInType(Env<AttrContext> env, Type site) {
+	return findIdentInType(env, site, names._this, VAR);
     }
 
     /**

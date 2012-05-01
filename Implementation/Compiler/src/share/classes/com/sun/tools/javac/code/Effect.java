@@ -145,10 +145,10 @@ public abstract class Effect implements
 	    return new MemoryEffect(rpls, this.perm.asMemberOf(types, t));
 	}
 	
-	public Effect atCallSite(Types types, Permissions perms,
+	public Effect atCallSite(Resolve rs, Env<AttrContext> env,
 		JCMethodInvocation tree) {
-	    return new MemoryEffect(rpls, this.perm.atCallSite(types, perms,
-	    	tree));
+	    return new MemoryEffect(rpls, this.perm.atCallSite(rs, env,
+		    tree));
 	}
 
 	public Effect substVars(Permissions perms, List<VarSymbol> from,
@@ -250,10 +250,10 @@ public abstract class Effect implements
 		    withEffects.substRefGroups(from, to));
 	}
 
-	public Effect atCallSite(Types types, Permissions perms,
+	public Effect atCallSite(Resolve rs, Env<AttrContext> env,
 		JCMethodInvocation tree) {
 	    return new InvocationEffect(rpls, methSym,
-		    withEffects.atCallSite(types, perms, tree));
+		    withEffects.atCallSite(rs, env, tree));
 	}
 		
 	public Effect asMemberOf(Types types, Type t) {

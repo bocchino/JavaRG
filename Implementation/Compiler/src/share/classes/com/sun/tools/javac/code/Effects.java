@@ -92,11 +92,11 @@ public class Effects implements
 	return memberEffects;
     }
     
-    public Effects atCallSite(Types types, Permissions perms,
-	    JCMethodInvocation site) {
+    public Effects atCallSite(Resolve rs, 
+	    Env<AttrContext> env, JCMethodInvocation site) {
 	Effects result = new Effects();
 	for (Effect e : effects)
-	    result.add(e.atCallSite(types, perms, site));
+	    result.add(e.atCallSite(rs, env, site));
 	return result;
     }
     

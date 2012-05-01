@@ -1,13 +1,16 @@
 package com.sun.tools.javac.code;
 
-import com.sun.tools.javac.code.Translation.AsMemberOf;
-import com.sun.tools.javac.code.Translation.AtCallSite;
-import com.sun.tools.javac.code.Translation.SubstRefGroups;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupNameSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupParameterSymbol;
 import com.sun.tools.javac.code.Symbol.RefGroupSymbol;
+import com.sun.tools.javac.code.Translation.AsMemberOf;
+import com.sun.tools.javac.code.Translation.AtCallSite;
+import com.sun.tools.javac.code.Translation.SubstRefGroups;
 import com.sun.tools.javac.code.Type.MethodType;
+import com.sun.tools.javac.comp.AttrContext;
+import com.sun.tools.javac.comp.Env;
+import com.sun.tools.javac.comp.Resolve;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.util.List;
 
@@ -34,7 +37,7 @@ public abstract class RefGroup
 	return this;
     }
     
-    public RefGroup atCallSite(Types types, Permissions permissions,
+    public RefGroup atCallSite(Resolve rs, Env<AttrContext> env,
 	    JCMethodInvocation tree) {
 	return this;
     }
@@ -122,13 +125,13 @@ public abstract class RefGroup
 	    return result;
 	}
 	
-	@Override public RefGroup atCallSite(Types types, Permissions permissions,
-		JCMethodInvocation tree) {
+	@Override public RefGroup atCallSite(Resolve rs, 
+		Env<AttrContext> env, JCMethodInvocation tree) {
 	    MethodSymbol methSym = tree.getMethodSymbol();
 	    if (methSym != null) {
 		MethodType methodType = (MethodType) tree.meth.type;
 		RefGroup refGroup = Translation.<RefGroup>accessElt(this, 
-			types, tree.meth);
+			rs.getTypes(), tree.meth);
 	            refGroup = refGroup.substRefGroups(methSym.refGroupParams, 
 	        	    methodType.refGroupActuals);
 	            return refGroup;
