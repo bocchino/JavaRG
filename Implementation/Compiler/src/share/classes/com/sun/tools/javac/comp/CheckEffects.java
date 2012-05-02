@@ -6,12 +6,15 @@ import static com.sun.tools.javac.code.Kinds.TYP;
 import static com.sun.tools.javac.code.TypeTags.CLASS;
 import static com.sun.tools.javac.code.TypeTags.TYPEVAR;
 
+import java.util.LinkedList;
+
 import com.sun.tools.javac.code.DerefSet;
 import com.sun.tools.javac.code.Effect.InvocationEffect;
 import com.sun.tools.javac.code.Effect.MemoryEffect;
 import com.sun.tools.javac.code.Effects;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.code.Permission.EnvPerm.EffectPerm;
 import com.sun.tools.javac.code.Permissions;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLs;
@@ -31,6 +34,7 @@ import com.sun.tools.javac.tree.JCTree.JCBinary;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
 import com.sun.tools.javac.tree.JCTree.JCCase;
 import com.sun.tools.javac.tree.JCTree.JCCatch;
+import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCConditional;
 import com.sun.tools.javac.tree.JCTree.JCDoWhileLoop;
 import com.sun.tools.javac.tree.JCTree.JCEnhancedForLoop;
@@ -65,9 +69,11 @@ import com.sun.tools.javac.tree.JCTree.JRGPardo;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Name;
+import com.sun.tools.javac.util.Pair;
 
 /**
  * Tree scanner that walks the AST, infers effects, and performs the following 
@@ -336,11 +342,36 @@ public class CheckEffects extends EnvScanner { // DPJ
     // Visitor Methods
     ///////////////////////////////////////////////////////////////////////////
 
+    private Effects initEffects;
+    private LinkedList<Pair<Effects, DiagnosticPosition>> constEffects;
+    
+    @Override
+    public void visitClassDef(JCClassDecl tree) {
+	Effects savedInitEffects = initEffects;
+	LinkedList<Pair<Effects, DiagnosticPosition>> savedConstEffects =
+		constEffects;
+	initEffects = new Effects();
+	constEffects = new LinkedList<Pair<Effects, DiagnosticPosition>>();
+	super.visitClassDef(tree);
+	// Check declared constructor effects against initializers
+	for (Pair<Effects, DiagnosticPosition> pair : constEffects) {
+	    if (!initEffects.areSubeffectsOf(pair.fst, attr, parentEnv)) {
+		log.error(pair.snd, "bad.effect.summary");
+		System.err.println("Missing " + 
+			initEffects.missingFrom(pair.fst, attr, parentEnv).trim(attr, parentEnv));
+		}
+	}
+	initEffects = savedInitEffects;
+	constEffects = savedConstEffects;
+    }
+    
     @Override
     public void visitMethodDef(JCMethodDecl tree) {
 	super.visitMethodDef(tree);
 	MethodSymbol m = tree.sym;
 	Effects declaredEffects = Effects.makeEffectsFrom(rpls, m.effectPerms);
+	// Convert UNKNOWN to pure in declared effects
+	declaredEffects.remove(MemoryEffect.makeEffectFrom(rpls, EffectPerm.UNKNOWN));
 	Effects actualEffects = Effects.UNKNOWN;
 	if (tree.body != null) {
 	    if (!inConstructor(childEnvs.head)) {
@@ -349,12 +380,17 @@ public class CheckEffects extends EnvScanner { // DPJ
 	    } else {
 		actualEffects =
 		    tree.body.getConstructorEffects().inEnvironment(rs, childEnvs.head, true);
+		// Add in constructor effects for later checking against initializers
+		constEffects.add(new Pair<Effects, DiagnosticPosition>(declaredEffects,
+			(tree.perms == null) ? tree.pos() : tree.perms.pos()));
 	    }
 	}
 	if (!actualEffects.areSubeffectsOf(declaredEffects, attr, parentEnv)) {
-	    log.error(tree.perms.pos(), "bad.effect.summary");
+	    DiagnosticPosition pos = 
+		    (tree.perms == null) ? tree.pos() : tree.perms.pos();
+	    log.error(pos, "bad.effect.summary");
 	    System.err.println("Missing " + 
-		    actualEffects.missingFrom(declaredEffects, attr, parentEnv));
+		    actualEffects.missingFrom(declaredEffects, attr, parentEnv).trim(attr, parentEnv));
 	}
     }
 	
@@ -435,7 +471,6 @@ public class CheckEffects extends EnvScanner { // DPJ
 
     @Override
     public void visitNewArray(JCNewArray tree) {
-	// TODO Constructor effects
 	super.visitNewArray(tree);
     }
 
@@ -534,8 +569,11 @@ public class CheckEffects extends EnvScanner { // DPJ
 
 	if (tree.init != null) {
 	    addAllWithRead(tree.init, tree);
-	    // TODO:  If VarDef is a field, make sure these effects 
-	    // get into the constructor
+	    if (tree.sym.owner.kind == TYP) {
+		// Record field initializer effects for checking against
+		// constructors
+		initEffects.addAll(tree.init.effects);
+	    }
 	}
 
     }

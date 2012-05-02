@@ -45,6 +45,10 @@ public abstract class Effect implements
     
     public boolean isSubeffectOf(Effects effects, Attr attr,
 	    Env<AttrContext> env) {
+	// Ignore UNKNOWN and invokes UNKNOWN
+	if (this.isSubeffectOf(MemoryEffect.makeEffectFrom(rpls, EffectPerm.UNKNOWN),
+		attr, env))
+	    return true;
 	// SE-UNION-1
 	for (Effect e : effects) {
 	    if (this.isSubeffectOf(e, attr, env)) return true;

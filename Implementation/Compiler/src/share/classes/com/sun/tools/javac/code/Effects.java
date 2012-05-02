@@ -54,6 +54,10 @@ public class Effects implements
     public void add(Effect effect) {
 	effects.add(effect);
     }
+    
+    public boolean remove(Effect effect) {
+	return effects.remove(effect);
+    }
 
     public void addAll(Effects otherEffects) {
 	for (Effect e : otherEffects)
