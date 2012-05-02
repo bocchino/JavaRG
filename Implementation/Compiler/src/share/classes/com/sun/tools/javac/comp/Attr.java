@@ -315,7 +315,7 @@ public class Attr extends JCTree.Visitor {
 	        }
 	        else if ((m.flags_field & STATIC) == 0) {
 	            m.thisPerm = RefPerm.SHARED;
-	            // TODO: Add default for effect perms
+	            m.effectPerms = List.of(EffectPerm.DEFAULT);
 	        }
 	        
 	        // Restore parent env

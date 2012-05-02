@@ -9,6 +9,7 @@ import static com.sun.tools.javac.code.TypeTags.TYPEVAR;
 import java.util.LinkedList;
 
 import com.sun.tools.javac.code.DerefSet;
+import com.sun.tools.javac.code.Effect;
 import com.sun.tools.javac.code.Effect.InvocationEffect;
 import com.sun.tools.javac.code.Effect.MemoryEffect;
 import com.sun.tools.javac.code.Effects;
@@ -354,12 +355,14 @@ public class CheckEffects extends EnvScanner { // DPJ
 	constEffects = new LinkedList<Pair<Effects, DiagnosticPosition>>();
 	super.visitClassDef(tree);
 	// Check declared constructor effects against initializers
+	initEffects = initEffects.inEnvironment(rs, parentEnv, true);
 	for (Pair<Effects, DiagnosticPosition> pair : constEffects) {
-	    if (!initEffects.areSubeffectsOf(pair.fst, attr, parentEnv)) {
+	    Effects declaredEffects = pair.fst.inEnvironment(rs, parentEnv, true);
+	    if (!initEffects.areSubeffectsOf(declaredEffects, attr, parentEnv)) {
 		log.error(pair.snd, "bad.effect.summary");
 		System.err.println("Missing " + 
-			initEffects.missingFrom(pair.fst, attr, parentEnv).trim(attr, parentEnv));
-		}
+			initEffects.missingFrom(declaredEffects, attr, parentEnv).trim(attr, parentEnv));
+	    }
 	}
 	initEffects = savedInitEffects;
 	constEffects = savedConstEffects;
@@ -370,8 +373,6 @@ public class CheckEffects extends EnvScanner { // DPJ
 	super.visitMethodDef(tree);
 	MethodSymbol m = tree.sym;
 	Effects declaredEffects = Effects.makeEffectsFrom(rpls, m.effectPerms);
-	// Convert UNKNOWN to pure in declared effects
-	declaredEffects.remove(MemoryEffect.makeEffectFrom(rpls, EffectPerm.UNKNOWN));
 	Effects actualEffects = Effects.UNKNOWN;
 	if (tree.body != null) {
 	    if (!inConstructor(childEnvs.head)) {

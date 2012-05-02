@@ -45,9 +45,11 @@ public abstract class Effect implements
     
     public boolean isSubeffectOf(Effects effects, Attr attr,
 	    Env<AttrContext> env) {
-	// Ignore UNKNOWN and invokes UNKNOWN
-	if (this.isSubeffectOf(MemoryEffect.makeEffectFrom(rpls, EffectPerm.UNKNOWN),
-		attr, env))
+	// Ignore NONE
+	if (this.equals(MemoryEffect.makeEffectFrom(rpls, EffectPerm.NONE)))
+	    return true;
+	// Ignore UNKNOWN
+	if (this.equals(MemoryEffect.makeEffectFrom(rpls, EffectPerm.UNKNOWN)))
 	    return true;
 	// SE-UNION-1
 	for (Effect e : effects) {
@@ -78,7 +80,7 @@ public abstract class Effect implements
      * A class for memory effects
      */
     public static class MemoryEffect extends Effect {
-	
+
 	/**
 	 * The effect permission representing this effect
 	 */

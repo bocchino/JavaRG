@@ -59,6 +59,10 @@ public class Effects implements
 	return effects.remove(effect);
     }
 
+    public boolean contains(Effect effect) {
+	return effects.contains(effect);
+    }
+    
     public void addAll(Effects otherEffects) {
 	for (Effect e : otherEffects)
 	    this.add(e);
@@ -145,9 +149,7 @@ public class Effects implements
      */
     public boolean areSubeffectsOf(Effects otherEffects,
 	    Attr attr, Env<AttrContext> env) {
-        if (effects.isEmpty()) return true;
         if (effects == UNKNOWN || otherEffects == UNKNOWN) return true;
-
         for (Effect e : this.effects) {
             if (!e.isSubeffectOf(otherEffects, attr, env)) {
         	return false;
