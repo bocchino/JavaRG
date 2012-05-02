@@ -12,6 +12,7 @@ import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.Resolve;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
+import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.util.List;
 
 public abstract class RefGroup 
@@ -39,6 +40,11 @@ public abstract class RefGroup
     
     public RefGroup atCallSite(Resolve rs, Env<AttrContext> env,
 	    JCMethodInvocation tree) {
+	return this;
+    }
+    
+    public RefGroup atNewClass(Resolve rs, Env<AttrContext> env,
+	    JCNewClass tree) {
 	return this;
     }
     

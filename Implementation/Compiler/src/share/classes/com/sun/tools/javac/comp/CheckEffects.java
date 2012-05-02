@@ -583,6 +583,7 @@ public class CheckEffects extends EnvScanner { // DPJ
 	super.visitApply(tree);
 	
 	// We are accumulating effects for e.m(e1, ..., en)
+	
 	// Accumulate the effects from evaluating e
 	addAll(tree.meth, tree);
 	
@@ -594,8 +595,6 @@ public class CheckEffects extends EnvScanner { // DPJ
 	// Accumulate the effect of invoking m
 	MethodSymbol sym = tree.getMethodSymbol();
 	if (sym != null) {
-	    //System.out.print("sym="+sym+", ");
-	    //System.out.print("effectPerms="+sym.effectPerms+", ");
 	    Effects effects =
 		    Effects.makeEffectsFrom(rpls, sym.effectPerms);
 	    effects = effects.atCallSite(rs, parentEnv, tree);
@@ -620,14 +619,26 @@ public class CheckEffects extends EnvScanner { // DPJ
 
     @Override public void visitNewClass(JCNewClass tree) {
 	super.visitNewClass(tree);
-	// Effects for new T(e1, ... en)
-	// Effects of evaluating e1, ..., en
+	
+	// We are accumulating effects for new T(e_1, ..., e_n)
+	
+	// Accumulate any effects of evaluating e_1, ..., e_n
 	for (JCExpression arg : tree.args) {
-	    // TODO:  Handle RPL arguments to constructor
 	    addAllWithRead(arg, tree);
 	}
-	// Effects of invoking constructor
-	// TODO
+
+	// Accumulate the effect of invoking the constructor
+	MethodSymbol sym = tree.getMethodSymbol();
+	if (sym != null) {
+	    Effects effects =
+		    Effects.makeEffectsFrom(rpls, sym.effectPerms);
+	    effects = effects.atNewClass(rs, parentEnv, tree);
+	    InvocationEffect ie = new InvocationEffect(rpls, sym, effects);
+	    tree.effects.add(ie);
+	    if (inConstructor(parentEnv))
+		tree.getConstructorEffects().add(ie);
+	}
+
     }
     
     @Override public void visitTypeApply(JCTypeApply tree) {

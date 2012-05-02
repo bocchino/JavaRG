@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.Set;
 
 import com.sun.tools.javac.code.Effect.MemoryEffect;
-import com.sun.tools.javac.code.Permission.EnvPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.EffectPerm;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Translation.AsMemberOf;
@@ -19,6 +18,7 @@ import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.Resolve;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
+import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCTreeWithEffects;
 import com.sun.tools.javac.util.List;
 
@@ -100,6 +100,14 @@ public class Effects implements
 	return result;
     }
     
+    public Effects atNewClass(Resolve rs, 
+	    Env<AttrContext> env, JCNewClass site) {
+	Effects result = new Effects();
+	for (Effect e : effects)
+	    result.add(e.atNewClass(rs, env, site));
+	return result;
+    }
+
     public Effects substVars(Permissions perms, List<VarSymbol> from,
 	    List<JCExpression> to) {
 	Effects result = new Effects();

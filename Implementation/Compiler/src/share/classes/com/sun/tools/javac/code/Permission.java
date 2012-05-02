@@ -2,7 +2,6 @@ package com.sun.tools.javac.code;
 
 import com.sun.tools.javac.code.Permission.RefPerm.LocallyUnique;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
-import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Translation.AsMemberOf;
 import com.sun.tools.javac.code.Translation.AtCallSite;
@@ -18,8 +17,8 @@ import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
+import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.util.List;
-import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 
 public abstract class Permission {
@@ -234,6 +233,13 @@ public abstract class Permission {
 			this : new FreshGroupPerm(refGroup);
 	    }
 	    
+	    public FreshGroupPerm atNewClass(Resolve rs, Env<AttrContext> env,
+		    JCNewClass tree) {
+		RefGroup refGroup = this.refGroup.atNewClass(rs, env, tree);
+		return (this.refGroup == refGroup) ?
+			this : new FreshGroupPerm(refGroup);
+	    }
+
 	}
     
 	/**
@@ -363,7 +369,25 @@ public abstract class Permission {
 			    sourceGroup, targetGroup);
 		MethodSymbol methSym = tree.getMethodSymbol();
 		if (methSym != null) {
-		    // TODO: Substitute for this
+	            result = result.substVars(rs.getPermissions(), 
+	        	    methSym.params(), tree.args);
+	            result = Translation.substForThis(result, tree.meth,
+	        	    rs, env, methSym.owner.thisSym);
+		}
+		return result;
+	    }
+
+	    public CopyPerm atNewClass(Resolve rs, Env<AttrContext> env,
+		    JCNewClass tree) {
+		RefGroup sourceGroup = (this.sourceGroup == null) ?
+			null : this.sourceGroup.atNewClass(rs, env, tree);
+		RefGroup targetGroup = this.targetGroup.atNewClass(rs, env, tree);
+		CopyPerm result = this;
+		if (this.sourceGroup != sourceGroup || this.targetGroup != targetGroup)
+		    result = new CopyPerm(this.exp, this.consumedFields,
+			    sourceGroup, targetGroup);
+		MethodSymbol methSym = tree.getMethodSymbol();
+		if (methSym != null) {
 	            result = result.substVars(rs.getPermissions(), 
 	        	    methSym.params(), tree.args);
 		}
@@ -572,6 +596,17 @@ public abstract class Permission {
 		return this;
 	    }
 	    
+	    public EffectPerm atNewClass(Resolve rs, Env<AttrContext> env,
+		    JCNewClass tree) {
+		RPL rpl = this.rpl.atNewClass(rs, env, tree);
+		DerefSet derefSet = this.derefSet.atNewClass(rs, 
+			env, tree);
+		if (this.rpl != rpl || this.derefSet != derefSet)
+		    return new EffectPerm(this.isWrite, rpl, 
+			    derefSet);
+		return this;
+	    }
+
 	    @Override 
 	    public int hashCode() {
 		int code = rpl.hashCode() + derefSet.hashCode();
@@ -696,6 +731,12 @@ public abstract class Permission {
 			this : new PreservedGroupPerm(refGroup);
 	    }
 
+	    public PreservedGroupPerm atNewClass(Resolve rs, Env<AttrContext> env,
+		    JCNewClass tree) {
+		RefGroup refGroup = this.refGroup.atNewClass(rs, env, tree);
+		return (this.refGroup == refGroup) ?
+			this : new PreservedGroupPerm(refGroup);
+	    }
 	    
 	}
     
@@ -733,6 +774,13 @@ public abstract class Permission {
 	    public UpdatedGroupPerm atCallSite(Resolve rs, Env<AttrContext> env,
 		    JCMethodInvocation tree) {
 		RefGroup refGroup = this.refGroup.atCallSite(rs, env, tree);
+		return (this.refGroup == refGroup) ?
+			this : new UpdatedGroupPerm(refGroup);
+	    }
+
+	    public UpdatedGroupPerm atNewClass(Resolve rs, Env<AttrContext> env,
+		    JCNewClass tree) {
+		RefGroup refGroup = this.refGroup.atNewClass(rs, env, tree);
 		return (this.refGroup == refGroup) ?
 			this : new UpdatedGroupPerm(refGroup);
 	    }

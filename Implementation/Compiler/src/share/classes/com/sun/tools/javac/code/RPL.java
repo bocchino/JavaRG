@@ -4,7 +4,6 @@ import com.sun.tools.javac.code.RPLElement.RPLCaptureParameter;
 import com.sun.tools.javac.code.RPLElement.RPLParameterElement;
 import com.sun.tools.javac.code.RPLElement.UndetRPLParameterElement;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
-import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Translation.AsMemberOf;
 import com.sun.tools.javac.code.Translation.AtCallSite;
 import com.sun.tools.javac.code.Translation.SubstRPLs;
@@ -12,7 +11,9 @@ import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.Resolve;
+import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
+import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
@@ -250,6 +251,18 @@ public class RPL
 	}
 	return this;
     }
+    
+    public RPL atNewClass(Resolve rs, Env<AttrContext> env, 
+	    JCNewClass tree) {
+	MethodSymbol methSym = tree.getMethodSymbol();
+	if (methSym != null) {
+	    ListBuffer<RPL> rpls = ListBuffer.lb();
+	    for (DPJRegionPathList rpl : tree.regionArgs)
+		rpls.append(rpl.rpl);
+	    return this.substRPLs(methSym.rgnParams, rpls.toList());
+	}
+	return this;
+    }    
 
     /**
      * Conform the RPL to an enclosing environment.  An RPL may contain 

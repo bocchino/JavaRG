@@ -16,6 +16,7 @@ import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.Resolve;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
+import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.util.List;
 
 /** A class to represent a JRG effect
@@ -150,6 +151,11 @@ public abstract class Effect implements
 	    return new MemoryEffect(rpls, this.perm.atCallSite(rs, env,
 		    tree));
 	}
+	
+	public Effect atNewClass(Resolve rs, Env<AttrContext> env,
+		JCNewClass tree) {
+	    return new MemoryEffect(rpls, this.perm.atNewClass(rs, env, tree));
+	}
 
 	public Effect substVars(Permissions perms, List<VarSymbol> from,
 		List<JCExpression> to) {
@@ -256,6 +262,12 @@ public abstract class Effect implements
 		    withEffects.atCallSite(rs, env, tree));
 	}
 		
+	public Effect atNewClass(Resolve rs, Env<AttrContext> env,
+		JCNewClass tree) {
+	    return new InvocationEffect(rpls, methSym,
+		    withEffects.atNewClass(rs, env, tree));
+	}
+
 	public Effect asMemberOf(Types types, Type t) {
 	    Effects memberEffects = withEffects.asMemberOf(types, t);
 	    return (memberEffects == withEffects) ? 

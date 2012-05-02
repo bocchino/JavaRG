@@ -7,6 +7,7 @@ import com.sun.tools.javac.comp.Resolve;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
+import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
@@ -37,9 +38,13 @@ public class Translation {
     /** Interface for translating things at method call sites */
     public interface AtCallSite<T extends AtCallSite<T>> {
 	
-	/** 'this' at the call site */
+	/** 'this' at a method call site */
 	public T atCallSite(Resolve rs, Env<AttrContext> env,
 		JCMethodInvocation site);
+	
+	/** 'this' at a constructor invocation */
+	public T atNewClass(Resolve rs, Env<AttrContext> env,
+		JCNewClass site);
 	
     }
 

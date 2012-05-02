@@ -1729,6 +1729,13 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public int getTag() {
             return NEWCLASS;
         }
+        
+        public MethodSymbol getMethodSymbol() {
+            if (constructor instanceof MethodSymbol)
+        	return (MethodSymbol) constructor;
+            return null;
+        }
+
     }
 
     /**
