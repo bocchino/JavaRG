@@ -40,11 +40,11 @@ public abstract class Effect implements
 	return this;
     }
     
-    public abstract boolean isSubeffectOf(Effect e, Attr attr, 
-	    Env<AttrContext> env);
+    public abstract boolean isSubeffectOf(Effect e,  
+	    Env<AttrContext> env, Resolve rs);
     
-    public boolean isSubeffectOf(Effects effects, Attr attr,
-	    Env<AttrContext> env) {
+    public boolean isSubeffectOf(Effects effects, 
+	    Env<AttrContext> env, Resolve rs) {
 	// Ignore NONE
 	if (this.equals(MemoryEffect.makeEffectFrom(rpls, EffectPerm.NONE)))
 	    return true;
@@ -53,7 +53,7 @@ public abstract class Effect implements
 	    return true;
 	// SE-UNION-1
 	for (Effect e : effects) {
-	    if (this.isSubeffectOf(e, attr, env)) return true;
+	    if (this.isSubeffectOf(e, env, rs)) return true;
 	}
 	return false;
     }
@@ -116,11 +116,11 @@ public abstract class Effect implements
 	    return perm.isWrite;
 	}
 	
-	public boolean isSubeffectOf(Effect e, Attr attr,
-		Env<AttrContext> env) {
+	public boolean isSubeffectOf(Effect e,
+		Env<AttrContext> env, Resolve rs) {
 	    if (e instanceof MemoryEffect) {
 		MemoryEffect me = (MemoryEffect) e;
-		return this.perm.isIncludedIn(me.perm, attr, env);
+		return this.perm.isIncludedIn(me.perm, env, rs);
 	    }
 	    return false;
 	}
@@ -209,20 +209,20 @@ public abstract class Effect implements
 	    this.withEffects = withEffects;
 	}
 	
-	public boolean isSubeffectOf(Effect e, Attr attr,
-		Env<AttrContext> env) {
+	public boolean isSubeffectOf(Effect e, 
+		Env<AttrContext> env, Resolve rs) {
 	    if (e instanceof InvocationEffect) {
 		InvocationEffect ie = (InvocationEffect) e;
 		// SE-INVOKES-1
 		if (this.methSym == ie.methSym && 
 			this.withEffects.areSubeffectsOf(ie.withEffects,
-				attr, env))
+				env, rs))
 		    return true;
 	    }
 	    Effects effects = new Effects();
 	    effects.add(e);
 	    if (this.withEffects.areSubeffectsOf(effects,
-		    attr, env))
+		    env, rs))
 		return true;
 	    return false;
 	}
@@ -245,11 +245,11 @@ public abstract class Effect implements
 	}
 	
 	@Override
-	public boolean isSubeffectOf(Effects set, Attr attr,
-		Env<AttrContext> env) {
-	    if (super.isSubeffectOf(set, attr, env)) return true;
+	public boolean isSubeffectOf(Effects set, 
+		Env<AttrContext> env, Resolve rs) {
+	    if (super.isSubeffectOf(set, env, rs)) return true;
 	    // SE-INVOKES-2
-	    return (this.withEffects.areSubeffectsOf(set, attr, env));
+	    return (this.withEffects.areSubeffectsOf(set, env, rs));
 	}
 	
 	public Effect substRPLs(List<RPL> from, List<RPL> to) {

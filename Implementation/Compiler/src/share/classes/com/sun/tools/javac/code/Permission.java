@@ -645,8 +645,8 @@ public abstract class Permission {
 	    /**
 	     * Is this included in e?
 	     */
-	    public boolean isIncludedIn(EffectPerm e, Attr attr, 
-		    Env<AttrContext> env) {
+	    public boolean isIncludedIn(EffectPerm e, 
+		    Env<AttrContext> env, Resolve rs) {
 		// Anything is included in an unknown permission, and vice versa
 		if (this==EffectPerm.UNKNOWN || e==EffectPerm.UNKNOWN) return true;
 		// None is included in anything
@@ -659,11 +659,11 @@ public abstract class Permission {
 		if (!(this.rpl.isIncludedIn(e.rpl))) return false;
 		// If e has deref set, then this.D must be included in e.D
 		if (e.hasDerefSet()) return this.hasDerefSet() &&
-			    this.derefSet.isIncludedIn(e.derefSet, attr, env);
+			    this.derefSet.isIncludedIn(e.derefSet, env, rs);
 		// If this was used in tree comparison, and we are including it
 		// in something with no deref set, then it must be a tree root
 		if (this.usedInTreeComparison)
-		    return this.derefSet.isTreeRoot(attr,  env);
+		    return this.derefSet.isTreeRoot(rs.getAttr(),  env);
 		// Otherwise we are OK
 		return true;
 	    }	    

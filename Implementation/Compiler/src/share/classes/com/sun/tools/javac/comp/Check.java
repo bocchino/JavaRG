@@ -2110,7 +2110,7 @@ public class Check {
 	for (EnvPerm perm : scope.envPerms) {
 	    if (perm instanceof EffectPerm) {
 		EffectPerm effectPerm = (EffectPerm) perm;
-		if (neededPerm.isIncludedIn(effectPerm, attr, env))
+		if (neededPerm.isIncludedIn(effectPerm, env, rs))
 		    return true;
 	    }
 	}

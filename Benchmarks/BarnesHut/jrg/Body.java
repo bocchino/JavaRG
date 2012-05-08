@@ -66,7 +66,7 @@ public class Body extends Node {
         /* stash resulting pot. and */
         phi = hg.phi0;
         /* acceleration in body p   */
-        this.acc.SETV(hg.acc0);
+	acc.SETV(hg.acc0);
     }
 
     /**

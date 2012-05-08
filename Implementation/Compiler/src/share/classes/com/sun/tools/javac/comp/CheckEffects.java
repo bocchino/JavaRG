@@ -271,7 +271,7 @@ public class CheckEffects extends EnvScanner { // DPJ
      * @param to
      */    
     private void addReadEffect(JCExpression from, JCTreeWithEffects to) {
-	DerefSet derefSet = getDerefSetFor(from);
+	DerefSet derefSet = getDerefSetFor(from, parentEnv, rs);
 	RPL access = accessedRPL(from, false);
 	if (access != null)
 	    to.effects.add(MemoryEffect.readEffect(rpls, access, 
@@ -302,7 +302,7 @@ public class CheckEffects extends EnvScanner { // DPJ
      * @param to
      */
     private void addWriteEffect(JCExpression from, JCTreeWithEffects to) {
-	DerefSet derefSet = getDerefSetFor(from);
+	DerefSet derefSet = getDerefSetFor(from, parentEnv, rs);
 	RPL access = accessedRPL(from, false);
 	if (access != null)
 	    to.effects.add(MemoryEffect.writeEffect(rpls, access, 
@@ -316,23 +316,23 @@ public class CheckEffects extends EnvScanner { // DPJ
     /**
      * Get the deref set, if any, associated with a variable access
      */
-    private DerefSet getDerefSetFor(JCExpression e) {
+    private DerefSet getDerefSetFor(JCExpression e, Env<AttrContext> env, Resolve rs) {
 	DerefSet derefSet = DerefSet.NONE;
 	if (e instanceof JCIdent) {
 	    JCIdent id = (JCIdent) e;
 	    if (id.sym.owner!=null && !id.sym.isLocal()) {
 		JCExpression thisExp = 
 			maker.Ident(rs.findIdent(parentEnv, names._this, Kinds.VAR));
-		derefSet = new DerefSet(thisExp);
+		derefSet = new DerefSet(thisExp, rs);
 	    }
 	}
 	else if (e instanceof JCFieldAccess) {
 	    JCFieldAccess fa = (JCFieldAccess) e;
-	    derefSet = new DerefSet(fa.selected);
+	    derefSet = new DerefSet(fa.selected, rs);
 	}
 	else if (e instanceof JCArrayAccess) {
 	    JCArrayAccess aa = (JCArrayAccess) e;
-	    derefSet = new DerefSet(aa.indexed);
+	    derefSet = new DerefSet(aa.indexed, rs);
 	}
 	if (!derefSet.isValid(attr, parentEnv, types))
 	    derefSet = DerefSet.NONE;	
@@ -358,10 +358,10 @@ public class CheckEffects extends EnvScanner { // DPJ
 	initEffects = initEffects.inEnvironment(rs, parentEnv, true);
 	for (Pair<Effects, DiagnosticPosition> pair : constEffects) {
 	    Effects declaredEffects = pair.fst.inEnvironment(rs, parentEnv, true);
-	    if (!initEffects.areSubeffectsOf(declaredEffects, attr, parentEnv)) {
+	    if (!initEffects.areSubeffectsOf(declaredEffects, parentEnv, rs)) {
 		log.error(pair.snd, "bad.effect.summary");
 		System.err.println("Missing " + 
-			initEffects.missingFrom(declaredEffects, attr, parentEnv).trim(attr, parentEnv));
+			initEffects.missingFrom(declaredEffects, parentEnv, rs).trim(parentEnv, rs));
 	    }
 	}
 	initEffects = savedInitEffects;
@@ -386,12 +386,12 @@ public class CheckEffects extends EnvScanner { // DPJ
 			(tree.perms == null) ? tree.pos() : tree.perms.pos()));
 	    }
 	}
-	if (!actualEffects.areSubeffectsOf(declaredEffects, attr, parentEnv)) {
+	if (!actualEffects.areSubeffectsOf(declaredEffects, parentEnv, rs)) {
 	    DiagnosticPosition pos = 
 		    (tree.perms == null) ? tree.pos() : tree.perms.pos();
 	    log.error(pos, "bad.effect.summary");
 	    System.err.println("Missing " + 
-		    actualEffects.missingFrom(declaredEffects, attr, parentEnv).trim(attr, parentEnv));
+		    actualEffects.missingFrom(declaredEffects, parentEnv, rs).trim(parentEnv, rs));
 	}
     }
 	

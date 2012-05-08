@@ -200,9 +200,11 @@ public class Resolve {
  * Getters for helper classes
  *************************************************************************/
 
+    public Attr getAttr() { return attr; }
     public Types getTypes() { return types; }
     public Permissions getPermissions() { return permissions; }
     public TreeMaker getTreeMaker() { return maker; }
+    public Name.Table getNames() { return names; }
     
 /* ************************************************************************
  * Identifier resolution
@@ -1425,9 +1427,6 @@ public class Resolve {
      * Is the given variable symbol in scope in the given environment? (DPJ)
      */
     public boolean isInScope(VarSymbol sym, Env<AttrContext> env) {
-	// FIXME: 'this' doesn't work normally because substitution for 'this'
-	// isn't handled right elsewhere
-	if (sym.name.toString().equals("this")) return true;
 	Symbol sym1 = findVar(env, sym.name);
 	return (sym1 == sym);
     }

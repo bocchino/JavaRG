@@ -4242,7 +4242,8 @@ public class Attr extends JCTree.Visitor {
 		    DerefSet.NONE);
 	else
 	    tree.effectPerm = new EffectPerm(isWrite, tree.rpl.rpl,
-		    new DerefSet(tree.derefSet.root, tree.derefSet.refGroup));
+		    new DerefSet(tree.derefSet.root, tree.derefSet.refGroup,
+			    rs));
     }
 
     public void visitDerefSet(JRGDerefSet tree) {

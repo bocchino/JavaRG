@@ -148,10 +148,10 @@ public class Effects implements
      * Effect in the given set 
      */
     public boolean areSubeffectsOf(Effects otherEffects,
-	    Attr attr, Env<AttrContext> env) {
+	    Env<AttrContext> env, Resolve rs) {
         if (effects == UNKNOWN || otherEffects == UNKNOWN) return true;
         for (Effect e : this.effects) {
-            if (!e.isSubeffectOf(otherEffects, attr, env)) {
+            if (!e.isSubeffectOf(otherEffects, env, rs)) {
         	return false;
             }
         }
@@ -161,11 +161,11 @@ public class Effects implements
     /** @return a set of Effects in this set that are <b>not</b> subeffects 
      * of at least one Effect in the given set 
      */
-    public Effects missingFrom(Effects otherEffects, Attr attr,
-	    Env<AttrContext> env) {
+    public Effects missingFrom(Effects otherEffects, 
+	    Env<AttrContext> env, Resolve rs) {
 	Effects result = new Effects();
 	for (Effect e : effects)
-	    if (!e.isSubeffectOf(otherEffects, attr, env))
+	    if (!e.isSubeffectOf(otherEffects, env, rs))
 	        result.add(e);
 	return result;
     }
@@ -209,13 +209,13 @@ public class Effects implements
     
     /** Trim effects to minimal set
      */
-    public Effects trim(Attr attr, Env<AttrContext> env) {
+    public Effects trim(Env<AttrContext> env, Resolve rs) {
 	Effects newEffects = new Effects();
 	newEffects.effects.addAll(this.effects);
 	boolean changed = false;
 	for (Effect e : effects) {
 	    newEffects.effects.remove(e);
-	    if (e.isSubeffectOf(newEffects, attr, env)) {
+	    if (e.isSubeffectOf(newEffects, env, rs)) {
 		changed = true;
 	    } else {
 		newEffects.effects.add(e);
