@@ -21,4 +21,12 @@ public class MethodRegionParams extends DPJTestCase {
 	compileExpectingErrors("ErrorInferEffect", 1);
     }
 
+    @Test public void testErrorCaptureExplicitArgs() throws Throwable {
+	compileExpectingErrors("ErrorCaptureExplicitArgs", 1);
+    }
+
+    @Test public void testErrorExplicitEffect() throws Throwable {
+	compileExpectingErrors("ErrorExplicitEffect", 1);
+    }
+
 }

@@ -394,6 +394,20 @@ public class Resolve {
         if (typeargtypes == null) typeargtypes = List.nil();
         if (regionargs == null) regionargs = List.nil();
         if (refGroupArgs == null) refGroupArgs = List.nil();
+        
+        // Capture explicit region args to prevent inconsistency.  For example,
+        // <region R>void foo(Data<R> x, Data<R> y) shouldn't be callable
+        // like this:  this.<*>foo(a,b), where a:Data<A> and b:Data<B>.
+        //
+        // As a practical matter, this means that if you want to bind
+        // a partially specified RPL to a method region parameter, and that
+        // parameter appears in one of the argument types, then you have
+        // to use region inference.
+        //
+        // (Java generics do something similar --- they don't allow you to
+        // use ? at all in a method type argument.)
+        regionargs = rpls.captureRPLs(regionargs);
+
         Type mt_old = mt;
         if (mt.tag != FORALL && typeargtypes.nonEmpty()) {
             // This is not a polymorphic method, but typeargs are supplied
