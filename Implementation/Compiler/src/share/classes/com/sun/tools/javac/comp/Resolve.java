@@ -1459,7 +1459,7 @@ public class Resolve {
     }
     
     public boolean isInScope(RefGroup group, Env<AttrContext> env) {
-	if (group == RefGroup.NONE || group == RefGroup.LEAF) return true;
+	if (group == RefGroup.NONE || group == RefGroup.UNIQUE) return true;
 	Symbol sym = group.getSymbol();
 	if (sym != null) return isInScope(sym, env);
 	return true;

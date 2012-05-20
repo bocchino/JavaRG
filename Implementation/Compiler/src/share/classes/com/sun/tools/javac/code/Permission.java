@@ -52,7 +52,7 @@ public abstract class Permission {
 	}
 	
 	public boolean isLeaf() {
-	    return this == LEAF;
+	    return this == UNIQUE;
 	}
 	
 	public static final RefPerm NONE = new RefPerm() {
@@ -71,11 +71,11 @@ public abstract class Permission {
 	};
 	
 	/**
-	 * Object representing the LEAF ref perm
+	 * Object representing the UNIQUE ref perm
 	 */
-	public static final RefPerm LEAF = new LocallyUnique(RefGroup.LEAF) {
+	public static final RefPerm UNIQUE = new LocallyUnique(RefGroup.UNIQUE) {
 	    @Override public String toString() {
-		return "leaf";
+		return "unique";
 	    }
 	};
 	    

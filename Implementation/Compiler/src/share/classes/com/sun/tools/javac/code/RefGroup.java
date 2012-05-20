@@ -54,9 +54,9 @@ public abstract class RefGroup
 	}
     };
     
-    public static final RefGroup LEAF = new RefGroup() {
+    public static final RefGroup UNIQUE = new RefGroup() {
 	@Override public String toString() {
-	    return "LEAF";
+	    return "UNIQUE";
 	}
     };
     

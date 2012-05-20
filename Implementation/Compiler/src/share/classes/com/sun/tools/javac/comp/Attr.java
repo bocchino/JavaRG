@@ -732,7 +732,7 @@ public class Attr extends JCTree.Visitor {
 	    tree.refPerm = RefPerm.SHARED;
 	}
 	else if (tree.isLeaf()) {
-	    tree.refPerm = RefPerm.LEAF;
+	    tree.refPerm = RefPerm.UNIQUE;
 	}
 	else {
 	    RefGroup refGroup = attribRefGroup(tree.group, env);

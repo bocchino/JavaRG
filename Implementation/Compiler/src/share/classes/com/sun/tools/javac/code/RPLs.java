@@ -38,6 +38,18 @@ public class RPLs {
     public static final RPL ROOT = new RPL(RPLElement.ROOT_ELEMENT);
 
     /**
+     * Capture a list of RPLs
+     */
+    public static List<RPL> captureRPLs(List<RPL> list) {
+	ListBuffer<RPL> lb = ListBuffer.lb();
+	for (RPL rpl : list) {
+	    RPL captureRPL = rpl.capture();
+	    lb.append(captureRPL);
+	}
+	return lb.toList();
+    }
+    
+    /**
      * Disjoint RPLs.  See Section 3.2 of the Tech Report
      */
     public boolean areDisjoint(RPL rpl1, RPL rpl2, List<Pair<RPL,RPL>> constraints) {

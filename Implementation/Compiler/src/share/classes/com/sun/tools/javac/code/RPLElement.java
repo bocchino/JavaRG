@@ -200,8 +200,13 @@ public abstract class RPLElement {
 	 */
 	public RPL includedIn;
 
+	public static int currentID=0;
+
+	public int ID;
+	
 	public RPLCaptureParameter(RPL includedIn) {
 	    this.includedIn = includedIn;
+	    this.ID=currentID++;
 	}
 	
 	@Override
@@ -210,7 +215,7 @@ public abstract class RPLElement {
 	}
 	
 	public String toString() {
-	    return "capture of (" + includedIn.toString() + ")";
+	    return "capture " + ID + " of (" + includedIn.toString() + ")";
 	}
     }
     
@@ -220,12 +225,13 @@ public abstract class RPLElement {
     public static class UndetRPLParameterElement extends RPLParameterElement {
 	
         public UndetRPLParameterElement(RegionParameterSymbol sym) {
-            super(sym, new RPL(List.<RPLElement>of(RPLElement.ROOT_ELEMENT, 
-        	    RPLElement.STAR)));
+            super(sym, null);//new RPL(List.<RPLElement>of(RPLElement.ROOT_ELEMENT, 
+        	    //RPLElement.STAR)));
         }
 	
 	public String toString() {
-	    return sym + "? under " + includedIn;
+	    if (includedIn==null) return sym + "?";
+	    return sym + "? = " + includedIn;
 	}
 
     }

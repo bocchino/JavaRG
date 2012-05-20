@@ -105,22 +105,21 @@ public class RPL
      *  See Section 1.2.3 of the DPJ Tech Report
      */
     public boolean isIncludedIn(RPL that) {
-	// Handle capture parameters
-	if (this.elts.head instanceof RPLCaptureParameter) {
-	    return this.upperBound().isIncludedIn(that);
-	}
 	// Handle undetermined parameters
 	if (that.elts.head instanceof UndetRPLParameterElement) {
 	    UndetRPLParameterElement element = 
 		(UndetRPLParameterElement) that.elts.head;
-	    if (element.includedIn == null) {
-		// Nothing to do
-	    } else if (this.isIncludedIn(element.includedIn)) {
+	    if (element.includedIn==null) {
 		element.includedIn = this;
-	    } else {
-		element.includedIn = null;
+		return true;
 	    }
-	    return true;	    
+	    else if (this.isIncludedIn(element.includedIn))
+		return true;
+	    return false;
+	}
+	// Handle capture parameters
+	if (this.elts.head instanceof RPLCaptureParameter) {
+	    return this.upperBound().isIncludedIn(that);
 	}
 	// Reflexivity
 	if (this.equals(that)) return true;
