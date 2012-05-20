@@ -9,13 +9,11 @@ import static com.sun.tools.javac.code.TypeTags.TYPEVAR;
 import java.util.LinkedList;
 
 import com.sun.tools.javac.code.DerefSet;
-import com.sun.tools.javac.code.Effect;
 import com.sun.tools.javac.code.Effect.InvocationEffect;
 import com.sun.tools.javac.code.Effect.MemoryEffect;
 import com.sun.tools.javac.code.Effects;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Permission.EnvPerm.EffectPerm;
 import com.sun.tools.javac.code.Permissions;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLs;
@@ -23,8 +21,10 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.OperatorSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Translation;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ArrayType;
+import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCArrayAccess;
@@ -83,7 +83,7 @@ import com.sun.tools.javac.util.Pair;
  * 1. Inferred method body effects are a subeffect of their declared effects 
  *    (violation = error)
  * 
- * 2. Inferred effects of each statement in a cobegin block are pairwise
+ * 2. Inferred effects of each statement in a pardo block are pairwise
  *    noninterfering (violation = warning)
  *    
  * 3. Inferred effects of foreach body are noninterfering with themselves, after
@@ -158,7 +158,7 @@ public class CheckEffects extends EnvScanner { // DPJ
 	    Effects effects1 = stat.effects.inEnvironment(rs, childEnvs.head, false);
 	    Effects effects2 = stat2.effects.inEnvironment(rs, childEnvs.head, false);
 	    if (!Effects.noninterferingEffects(effects1, effects2,
-			childEnvs.head.info.constraints))
+			childEnvs.head, rpls, childEnvs.head.info.constraints))
 		return true;
 	}
 	if (statementsInterfere(stats))
@@ -220,6 +220,17 @@ public class CheckEffects extends EnvScanner { // DPJ
 	    RPL rpl = null;
 	    return rpl;
 	}
+	
+        public void visitSelect(JCFieldAccess tree) {
+            if (tree.selected.type instanceof ClassType &&
+                    tree.sym instanceof VarSymbol) {
+                ClassType ct = (ClassType) tree.selected.type;
+                VarSymbol vsym = (VarSymbol) tree.sym;
+                if (inConstructor && isInstanceField(vsym)) return;
+                if (vsym.rpl == null) return;
+                result = Translation.<RPL>accessElt(vsym.rpl, types, tree);
+            }
+        }
 	
 	public void visitIndexed(JCArrayAccess tree) {
             Type atype = tree.indexed.type;
@@ -320,7 +331,8 @@ public class CheckEffects extends EnvScanner { // DPJ
 	DerefSet derefSet = DerefSet.NONE;
 	if (e instanceof JCIdent) {
 	    JCIdent id = (JCIdent) e;
-	    if (id.sym.owner!=null && !id.sym.isLocal()) {
+	    if (id.sym.owner!=null && !id.sym.isLocal()
+		    && !id.sym.toString().equals(names._this.toString())) {
 		JCExpression thisExp = 
 			maker.Ident(rs.findIdent(parentEnv, names._this, Kinds.VAR));
 		derefSet = new DerefSet(thisExp, rs);
@@ -701,7 +713,7 @@ public class CheckEffects extends EnvScanner { // DPJ
 	    interfere = statementsInterfere(((JCBlock) tree.body).stats);
 	}
 	if (interfere) {
-	    log.warning(tree.pos(), "interference.cobegin");
+	    log.warning(tree.pos(), "interference.pardo");
 	}
     }
 

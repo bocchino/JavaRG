@@ -199,9 +199,10 @@ public class Effects implements
      * Check whether two effect sets are noninterfering
      */
     public static boolean noninterferingEffects(Effects effects1, 
-	    Effects effects2, Constraints constraints) {
+	    Effects effects2, Env<AttrContext> env, RPLs rpls, 
+	    Constraints constraints) {
 	for (Effect e: effects1) {
-	    if (!e.isNoninterferingWith(effects2, constraints))
+	    if (!e.isNoninterferingWith(effects2, env, rpls, constraints))
 		return false;
 	}
 	return true;

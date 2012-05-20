@@ -667,6 +667,25 @@ public abstract class Permission {
 		// Otherwise we are OK
 		return true;
 	    }	    
+
+	    /**
+	     * Is this noninterfering with e?
+	     */
+	    public boolean isNoninterferingWith(EffectPerm e,
+		    Env<AttrContext> env, RPLs rpls, 
+		    Constraints constraints) {
+		if (this==EffectPerm.UNKNOWN || e==EffectPerm.UNKNOWN)
+		    return true;
+		if (this==EffectPerm.NONE || e==EffectPerm.NONE)
+		    return true;
+		if (!this.isWrite && !e.isWrite)
+		    return true;
+		if (rpls.areDisjoint(this.rpl, e.rpl, constraints.disjointRPLs))
+		    return true;
+		if (this.derefSet.isDisjointFrom(e.derefSet, env))
+		    return true;
+		return false;
+	    }
 	    
 	    @Override public String toString() {
 		StringBuffer sb = new StringBuffer();

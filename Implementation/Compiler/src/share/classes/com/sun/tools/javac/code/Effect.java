@@ -62,15 +62,15 @@ public abstract class Effect implements
      * Noninterfering effects
      */
     public abstract boolean isNoninterferingWith(Effect e, 
-	    Constraints constraints);
+	    Env<AttrContext> env, RPLs rpls, Constraints constraints);
     
     public boolean isNoninterferingWith(Effects effects,
-	    Constraints constraints) { 
+	    Env<AttrContext> env, RPLs rpls, Constraints constraints) { 
 	// NI-EMPTY
 	if (effects.isEmpty()) return true;
 	// NI-UNION
 	for (Effect e : effects) {
-	    if (!this.isNoninterferingWith(e, constraints))
+	    if (!this.isNoninterferingWith(e, env, rpls, constraints))
 		return false;
 	}
 	return true;
@@ -126,15 +126,18 @@ public abstract class Effect implements
 	}
 	
 	@Override
-	public boolean isNoninterferingWith(Effect e, Constraints constraints) {
+	public boolean isNoninterferingWith(Effect e, 
+		Env<AttrContext> env, RPLs rpls,
+		Constraints constraints) {
 	    if (e instanceof MemoryEffect) {
-		// NI-READ
-		return true;
+		MemoryEffect me = (MemoryEffect) e;
+		return this.perm.isNoninterferingWith(me.perm, env, rpls,
+			constraints);
 	    }
 	    if (e instanceof InvocationEffect) {
 		// NI-INVOKES-1
 		if (this.isNoninterferingWith(((InvocationEffect) e).withEffects,
-			constraints))
+			env, rpls, constraints))
 		    return true;
 	    }
 	    return false;
@@ -228,12 +231,14 @@ public abstract class Effect implements
 	}
 	
 	@Override
-	public boolean isNoninterferingWith(Effect e, Constraints constraints) {
-	    if (e.isNoninterferingWith(withEffects, constraints)) return true;
+	public boolean isNoninterferingWith(Effect e, 
+		Env<AttrContext> env, RPLs rpls, Constraints constraints) {
+	    if (e.isNoninterferingWith(withEffects, env, rpls, constraints)) 
+		return true;
 	    if (e instanceof InvocationEffect) {
 		InvocationEffect ie = (InvocationEffect) e;
 		if (Effects.noninterferingEffects(withEffects, ie.withEffects,
-			constraints)) {
+			env, rpls, constraints)) {
 		    return true;
 		}
 		if ((methSym == ie.methSym) && 
