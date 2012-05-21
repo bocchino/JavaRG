@@ -5,6 +5,8 @@ import java.util.Formatter;
  */
 public class Vector<region R> {
 
+    public Vector() pure {}
+
     public final unique DoubleArray<R> elts in R = 
 	new DoubleArray<R>(Constants.NDIM);
 
@@ -90,7 +92,7 @@ public class Vector<region R> {
     }
     
     public <region Ru>void DISTV(double s, Vector<Ru> u) 
-	reads R via this, Ru via this
+	reads R via this, Ru via u, Ru via this
     {
 	double tmp;                                                
 	int i;							
@@ -128,7 +130,7 @@ public class Vector<region R> {
     }
     
     public void INCMULVS(double s) 
-	reads R via this
+	writes R via this
     {
 	int i;                                                    
 	for (i = 0; i < Constants.NDIM; i++)                                       
@@ -136,7 +138,7 @@ public class Vector<region R> {
     }
 
     public void INCDIVVS(double s) 
-	reads R via this
+	writes R via this
     {
 	int i;                                                    
 	for (i = 0; i < Constants.NDIM; i++)                                       

@@ -656,7 +656,8 @@ public abstract class Permission {
 		// Write can't be included in read
 		if (this.isWrite && !e.isWrite) return false;
 		// RPLs must be included
-		if (!(this.rpl.isIncludedIn(e.rpl))) return false;
+		if (!(this.rpl.isIncludedIn(e.rpl)))
+		    return false;
 		// If e has deref set, then this.D must be included in e.D
 		if (e.hasDerefSet()) return this.hasDerefSet() &&
 			    this.derefSet.isIncludedIn(e.derefSet, env, rs);

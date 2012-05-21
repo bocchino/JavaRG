@@ -18,11 +18,11 @@ public class Foreach extends DPJTestCase {
     }
 
     @Test public void testBasicPar() throws Throwable {
-	compile("BasicPar");
+	compileExpectingWarnings("BasicPar", 1);
     }
     
     @Test public void testErrorPreservesUpdatesPar() throws Throwable {
-	compileExpectingErrors("ErrorPreservesUpdatesPar", 1);
+	compile("ErrorPreservesUpdatesPar", 1, 1);
     }
 
 }

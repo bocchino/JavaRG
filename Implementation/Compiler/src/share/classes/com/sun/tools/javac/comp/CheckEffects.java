@@ -27,6 +27,7 @@ import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.DPJNegationExpression;
 import com.sun.tools.javac.tree.JCTree.JCArrayAccess;
 import com.sun.tools.javac.tree.JCTree.JCAssert;
 import com.sun.tools.javac.tree.JCTree.JCAssign;
@@ -173,7 +174,7 @@ public class CheckEffects extends EnvScanner { // DPJ
      * in the AST) to tell us that.
      */
     protected RPL accessedRPL(JCExpression tree, boolean inConstructor) {
-	RPL result = (new RPLAccessVisitor()).accessed(tree, inConstructor);
+	RPL result = (new RPLAccessVisitor()).accessed(tree, parentEnv, inConstructor);
 	if (tree instanceof JCExpressionWithRPL && inConstructor == false) {
 	    ((JCExpressionWithRPL)tree).rpl = result;
 	}
@@ -182,8 +183,11 @@ public class CheckEffects extends EnvScanner { // DPJ
     private class RPLAccessVisitor extends JCTree.Visitor {
 	public RPL result = null;
 	public boolean inConstructor = false;
-	public RPL accessed(JCExpression tree, boolean inConstructor) {
+	public Env<AttrContext> env;
+	public RPL accessed(JCExpression tree, Env<AttrContext> env,
+		boolean inConstructor) {
 	    this.inConstructor = inConstructor;
+	    this.env = env;
 	    tree.accept(this);
 	    return result;
 	}
@@ -234,10 +238,9 @@ public class CheckEffects extends EnvScanner { // DPJ
 	
 	public void visitIndexed(JCArrayAccess tree) {
             Type atype = tree.indexed.type;
-            if (types.isArray(atype)) {
-                ArrayType at = (ArrayType) atype;
-                Type elemtype = types.elemtype(atype);
-            }
+            VarSymbol vsym = attr.getSymbolFor(tree, env);
+            if (vsym == null || vsym.rpl == null) return;
+            result = Translation.<RPL>accessElt(vsym.rpl, types, tree);
         }
         @Override
         public void visitTree(JCTree tree) {
@@ -432,15 +435,17 @@ public class CheckEffects extends EnvScanner { // DPJ
 	env.info.scope.enter(tree.indexVar.sym);
 	Effects effects = tree.body.effects.inEnvironment(rs, env, false);
 	env.info.scope.leave();
-	/*
-	Effects negatedEffects = 
-	    effects.substIndices(List.of(tree.indexVar.sym), 
-		    List.<JCExpression>of(new DPJNegationExpression(tree.indexVar.sym)));
-	if (!Effects.noninterferingEffects(effects, negatedEffects,
-		env.info.constraints, false)) {
-	    log.warning(tree.pos(), "interference.foreach");
+	if (tree.isParallel) {
+	    Effects negatedEffects = 
+		    effects.substVars(permissions, List.of(tree.indexVar.sym), 
+			    List.<JCExpression>of(new DPJNegationExpression(tree.indexVar.sym)));
+	    //System.err.println("effects="+effects);
+	    //System.err.println("negatedEffects="+negatedEffects);
+	    if (!Effects.noninterferingEffects(effects, negatedEffects,
+		    env, rpls, env.info.constraints)) {
+		log.warning(tree.pos(), "interference.pardo");
+	    }
 	}
-	*/
     }
 
     @Override

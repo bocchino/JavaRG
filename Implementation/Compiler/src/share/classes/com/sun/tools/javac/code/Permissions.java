@@ -196,9 +196,11 @@ public class Permissions {
 	    JCArrayAccess aa = (JCArrayAccess) e;
 	    JCExpression newIndexed =
 		    substVars(aa.indexed, from, to);
-	    if (newIndexed != aa.indexed) {
+	    JCExpression newIndex =
+		    substVars(aa.index, from, to);
+	    if (newIndexed != aa.indexed || newIndex != aa.index) {
 		JCArrayAccess result = maker.Indexed(newIndexed,
-			aa.index);
+			newIndex);
 		result.pos = e.pos;
 		result.type = e.type;
 		return result;

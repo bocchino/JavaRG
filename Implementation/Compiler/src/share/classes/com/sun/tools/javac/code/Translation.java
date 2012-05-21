@@ -4,6 +4,7 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.Resolve;
+import com.sun.tools.javac.tree.JCTree.JCArrayAccess;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
@@ -62,6 +63,10 @@ public class Translation {
 	if (tree instanceof JCFieldAccess) {
 	    JCFieldAccess fa = (JCFieldAccess) tree;
 	    return elt.asMemberOf(types, fa.selected.type);
+	}
+	if (tree instanceof JCArrayAccess) {
+	    JCArrayAccess aa = (JCArrayAccess) tree;
+	    return elt.asMemberOf(types, aa.indexed.type);
 	}
 	return elt;
     }

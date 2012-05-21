@@ -4,7 +4,7 @@
  */
 
 public class HGStruct<region R> {
-    
+
     /* Node to skip in force evaluation */
     Node pskip in R;
     
@@ -26,7 +26,7 @@ public class HGStruct<region R> {
     /**
      * Constructor
      */
-    public HGStruct() {
+    public HGStruct() pure {
         this.pskip = null;
         this.pos0  = new Vector<R>();
         this.phi0  = 0;

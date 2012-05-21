@@ -119,8 +119,10 @@ public abstract class Effect implements
 	public boolean isSubeffectOf(Effect e,
 		Env<AttrContext> env, Resolve rs) {
 	    if (e instanceof MemoryEffect) {
+		boolean result;
 		MemoryEffect me = (MemoryEffect) e;
-		return this.perm.isIncludedIn(me.perm, env, rs);
+		result = this.perm.isIncludedIn(me.perm, env, rs);
+		return result;
 	    }
 	    return false;
 	}
@@ -129,18 +131,21 @@ public abstract class Effect implements
 	public boolean isNoninterferingWith(Effect e, 
 		Env<AttrContext> env, RPLs rpls,
 		Constraints constraints) {
+	    boolean result = false;
 	    if (e instanceof MemoryEffect) {
 		MemoryEffect me = (MemoryEffect) e;
-		return this.perm.isNoninterferingWith(me.perm, env, rpls,
+		result = this.perm.isNoninterferingWith(me.perm, env, rpls,
 			constraints);
 	    }
-	    if (e instanceof InvocationEffect) {
+	    else if (e instanceof InvocationEffect) {
 		// NI-INVOKES-1
 		if (this.isNoninterferingWith(((InvocationEffect) e).withEffects,
 			env, rpls, constraints))
-		    return true;
+		    result = true;
 	    }
-	    return false;
+	    if (result == false)
+		System.err.println(this + " INTERFERES WITH " + e);
+	    return result;
 	}
 	
 	public Effect substRPLs(List<RPL> from, List<RPL> to) {

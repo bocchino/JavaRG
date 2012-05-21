@@ -266,6 +266,7 @@ public class Attr extends JCTree.Visitor {
 	final Permissions permissions;
 	final Check chk;
 	final RefGroups refGroups;
+	final Types types;
 
 	
 	public DPJAttrPrePass(Context context) {
@@ -275,6 +276,7 @@ public class Attr extends JCTree.Visitor {
 	    permissions = Permissions.instance(context);
 	    chk = Check.instance(context);
 	    refGroups = RefGroups.instance(context);
+	    types = Types.instance(context);
 	}
 
 	@Override public void visitVarDef(JCVariableDecl tree) {
@@ -313,7 +315,8 @@ public class Attr extends JCTree.Visitor {
 	        if (tree.perms != null) {
 	            attr.attribMethodPerms(tree.perms, m, parentEnv);
 	        }
-	        else if ((m.flags_field & STATIC) == 0) {
+	        else if ((m.flags_field & STATIC) == 0 &&
+	        	!types.isArrayClass(m.owner.type)) {
 	            m.thisPerm = RefPerm.SHARED;
 	            m.effectPerms = List.of(EffectPerm.DEFAULT);
 	        }

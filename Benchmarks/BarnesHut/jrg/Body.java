@@ -55,7 +55,7 @@ public class Body extends Node {
      */
     <region Rhg>void hackgrav(HGStruct<Rhg> hg, 
 			      double rsize, Node root) 
-	reads Masses, Positions
+	reads Masses, Positions, BarnesHut.Links
 	writes Forces via this, Rhg via hg
     {	
         double szsq;
@@ -77,7 +77,7 @@ public class Body extends Node {
     protected <region Rhg>
 	void walksub(Node p, double dsq, double tolsq, 
 		     HGStruct<Rhg> hg, int level) 
-	reads Masses, Positions
+	reads Masses, Positions, BarnesHut.Links
 	writes Forces via this, Rhg via hg
     {
         /* should p be opened?    */
