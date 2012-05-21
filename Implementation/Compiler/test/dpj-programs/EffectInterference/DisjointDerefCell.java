@@ -10,7 +10,7 @@ class DisjointDerefCell<refgroup G> {
 	region AR;
 	unique(G) Data in AR;
     }
-    void m(Array<G> a) unique(G) preserves G {
+    void m(unique(G) Array<G> a) preserves G {
 	pardo {
 	    a[0].d=0;
 	    a[1].d=1;

@@ -683,8 +683,12 @@ public abstract class Permission {
 		    return true;
 		if (rpls.areDisjoint(this.rpl, e.rpl, constraints.disjointRPLs))
 		    return true;
-		if (this.derefSet.isDisjointFrom(e.derefSet, env))
+		if (this.derefSet.isDisjointFrom(e.derefSet, env)) {
+		    // Record that we needed the tree info
+		    this.usedInTreeComparison=true;
+		    e.usedInTreeComparison=true;
 		    return true;
+		}
 		return false;
 	    }
 	    

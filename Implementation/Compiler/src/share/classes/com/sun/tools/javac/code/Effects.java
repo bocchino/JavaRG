@@ -164,9 +164,10 @@ public class Effects implements
     public Effects missingFrom(Effects otherEffects, 
 	    Env<AttrContext> env, Resolve rs) {
 	Effects result = new Effects();
-	for (Effect e : effects)
+	for (Effect e : effects) {
 	    if (!e.isSubeffectOf(otherEffects, env, rs))
 	        result.add(e);
+	}
 	return result;
     }
     
@@ -212,17 +213,11 @@ public class Effects implements
      */
     public Effects trim(Env<AttrContext> env, Resolve rs) {
 	Effects newEffects = new Effects();
-	newEffects.effects.addAll(this.effects);
-	boolean changed = false;
 	for (Effect e : effects) {
-	    newEffects.effects.remove(e);
-	    if (e.isSubeffectOf(newEffects, env, rs)) {
-		changed = true;
-	    } else {
+	    if (!e.isSubeffectOf(newEffects, env, rs))
 		newEffects.effects.add(e);
-	    }
 	}
-	return changed ? newEffects : this;
+	return newEffects;
     }
 
 }

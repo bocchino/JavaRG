@@ -119,10 +119,8 @@ public abstract class Effect implements
 	public boolean isSubeffectOf(Effect e,
 		Env<AttrContext> env, Resolve rs) {
 	    if (e instanceof MemoryEffect) {
-		boolean result;
 		MemoryEffect me = (MemoryEffect) e;
-		result = this.perm.isIncludedIn(me.perm, env, rs);
-		return result;
+		return this.perm.isIncludedIn(me.perm, env, rs);
 	    }
 	    return false;
 	}
@@ -143,8 +141,6 @@ public abstract class Effect implements
 			env, rpls, constraints))
 		    result = true;
 	    }
-	    if (result == false)
-		System.err.println(this + " INTERFERES WITH " + e);
 	    return result;
 	}
 	

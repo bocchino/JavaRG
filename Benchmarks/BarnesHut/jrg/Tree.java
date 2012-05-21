@@ -253,8 +253,9 @@ public class Tree {
      */
     <refgroup T,A>void computegrav(int nstep,
 				   Node root,
-				   BodyArray<A> bodies) {
-
+				   BodyArray<A> bodies) 
+	writes Root:*, Root:* via bodies...A
+    {
         for each i in bodies pardo {
 	    region r;
 	    HGStruct<r> hg = new HGStruct<r>();

@@ -21,4 +21,8 @@ public class EffectInclusion extends DPJTestCase {
 	compileExpectingErrors("errorDefaultConstructor", 1);
     }
 
+    @Test public void testErrorNeedRootPerm() throws Throwable {
+	compileExpectingErrors("ErrorNeedRootPerm", 1);
+    }
+    
 }
