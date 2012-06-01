@@ -220,4 +220,16 @@ public class Effects implements
 	return newEffects;
     }
 
+    /** Coarsen effects with updated groups
+     */
+    public Effects coarsenWith(Set<RefGroup> updatedGroups,
+	    Attr attr, Env<AttrContext> env) {
+	Effects newEffects = new Effects();
+	for (Effect e : effects) {
+	    newEffects.effects.add(e.coarsenWith(updatedGroups,
+		    attr, env));
+	}
+	return newEffects;
+    }
+
 }

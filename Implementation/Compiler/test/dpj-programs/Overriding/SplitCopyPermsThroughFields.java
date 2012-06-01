@@ -10,7 +10,7 @@ class List<refgroup G> {
 
 abstract class A<refgroup GA1,GA2> {
     abstract void m(unique(GA1) List<GA1> xA) 
-    	fresh GA2;
+    	fresh GA2 preserves GA1;
 }
 
 abstract class B<refgroup GB1,GB2> extends A<GB1,GB2> {

@@ -6,32 +6,42 @@ import static com.sun.tools.javac.code.Flags.STATIC;
 import static com.sun.tools.javac.code.Kinds.MTH;
 import static com.sun.tools.javac.code.Kinds.TYP;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
+import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.RPL;
-import com.sun.tools.javac.code.RPLElement;
+import com.sun.tools.javac.code.RefGroup;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.TreeScanner;
-import com.sun.tools.javac.tree.JCTree.JRGForLoop;
+import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
 import com.sun.tools.javac.tree.JCTree.DPJRegionParameter;
 import com.sun.tools.javac.tree.JCTree.DPJRegionPathList;
+import com.sun.tools.javac.tree.JCTree.JCAssign;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
 import com.sun.tools.javac.tree.JCTree.JCCase;
 import com.sun.tools.javac.tree.JCTree.JCCatch;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
+import com.sun.tools.javac.tree.JCTree.JCConditional;
 import com.sun.tools.javac.tree.JCTree.JCEnhancedForLoop;
 import com.sun.tools.javac.tree.JCTree.JCForLoop;
-import com.sun.tools.javac.tree.JCTree.JCIdent;
+import com.sun.tools.javac.tree.JCTree.JCIf;
 import com.sun.tools.javac.tree.JCTree.JCLabeledStatement;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
-import com.sun.tools.javac.tree.JCTree.DPJRegionDecl;
+import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.JCSwitch;
 import com.sun.tools.javac.tree.JCTree.JCTry;
 import com.sun.tools.javac.tree.JCTree.JCTypeParameter;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
+import com.sun.tools.javac.tree.JCTree.JRGForLoop;
+import com.sun.tools.javac.tree.JCTree.JRGRefGroupDecl;
+import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
@@ -60,11 +70,13 @@ import com.sun.tools.javac.util.Pair;
  */
 public abstract class EnvScanner extends TreeScanner {
 
+    protected final Attr attr;
     final Name.Table names;
     final MemberEnter memberEnter;
     protected Enter enter;
 
     protected EnvScanner(Context context) {
+	attr = Attr.instance(context);
 	names = Name.Table.instance(context);
 	memberEnter = MemberEnter.instance(context);
 	enter = Enter.instance(context);
@@ -78,6 +90,8 @@ public abstract class EnvScanner extends TreeScanner {
      * Visitor methods
      *************************************************************************/
 
+    protected Set<RefGroup> updatedGroups = new HashSet<RefGroup>();
+    
     /**
      * Visitor argument: the environment that came in from our parent.
      */
@@ -87,6 +101,20 @@ public abstract class EnvScanner extends TreeScanner {
      * Visitor return value: the environment(s) used to process our children.
      */
     protected List<Env<AttrContext>> childEnvs;
+    
+    @Override
+    public void visitAssign(JCAssign tree) {
+	scan(tree.lhs);
+	if (tree.lhs.type != null) {
+	    RefPerm perm = attr.getRefPermFor(tree.lhs, parentEnv);
+	    if (perm != null) {
+		RefGroup group = perm.getRefGroup();
+		if (group != RefGroup.NONE)
+		    updatedGroups.add(group);
+	    }
+	}
+	scan(tree.rhs);
+    }
     
     @Override
     public void visitClassDef(JCClassDecl tree) {
@@ -104,6 +132,16 @@ public abstract class EnvScanner extends TreeScanner {
         super.visitApply(tree);
         childEnvs = List.of(parentEnv);
         parentEnv = savedEnv;
+        MethodSymbol methSym = tree.getMethodSymbol();
+        if (methSym != null) {
+            List<UpdatedGroupPerm> updatedGroupPerms =
+        	    methSym.updatedGroupPerms;
+            for (UpdatedGroupPerm perm : updatedGroupPerms) {
+        	RefGroup updatedGroup = perm.refGroup.atCallSite(attr.rs, 
+        		parentEnv, tree);
+        	updatedGroups.add(updatedGroup);
+            }
+        }
     }
     
     @Override
@@ -118,15 +156,25 @@ public abstract class EnvScanner extends TreeScanner {
                 new MethodSymbol(tree.flags | BLOCK, names.empty, null,
                                  parentEnv.info.scope.owner);
             if ((tree.flags & STATIC) != 0) parentEnv.info.staticLevel++;
-            super.visitBlock(tree);
+            scanBlock(tree);
         } else {
             // Create a new local environment with a local scope.
             parentEnv = parentEnv.dup(tree, parentEnv.info.dup(parentEnv.info.scope.dup()));
-            super.visitBlock(tree);
+            scanBlock(tree);
             parentEnv.info.scope.leave();
         }	
 	childEnvs = List.of(parentEnv);
         parentEnv = savedEnv;
+    }
+    
+    private void scanBlock(JCBlock tree) {
+	Set<RefGroup> savedUpdatedGroups = updatedGroups;
+	for (JCStatement stat : tree.stats) {
+	    updatedGroups = new HashSet<RefGroup>();
+	    scan(stat);
+	    savedUpdatedGroups.addAll(updatedGroups);
+	}
+	updatedGroups = savedUpdatedGroups;
     }
     
     @Override
@@ -179,6 +227,7 @@ public abstract class EnvScanner extends TreeScanner {
 
     @Override
     public void visitMethodDef(JCMethodDecl tree) {
+	updatedGroups.clear();
 	Env<AttrContext> savedEnv = parentEnv;
 	MethodSymbol m = tree.sym;
 
@@ -242,21 +291,51 @@ public abstract class EnvScanner extends TreeScanner {
     }
     
     @Override
+    public void visitConditional(JCConditional tree) {
+	scan(tree.cond);
+	Set<RefGroup> savedUpdatedGroups = updatedGroups;
+	updatedGroups = new HashSet<RefGroup>();
+	scan(tree.truepart);
+	savedUpdatedGroups.addAll(updatedGroups);
+	updatedGroups = new HashSet<RefGroup>();
+	scan(tree.falsepart);
+	savedUpdatedGroups.addAll(updatedGroups);
+	updatedGroups = savedUpdatedGroups;
+    }
+
+    @Override
+    public void visitIf(JCIf tree) {
+	Set<RefGroup> savedUpdatedGroups = updatedGroups;
+	scan(tree.cond);
+	updatedGroups = new HashSet<RefGroup>();
+	scan(tree.thenpart);
+	savedUpdatedGroups.addAll(updatedGroups);
+	updatedGroups = new HashSet<RefGroup>();
+	scan(tree.elsepart);
+	savedUpdatedGroups.addAll(updatedGroups);
+	updatedGroups = savedUpdatedGroups;
+    }
+    
+    @Override
     public void visitSwitch(JCSwitch tree) {
+	Set<RefGroup> savedUpdatedGroups = updatedGroups;
 	super.scan(tree.selector);
 	Env<AttrContext> savedEnv = parentEnv;
         Env<AttrContext> switchEnv =
             parentEnv.dup(tree, parentEnv.info.dup(parentEnv.info.scope.dup()));
         ListBuffer<Env<AttrContext>> buffer = ListBuffer.lb();
         for (List<JCCase> l = tree.cases; l.nonEmpty(); l = l.tail) {
+            updatedGroups = new HashSet<RefGroup>();
             parentEnv = switchEnv.dup(tree, switchEnv.info.dup(switchEnv.info.scope.dup()));
             super.scan(l.head);
             parentEnv.info.scope.leave();
             buffer.append(parentEnv);
+            savedUpdatedGroups.addAll(updatedGroups);
         }        
         switchEnv.info.scope.leave();
 	childEnvs = buffer.toList();
 	parentEnv = savedEnv;
+	updatedGroups = savedUpdatedGroups;
     }
     
     @Override
@@ -312,6 +391,18 @@ public abstract class EnvScanner extends TreeScanner {
         if (parentEnv.info.scope.owner.kind == MTH) {
             if (tree.sym != null) {
                 parentEnv.info.scope.enter(tree.sym);
+            }
+        }
+    }
+
+    @Override
+    public void visitRefGroupDecl(JRGRefGroupDecl tree) {
+        if (parentEnv.info.scope.owner.kind == MTH) {
+            if (tree.refGroup != null) {
+        	Symbol sym = tree.refGroup.getSymbol();
+        	if (sym != null) {
+        	    parentEnv.info.scope.enter(sym);
+        	}
             }
         }
     }

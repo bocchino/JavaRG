@@ -21,4 +21,7 @@ public class Pardo extends DPJTestCase {
 	compile("ErrorPreservesUpdates", 1, 1);
     }
     
+    @Test public void testWarnCoarsenUpdatedGroup() throws Throwable {
+	compileExpectingWarnings("WarnCoarsenUpdatedGroup", 1);
+    }
 }

@@ -2061,6 +2061,7 @@ public class Check {
 		    return false;
 		}
 		found = (CopyPerm) env.info.scope.getPermFor(key);
+		if (found == null) return false;
 	    }
 	    // Now 'found' should contain 'copies e.?{\f}...G1 to G2'
 	    // Next, ask if the field we want is there or is in the 
@@ -2115,9 +2116,10 @@ public class Check {
 	    }
 	}
 	log.error(pos, "missing.perm", neededPerm);
-	System.out.println("envPerms="+scope.envPerms);
+	//System.out.println("envPerms="+scope.envPerms);
 	return false;
    }
+    
     
 /* *************************************************************************
  * Check annotations

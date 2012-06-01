@@ -4,6 +4,8 @@ import java.util.HashSet;
 
 import com.sun.tools.javac.code.Permission.EnvPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.CopyPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.comp.Attr;
@@ -300,7 +302,5 @@ public class Permissions {
 	}
 	return result;
     }
-
-
     
 }

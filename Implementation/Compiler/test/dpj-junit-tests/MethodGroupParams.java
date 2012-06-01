@@ -24,4 +24,8 @@ public class MethodGroupParams extends DPJTestCase {
     @Test public void testErrorDuplicateArgs() throws Throwable {
 	compileExpectingErrors("ErrorDuplicateArgs", 1);
     }
+    
+    @Test public void testErrorDuplicateMethodAndTypeArgs() throws Throwable {
+	compileExpectingErrors("ErrorDuplicateMethodAndTypeArgs", 1);
+    }
 }

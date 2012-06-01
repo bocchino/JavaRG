@@ -6,6 +6,7 @@ import static com.sun.tools.javac.code.Kinds.TYP;
 import static com.sun.tools.javac.code.TypeTags.CLASS;
 import static com.sun.tools.javac.code.TypeTags.TYPEVAR;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 
 import com.sun.tools.javac.code.DerefSet;
@@ -17,13 +18,13 @@ import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Permissions;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RPLs;
+import com.sun.tools.javac.code.RefGroup;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.OperatorSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Translation;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.tree.JCTree;
@@ -104,7 +105,6 @@ public class CheckEffects extends EnvScanner { // DPJ
     private final Types types;
     private final Resolve rs;
     private final RPLs rpls;
-    private final Attr attr;
     private final TreeMaker maker;
     private final Permissions permissions;
     private       Lint lint;
@@ -126,7 +126,6 @@ public class CheckEffects extends EnvScanner { // DPJ
 	lint = Lint.instance(context);
 	rs = Resolve.instance(context);
 	rpls = RPLs.instance(context);
-	attr = Attr.instance(context);
 	maker = TreeMaker.instance(context);
 	permissions = Permissions.instance(context);
     }
@@ -157,7 +156,9 @@ public class CheckEffects extends EnvScanner { // DPJ
     private boolean statementsInterfere(JCStatement stat, List<JCStatement> stats) {
 	for (JCStatement stat2 : stats) {
 	    Effects effects1 = stat.effects.inEnvironment(rs, childEnvs.head, false);
+	    effects1 = effects1.coarsenWith(updatedGroups, attr, parentEnv);
 	    Effects effects2 = stat2.effects.inEnvironment(rs, childEnvs.head, false);
+	    effects2 = effects2.coarsenWith(updatedGroups, attr, parentEnv);
 	    if (!Effects.noninterferingEffects(effects1, effects2,
 			childEnvs.head, rpls, childEnvs.head.info.constraints))
 		return true;
@@ -433,9 +434,10 @@ public class CheckEffects extends EnvScanner { // DPJ
 	addAll(tree.body, tree);
 	Env<AttrContext> env = parentEnv.dup(tree, parentEnv.info.dup());
 	env.info.scope.enter(tree.indexVar.sym);
-	Effects effects = tree.body.effects.inEnvironment(rs, env, false);
 	env.info.scope.leave();
 	if (tree.isParallel) {
+	    Effects effects = tree.body.effects.inEnvironment(rs, env, false);
+	    effects = effects.coarsenWith(updatedGroups, attr, env);
 	    Effects negatedEffects = 
 		    effects.substVars(permissions, List.of(tree.indexVar.sym), 
 			    List.<JCExpression>of(new DPJNegationExpression(tree.indexVar.sym)));

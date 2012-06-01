@@ -2,6 +2,8 @@
 
 package com.sun.tools.javac.code;
 
+import java.util.Set;
+
 import com.sun.tools.javac.code.Permission.EnvPerm.EffectPerm;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
@@ -40,8 +42,11 @@ public abstract class Effect implements
 	return this;
     }
     
+    public abstract Effect coarsenWith(Set<RefGroup> updatedGroups,
+	    Attr attr, Env<AttrContext> env);
+    
     public abstract boolean isSubeffectOf(Effect e,  
-	    Env<AttrContext> env, Resolve rs);
+ 	    Env<AttrContext> env, Resolve rs);
     
     public boolean isSubeffectOf(Effects effects, 
 	    Env<AttrContext> env, Resolve rs) {
@@ -70,8 +75,10 @@ public abstract class Effect implements
 	if (effects.isEmpty()) return true;
 	// NI-UNION
 	for (Effect e : effects) {
-	    if (!this.isNoninterferingWith(e, env, rpls, constraints))
-		return false;
+	    if (!this.isNoninterferingWith(e, env, rpls, constraints)) {
+		System.err.println(this + " interferes with " + e);
+		return false;		
+	    }
 	}
 	return true;
     }
@@ -177,6 +184,12 @@ public abstract class Effect implements
 		boolean pruneLocalEffects) {
 	    return new MemoryEffect(rpls, this.perm.inEnvironment(rs, env, 
 		    pruneLocalEffects));
+	}
+
+	public Effect coarsenWith(Set<RefGroup> updatedGroups,
+		Attr attr, Env<AttrContext> env) {
+	    return new MemoryEffect(rpls, this.perm.coarsenWith(updatedGroups,
+		    attr, env));
 	}
 
 	public String toString() {
@@ -301,6 +314,14 @@ public abstract class Effect implements
 		    this : new InvocationEffect(rpls, methSym, newEffects);
 	}
 	
+	public Effect coarsenWith(Set<RefGroup> updatedGroups,
+		Attr attr, Env<AttrContext> env) {
+	    Effects newEffects = withEffects.coarsenWith(updatedGroups,
+		    attr, env);
+	    return (newEffects == withEffects) ?
+		    this : new InvocationEffect(rpls, methSym, newEffects);
+	}
+
 	@Override
 	public int hashCode() {
 	    return 5 * this.methSym.hashCode() + this.withEffects.hashCode();

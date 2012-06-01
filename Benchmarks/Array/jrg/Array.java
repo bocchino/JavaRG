@@ -20,7 +20,7 @@ public class Array<region Elts,Rep,refgroup G | Elts # Rep> {
     }
 
     public <refgroup NewG>Array<Elts,Rep,NewG> freshArray() 
-	fresh NewG 
+	fresh NewG
     {
 	Array<Elts,Rep,NewG> result = 
 	    new Array<Elts,Rep,NewG>(rep.length);

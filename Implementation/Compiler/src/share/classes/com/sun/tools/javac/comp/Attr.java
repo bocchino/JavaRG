@@ -1990,7 +1990,11 @@ public class Attr extends JCTree.Visitor {
         	    log.warning(tree, "rpl.constraints");        	    
         	}
         	// Check that no two ref group args are equal
-        	if (!refGroups.areDisjoint(refGroupArgs))
+        	Type selectorType = tree.meth.getSymbol().owner.type;
+        	if (tree.meth instanceof JCFieldAccess) {
+        	    selectorType = (((JCFieldAccess) tree.meth).selected.type);
+        	}
+        	if (!refGroups.areDisjoint(selectorType.getRefGroupArguments().appendList(refGroupArgs)))
         	    log.error(tree.pos(), "duplicate.group.args");
 
             }

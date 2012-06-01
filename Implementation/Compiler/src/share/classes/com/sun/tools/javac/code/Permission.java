@@ -1,5 +1,7 @@
 package com.sun.tools.javac.code;
 
+import java.util.Set;
+
 import com.sun.tools.javac.code.Permission.RefPerm.LocallyUnique;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
@@ -640,6 +642,17 @@ public abstract class Permission {
 		if (this.rpl != newRPL || this.derefSet != newDerefSet)
 		    return new EffectPerm(this.isWrite, newRPL, newDerefSet);
 		return this;
+	    }
+	    
+	    public EffectPerm coarsenWith(Set<RefGroup> updatedGroups,
+		    Attr attr, Env<AttrContext> env) {
+		RefGroup rg = this.derefSet.refGroup(attr, env);
+		if (updatedGroups.contains(rg)) {
+		    return new EffectPerm(this.isWrite, rpl, DerefSet.NONE);
+		}
+		else {
+		    return this;
+		}
 	    }
 	    
 	    /**
