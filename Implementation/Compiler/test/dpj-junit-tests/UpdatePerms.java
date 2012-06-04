@@ -21,4 +21,12 @@ public class UpdatePerms extends DPJTestCase {
 	compileExpectingErrors("ErrorCantUpdateArray", 1);
     }
 
+    @Test public void testErrorCantSwitchAndPreserve() throws Throwable {
+	compileExpectingErrors("ErrorCantSwitchAndPreserve", 1);
+    }    
+    
+    @Test public void testSwitchFresh() throws Throwable {
+	compile("SwitchFresh");
+    }
+    
 }
