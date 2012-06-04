@@ -100,7 +100,7 @@ public class Scope {
      */
     public static final Scope emptyScope = new Scope(null, null, new Entry[]{},
 	    new HashSet<EnvPerm>(), new HashSet<VarSymbol>(),
-	    new HashSet<RefGroupSymbol>(), false);
+	    false);
 
     /** Permissions available in the environment
      */
@@ -111,19 +111,12 @@ public class Scope {
      */
     public HashSet<VarSymbol> sharedVarPerms = new HashSet<VarSymbol>();
     
-    /** "Locked" ref groups  (i.e., groups we can't switch from preserving
-     *  to updating or vice versa)
-     */
-    private HashSet<RefGroupSymbol> lockedGroups = 
-	    new HashSet<RefGroupSymbol>();
-    
     /** Construct a new scope, within scope next, with given owner, using
      *  given table. The table's length must be an exponent of 2.
      */
     Scope(Scope next, Symbol owner, Entry[] table,
 	    HashSet<EnvPerm> envPerms, 
 	    HashSet<VarSymbol> varPerms,
-	    HashSet<RefGroupSymbol> lockedGroups,
 	    boolean inParallelBlock) {
         this.next = next;
 	assert emptyScope == null || owner != null;
@@ -132,7 +125,6 @@ public class Scope {
         this.envPerms = envPerms;
         if (envPerms == null) throw new NullPointerException();
         this.sharedVarPerms = varPerms;
-        this.lockedGroups = lockedGroups;
 	this.hashMask = table.length - 1;
         this.elems = null;
 	this.nelems = 0;
@@ -146,7 +138,7 @@ public class Scope {
     public Scope(Symbol owner) {
         this(null, owner, new Entry[INITIAL_SIZE], 
         	new HashSet<EnvPerm>(), new HashSet<VarSymbol>(),
-        	new HashSet<RefGroupSymbol>(), false);
+        	false);
 	for (int i = 0; i < INITIAL_SIZE; i++) table[i] = sentinel;
     }
 
@@ -158,7 +150,6 @@ public class Scope {
     public Scope dup() {
         Scope result = new Scope(this, this.owner, this.table,
         	this.envPerms, this.sharedVarPerms,
-        	(HashSet<RefGroupSymbol>) this.lockedGroups.clone(),
         	this.inParallelBlock);
 	shared++;
 	// System.out.println("====> duping scope " + this.hashCode() + " owned by " + this.owner + " to " + result.hashCode());
@@ -174,7 +165,6 @@ public class Scope {
     public Scope dup(Symbol newOwner) {
         Scope result = new Scope(this, newOwner, this.table,
         	this.envPerms, this.sharedVarPerms,
-        	(HashSet<RefGroupSymbol>) this.lockedGroups.clone(),
         	this.inParallelBlock);
 	shared++;
 	// System.out.println("====> duping scope " + this.hashCode() + " owned by " + newOwner + " to " + result.hashCode());
@@ -190,7 +180,6 @@ public class Scope {
 	return new Scope(this, this.owner, this.table.clone(),
 		(HashSet<EnvPerm>) this.envPerms.clone(), 
 		(HashSet<VarSymbol>) this.sharedVarPerms.clone(),
-		(HashSet<RefGroupSymbol>) this.lockedGroups.clone(),
 		this.inParallelBlock);
     }
 
@@ -693,7 +682,7 @@ public class Scope {
 
 	public DelegatedScope(Scope outer) {
 	    super(outer, outer.owner, emptyTable, new HashSet<EnvPerm>(), 
-		    new HashSet<VarSymbol>(), null, false);
+		    new HashSet<VarSymbol>(), false);
 	    delegatee = outer;
 	}
 	public Scope dup() {
@@ -722,7 +711,7 @@ public class Scope {
     /** An error scope, for which the owner should be an error symbol. */
     public static class ErrorScope extends Scope {
 	ErrorScope(Scope next, Symbol errSymbol, Entry[] table) {
-	    super(next, /*owner=*/errSymbol, table, null, null, null, false);
+	    super(next, /*owner=*/errSymbol, table, null, null, false);
 	}
 	public ErrorScope(Symbol errSymbol) {
 	    super(errSymbol);
