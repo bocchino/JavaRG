@@ -86,6 +86,7 @@ import static com.sun.tools.javac.parser.Token.STATIC;
 import static com.sun.tools.javac.parser.Token.SUB;
 import static com.sun.tools.javac.parser.Token.SUBSUB;
 import static com.sun.tools.javac.parser.Token.SUPER;
+import static com.sun.tools.javac.parser.Token.SWITCHES;
 import static com.sun.tools.javac.parser.Token.THROWS;
 import static com.sun.tools.javac.parser.Token.TRUE;
 import static com.sun.tools.javac.parser.Token.UNIQUE;
@@ -3260,7 +3261,7 @@ public class Parser {
 
     /** MethodPermsOpt = RefPermOpt [FRESH IdentList] CopyPermsOpt
      *                   [READS EffectPermList] [WRITES EffectPermList]
-     *                   [PRESERVES IdentList]
+     *                   [PRESERVES IdentList] [SWITCHES IdentList]
      */
     JRGMethodPerms methodPermsOpt() {
 	int pos = S.pos();
@@ -3298,9 +3299,14 @@ public class Parser {
 	    accept(PRESERVES);
 	    preservedGroups = identList();
 	}
+	List<JCIdent> switchedGroups = List.nil();
+	if (S.token() == SWITCHES) {
+	    accept(SWITCHES);
+	    switchedGroups = identList();
+	}
 	return toP(F.at(pos).MethodPerms(refPerm, freshGroups, copyPerms, 
 		defaultEffectPerms, readEffectPerms, writeEffectPerms,
-		preservedGroups));
+		preservedGroups, switchedGroups));
     }
     
     /** CopyPermsOpt = [COPIES DerefSet "to" Ident {"," DerefSet "to" Ident}]

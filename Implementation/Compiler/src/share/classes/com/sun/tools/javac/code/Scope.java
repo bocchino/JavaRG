@@ -33,16 +33,14 @@ import com.sun.tools.javac.code.Permission.EnvPerm.CopyPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.EffectPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.SwitchedGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.Symbol.RefGroupSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
-import com.sun.tools.javac.comp.AttrContext;
-import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
 /** A scope represents an area of visibility in a Java program. The
  *  Scope class is a container for symbols which provides
@@ -281,6 +279,18 @@ public class Scope {
 	nelems++;
     }
 
+    public void enterParallelBlock() {
+	this.inParallelBlock = true;
+	// Remove all switches perms
+	ListBuffer<EnvPerm> lb = ListBuffer.lb();
+	for (EnvPerm perm : envPerms) {
+	    if (perm instanceof SwitchedGroupPerm)
+		lb.append(perm);
+	}
+	for (EnvPerm perm : lb)
+	    removePerm(perm);
+    }
+    
     Entry makeEntry(Symbol sym, Entry shadowed, Entry sibling, Scope scope, Scope origin) {
 	return new Entry(sym, shadowed, sibling, scope);
     }
@@ -401,6 +411,11 @@ public class Scope {
 	
     }
     
+    public void addSwitchedGroupPerm(Permissions perms,
+	    SwitchedGroupPerm perm) {
+	envPerms.add(perm);
+    }
+    
     public boolean addCopyPerm(Permissions permissions, 
 	    CopyPerm perm) {
 	if (perm.sourceGroup != RefGroup.NONE) {
@@ -428,22 +443,25 @@ public class Scope {
 
     public boolean addPreservedGroupPerm(Permissions permissions, 
 	    PreservedGroupPerm perm) {
-	if (this.inParallelBlock) {
-	    lockedGroups.add(perm.refGroup.getSymbol());
+	if (this.hasUpdatedGroupPermFor(perm.refGroup) &&
+		!mayBeSwitched(perm.refGroup)) {
+	    return false;
 	}
-	if (envPerms.contains(perm)) return true;
-	if (isLocked(perm.refGroup)) return false;
 	envPerms = permissions.addEnvPerm(envPerms, perm);
 	return true;
+    }
+
+    public boolean mayBeSwitched(RefGroup group) {
+	if (group == RefGroup.UNIQUE) return true;
+	return envPerms.contains(new SwitchedGroupPerm(group));
     }
     
     public boolean addUpdatedGroupPerm(Permissions permissions, 
 	    UpdatedGroupPerm perm) {
-	if (this.inParallelBlock) {
-	    lockedGroups.add(perm.refGroup.getSymbol());
+	if (this.hasPreservedGroupPermFor(perm.refGroup) &&
+		!mayBeSwitched(perm.refGroup)) {
+	    return false;
 	}
-	if (envPerms.contains(perm)) return true;
-	if (isLocked(perm.refGroup)) return false;
 	envPerms = permissions.addEnvPerm(envPerms, perm);
 	return true;
     }
@@ -483,18 +501,6 @@ public class Scope {
     }
     
         
-    public void lockAllPreservedGroups() {
-	for (Symbol sym : this.getElements()) {
-	    if (sym instanceof RefGroupSymbol) {
-		RefGroup refGroup = RefGroup.makeRefGroup((RefGroupSymbol) sym);
-		if (this.hasPreservedGroupPermFor(refGroup) &&
-			!this.hasFreshGroupPermFor(refGroup)) {
-		    this.lockedGroups.add((RefGroupSymbol) sym);
-		}
-	    }
-	}
-    }
-    
     /**
      * Add updated group perms for all groups that have no preserves permission;
      * used at the start of method body checking.
@@ -513,15 +519,6 @@ public class Scope {
 	    }
 	}
 	return lb.toList();
-    }
-    
-    public boolean isLocked(RefGroup refGroup) {
-	RefGroupSymbol sym = refGroup.getSymbol();	
-	return isLocked(sym);	    
-    }
-    
-    public boolean isLocked(RefGroupSymbol sym) {
-	return lockedGroups.contains(sym);
     }
     
     public boolean hasUpdatedGroupPermFor(RefGroup refGroup) {

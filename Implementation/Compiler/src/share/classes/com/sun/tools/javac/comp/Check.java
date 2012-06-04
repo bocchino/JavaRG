@@ -95,6 +95,7 @@ import com.sun.tools.javac.code.Permission.EnvPerm.CopyPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.EffectPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.SwitchedGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.Permissions;
@@ -108,7 +109,6 @@ import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.OperatorSymbol;
-import com.sun.tools.javac.code.Symbol.RegionParameterSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
@@ -1882,6 +1882,23 @@ public class Check {
 	return success;	
     }
     
+    boolean requireNotPreserved(DiagnosticPosition pos, 
+	    RefGroup group, Env<AttrContext> env) {
+	for (EnvPerm perm : env.info.scope.envPerms) {
+	    if (perm instanceof PreservedGroupPerm) {
+		PreservedGroupPerm preservedGroupPerm = 
+			(PreservedGroupPerm) perm;
+		if (preservedGroupPerm.refGroup.equals(group)) {
+		    if (!env.info.scope.hasFreshGroupPermFor(group)) {
+			log.error(pos, "cant.switch.and.preserve", group);
+			return false;		    
+		    }
+		}
+	    }
+	}
+	return true;
+    }
+    
     
     boolean requireEnvPerm(DiagnosticPosition pos, 
 	    EnvPerm perm, Env<AttrContext> env) 
@@ -1920,6 +1937,15 @@ public class Check {
 		    updatedGroupPerm)) {
 		log.error(pos, "cant.update.group", 
 			updatedGroupPerm.refGroup);
+		return false;
+	    }
+	}
+	else if (perm instanceof SwitchedGroupPerm) {
+	    SwitchedGroupPerm switchedGroupPerm =
+		    (SwitchedGroupPerm) perm;
+	    if (!scope.envPerms.contains(perm)) {
+		log.error(pos, "cant.switch.group",
+			switchedGroupPerm.refGroup);
 		return false;
 	    }
 	}

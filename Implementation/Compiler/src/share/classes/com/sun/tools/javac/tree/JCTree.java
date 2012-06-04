@@ -2509,12 +2509,16 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
 	/** The preserved group permissions available on method entry */
 	public List<JCIdent> preservedGroups;
+	
+	/** The switched group permissions available on method entry */
+	public List<JCIdent> switchedGroups;
 
 	protected JRGMethodPerms(JRGRefPerm thisPerm, List<JCIdent> freshGroups,
 		List<JRGCopyPerm> copyPerms,boolean defaultEffectPerms,
 		List<JRGEffectPerm> readEffectPerms, 
 		List<JRGEffectPerm> writeEffectPerms,
-		List<JCIdent> preservedGroups) {
+		List<JCIdent> preservedGroups,
+		List<JCIdent> switchedGroups) {
 	    this.thisPerm = thisPerm;
 	    this.freshGroups = freshGroups;
 	    this.copyPerms = copyPerms;
@@ -2522,6 +2526,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 	    this.readEffectPerms = readEffectPerms;
 	    this.writeEffectPerms = writeEffectPerms;
 	    this.preservedGroups = preservedGroups;
+	    this.switchedGroups = switchedGroups;
 	}
 	
 	@Override
@@ -2967,7 +2972,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         	List<JRGCopyPerm> copyPerms, boolean defaultEffectPerms,
         	List<JRGEffectPerm> readEffectPerms, 
         	List<JRGEffectPerm> writeEffectPerms, 
-        	List<JCIdent> preservedGroups);
+        	List<JCIdent> preservedGroups,
+        	List<JCIdent> switchedGroups);
         JRGDerefSet DerefSet(JCExpression root, JCIdent group);
         JRGCopyPerm CopyPerm(JRGDerefSet derefSet, JCIdent group);
         JRGCopyPerm CopyPerm(JRGDerefSet derefSet, JCIdent group, CopyPerm copyPerm);

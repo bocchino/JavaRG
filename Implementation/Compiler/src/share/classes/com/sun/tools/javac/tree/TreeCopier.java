@@ -615,11 +615,12 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
 	List<JCIdent> freshGroups = copy(t.freshGroups, p);
 	List<JRGCopyPerm> copyPerms = copy(t.copyPerms, p);
 	List<JCIdent> preservedGroups = copy(t.preservedGroups, p);
+	List<JCIdent> switchedGroups = copy(t.switchedGroups, p);
 	List<JRGEffectPerm> readEffectPerms = copy(t.readEffectPerms, p);
 	List<JRGEffectPerm> writeEffectPerms = copy(t.writeEffectPerms, p);
 	return M.at(t.pos).MethodPerms(refPerm, freshGroups, copyPerms, 
 		t.defaultEffectPerms, readEffectPerms, writeEffectPerms,
-		preservedGroups);
+		preservedGroups, switchedGroups);
     }
     
     public JCTree visitDerefSet(DerefSetTree node, P p) {

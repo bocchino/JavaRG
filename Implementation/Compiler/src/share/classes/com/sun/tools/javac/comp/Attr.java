@@ -85,6 +85,7 @@ import com.sun.tools.javac.code.Permission.EnvPerm.CopyPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.EffectPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.SwitchedGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.Permission.RefPerm.LocallyUnique;
@@ -878,6 +879,20 @@ public class Attr extends JCTree.Visitor {
 	    }
 	    methodSymbol.preservedGroupPerms = lb.toList();
 	}
+
+	// Attribute switched groups and add to env
+	{
+	    List<RefGroup> switchedGroups =
+		    attribRefGroups(tree.switchedGroups, env);
+	    ListBuffer<SwitchedGroupPerm> lb = ListBuffer.lb();
+	    for (RefGroup refGroup : switchedGroups) {
+		SwitchedGroupPerm newPerm = 
+			new SwitchedGroupPerm(refGroup);
+		lb.append(newPerm);
+		chk.requireNotPreserved(tree.pos(), refGroup, env);
+	    }
+	    methodSymbol.switchedGroupPerms = lb.toList();
+	}
 	
 	// Give update permission to all non-preserved groups
 	methodSymbol.updatedGroupPerms = env.info.scope.addUpdatePerms();
@@ -1281,12 +1296,15 @@ public class Attr extends JCTree.Visitor {
 	for (PreservedGroupPerm perm : 
 	    Translation.asMemberOf(from.preservedGroupPerms, types, ownerType))
 	    scope.addPreservedGroupPerm(permissions, perm);
+	
+	// Add switched group perms
+	for (SwitchedGroupPerm perm :
+	    Translation.asMemberOf(from.switchedGroupPerms, types, ownerType))
+	    scope.envPerms.add(perm); 
 
 	// Default:  Update if no perm specified
         scope.addUpdatePerms();
         
-        // Lock all preserved groups in scope
-        scope.lockAllPreservedGroups();
     }
     
     public void visitVarDef(JCVariableDecl tree) {
@@ -2074,6 +2092,12 @@ public class Attr extends JCTree.Visitor {
         	    Translation.atCallSite(methSym.updatedGroupPerms,
         		    rs, localEnv, tree);
             chk.requireEnvPerms(tree.pos(), updatedGroupPerms, localEnv);
+            // Switched group perms
+            List<SwitchedGroupPerm> switchedGroupPerms =
+        	    Translation.atCallSite(methSym.switchedGroupPerms,
+        		    rs, localEnv, tree);
+            chk.requireEnvPerms(tree.pos(), switchedGroupPerms, localEnv);
+            
         }
         
         chk.validate(tree.typeargs);
@@ -4107,13 +4131,15 @@ public class Attr extends JCTree.Visitor {
 	annotate.flush();
 	env.info.scope.addFreshGroupPerm(permissions, 
 		new FreshGroupPerm(tree.refGroup));
+	env.info.scope.addSwitchedGroupPerm(permissions,
+		new SwitchedGroupPerm(tree.refGroup));
     }
 
     public void visitPardo(JRGPardo tree) {
         // Create a new local environment with a local scope.
         Env<AttrContext> localEnv =
-            env.dup(tree.body, env.info.dup(env.info.scope.dup()));
-        localEnv.info.scope.inParallelBlock = true;
+            env.dup(tree.body, env.info.dup(env.info.scope.dupUnshared()));
+        localEnv.info.scope.enterParallelBlock();
         attribStats(tree.body.stats, localEnv);
         localEnv.info.scope.leave();
 	result = null;
@@ -4131,7 +4157,8 @@ public class Attr extends JCTree.Visitor {
             log.error(tree.pos(), "arrayclass.req.but.found", tree.array.type);
 	}
 	loopEnv.tree = tree; // before, we were not in loop!
-	loopEnv.info.scope.inParallelBlock = tree.isParallel;
+	if (tree.isParallel)
+	    loopEnv.info.scope.enterParallelBlock();
 	attribStat(tree.body, loopEnv);
 	loopEnv.info.scope.leave();
 	loopEnv.info.forIndexVars = loopEnv.info.forIndexVars.tail;

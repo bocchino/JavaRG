@@ -838,6 +838,67 @@ public abstract class Permission {
 
 	}
     
+	/**
+	 * Class representing a permission 'switches G'
+	 */
+	public static class SwitchedGroupPerm extends EnvPerm 
+		implements 
+		SubstRefGroups<SwitchedGroupPerm>,
+		AsMemberOf<SwitchedGroupPerm>, 
+		AtCallSite<SwitchedGroupPerm>
+	{
+	
+	    /** The switched group */	
+	    public final RefGroup refGroup;
+	
+	    public SwitchedGroupPerm(RefGroup refGroup) {
+		super(RefGroup.NONE, RefGroup.NONE);
+		this.refGroup = refGroup;
+	    }
+
+	    public SwitchedGroupPerm substRefGroups(List<RefGroup> from, 
+		    List<RefGroup> to) {
+		RefGroup refGroup = this.refGroup.substRefGroups(from, to);
+		return (refGroup == this.refGroup) ? this : 
+		    new SwitchedGroupPerm(refGroup);
+	    }
+	
+	    public SwitchedGroupPerm asMemberOf(Types types, Type t) {
+		RefGroup refGroup = this.refGroup.asMemberOf(types, t);
+		return (refGroup == this.refGroup) ? this :
+		    new SwitchedGroupPerm(refGroup);
+	    }
+
+	    public SwitchedGroupPerm atCallSite(Resolve rs, Env<AttrContext> env,
+		    JCMethodInvocation tree) {
+		RefGroup refGroup = this.refGroup.atCallSite(rs, env, tree);
+		return (this.refGroup == refGroup) ?
+			this : new SwitchedGroupPerm(refGroup);
+	    }
+
+	    public SwitchedGroupPerm atNewClass(Resolve rs, Env<AttrContext> env,
+		    JCNewClass tree) {
+		RefGroup refGroup = this.refGroup.atNewClass(rs, env, tree);
+		return (this.refGroup == refGroup) ?
+			this : new SwitchedGroupPerm(refGroup);
+	    }
+
+	    @Override public String toString() {
+		return "switches " + refGroup;
+	    }
+
+	    @Override public boolean equals(Object obj) {
+		if (!(obj instanceof SwitchedGroupPerm))
+		    return false;
+		return this.refGroup.equals(((SwitchedGroupPerm) obj).refGroup);
+	    }
+	
+	    @Override public int hashCode() {
+		return (refGroup.hashCode() << 3) + 5;
+	    }	
+
+	}
+
     }
     
      

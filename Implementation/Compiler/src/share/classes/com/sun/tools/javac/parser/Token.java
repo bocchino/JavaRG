@@ -156,6 +156,7 @@ public enum Token {
     READS("reads"),
     REFGROUP("refgroup"),
     REGION("region"),
+    SWITCHES("switches"),
     UNIQUE("unique"),
     UPDATES("updates"),
     WRITES("writes");

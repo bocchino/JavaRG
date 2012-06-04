@@ -71,6 +71,7 @@ import com.sun.tools.javac.code.Permission.EnvPerm.CopyPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.EffectPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.FreshGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.PreservedGroupPerm;
+import com.sun.tools.javac.code.Permission.EnvPerm.SwitchedGroupPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.UpdatedGroupPerm;
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.Type.ClassType;
@@ -1274,7 +1275,8 @@ public abstract class Symbol implements Element {
 	/** The updated group permissions of the method */
 	public List<UpdatedGroupPerm> updatedGroupPerms = List.nil();
 	
-	
+	/** The switched group permissions of the method */
+	public List<SwitchedGroupPerm> switchedGroupPerms = List.nil();
         
         
         /** The parameters of the method. */
