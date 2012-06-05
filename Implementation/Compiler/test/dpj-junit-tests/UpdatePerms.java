@@ -25,8 +25,4 @@ public class UpdatePerms extends DPJTestCase {
 	compileExpectingErrors("ErrorPermDestroyedBySwitch", 1);
     }    
     
-    @Test public void testSwitchFresh() throws Throwable {
-	compile("SwitchFresh");
-    }
-    
 }

@@ -88,5 +88,9 @@ public class RefPerms extends DPJTestCase {
     @Test public void testErrorSharedArgToThis() throws Throwable {
 	compileExpectingErrors("ErrorSharedArgToThis", 1);
     }
+ 
+    @Test public void testErrorUniqueNotFinal() throws Throwable {
+	compileExpectingErrors("ErrorUniqueNotFinal", 1);
+    }
     
 }

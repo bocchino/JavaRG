@@ -4,8 +4,8 @@
 public class Array<region Elts,Rep,refgroup G | Elts # Rep> {
 
     public static abstract class Data<region Elts> {
-	public abstract void updateParallel() 
-	    writes Elts via this;
+	public abstract <refgroup G>void updateParallel() 
+	    writes Elts via this...G;
 	public abstract void updateSequential();
     }
 
@@ -61,7 +61,7 @@ public class Array<region Elts,Rep,refgroup G | Elts # Rep> {
     {
 	for each i in rep pardo {
 		if (rep[i] != null) {
-		    this.rep[i].updateParallel();
+		    this.rep[i].<refgroup G>updateParallel();
 		}
 	    }
     }
