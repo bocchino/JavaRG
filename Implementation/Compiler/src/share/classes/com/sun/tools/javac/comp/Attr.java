@@ -889,7 +889,7 @@ public class Attr extends JCTree.Visitor {
 		SwitchedGroupPerm newPerm = 
 			new SwitchedGroupPerm(refGroup);
 		lb.append(newPerm);
-		chk.requireNotPreserved(tree.pos(), refGroup, env);
+		//chk.requireNotPreserved(tree.pos(), refGroup, env);
 	    }
 	    methodSymbol.switchedGroupPerms = lb.toList();
 	}
@@ -2096,7 +2096,12 @@ public class Attr extends JCTree.Visitor {
             List<SwitchedGroupPerm> switchedGroupPerms =
         	    Translation.atCallSite(methSym.switchedGroupPerms,
         		    rs, localEnv, tree);
-            chk.requireEnvPerms(tree.pos(), switchedGroupPerms, localEnv);
+            chk.requireEnvPerms(tree.pos(), switchedGroupPerms, localEnv);      
+            // Convert all groups switched by method to updated
+            for (SwitchedGroupPerm perm : switchedGroupPerms) {
+        	localEnv.info.scope.addUpdatedGroupPerm(permissions, 
+        		new UpdatedGroupPerm(perm.refGroup));
+            }
             
         }
         

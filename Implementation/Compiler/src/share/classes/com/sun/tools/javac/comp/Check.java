@@ -1882,24 +1882,6 @@ public class Check {
 	return success;	
     }
     
-    boolean requireNotPreserved(DiagnosticPosition pos, 
-	    RefGroup group, Env<AttrContext> env) {
-	for (EnvPerm perm : env.info.scope.envPerms) {
-	    if (perm instanceof PreservedGroupPerm) {
-		PreservedGroupPerm preservedGroupPerm = 
-			(PreservedGroupPerm) perm;
-		if (preservedGroupPerm.refGroup.equals(group)) {
-		    if (!env.info.scope.hasFreshGroupPermFor(group)) {
-			log.error(pos, "cant.switch.and.preserve", group);
-			return false;		    
-		    }
-		}
-	    }
-	}
-	return true;
-    }
-    
-    
     boolean requireEnvPerm(DiagnosticPosition pos, 
 	    EnvPerm perm, Env<AttrContext> env) 
     {
