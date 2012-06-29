@@ -142,6 +142,7 @@ public class BarnesHut {
      * Carry out the simulation
      */
     public <refgroup A>void doSimulationOn(unique(A) BodyArray<A> bodies) 
+	preserves A
 	throws InterruptedException 
     {
         double tnow;

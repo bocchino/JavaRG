@@ -66,6 +66,7 @@ public class Tree {
      */
     <refgroup A>unique(A) BodyArray<A> stepsystem(int nstep, 
 						  unique(A) BodyArray<A> bodies) 
+	preserves A
     {
         long start = 0, end = 0;
         // 1. Rebuild the tree with the new positions
@@ -193,32 +194,35 @@ public class Tree {
         if (subroot == null) {
             return body;
         }
-        /*   dont run out of bits   */
-        assert(level != 0);
-        unique(T) Cell<T> cell = null;
-
-	// TODO: Fix typing of switch to eliminate if...else
-	// Note fall-through cannot be allowed here!
-	if (subroot instanceof Body) {
-	    switch(subroot) instanceof {
-		case Body:
-		    cell = new Cell<T>();
-		    final int si1 = subindex(intcoord(subroot), level);
-		    cell.subp[si1] = subroot;
-		}
-	}
 	else {
-	    switch (subroot) instanceof {
-		case Cell<T>:
-		    cell = subroot;
-		}
-	}
+	    /*   dont run out of bits   */
 
-        final int si = subindex(xpic, level);
-        cell.subp[si] = this.<refgroup T>loadtree(body, xpic, 
-						  cell.subp[si],
-						  level >> 1, idx);
-        return cell;
+	    assert(level != 0);
+	    unique(T) Cell<T> cell = null;
+	    
+	    // TODO: Fix typing of switch to eliminate if...else
+	    // Note fall-through cannot be allowed here!
+	    if (subroot instanceof Body) {
+		switch(subroot) instanceof {
+		    case Body:
+			cell = new Cell<T>();
+			final int si1 = subindex(intcoord(subroot), level);
+			cell.subp[si1] = subroot;
+		    }
+	    }
+	    else {
+		switch (subroot) instanceof {
+		    case Cell<T>:
+			cell = subroot;
+		    }
+	    }
+	    
+	    final int si = subindex(xpic, level);
+	    cell.subp[si] = this.<refgroup T>loadtree(body, xpic, 
+						      cell.subp[si],
+						      level >> 1, idx);
+	    return cell;
+	}
     }
 
     /**

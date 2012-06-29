@@ -1894,13 +1894,17 @@ public class Check {
 	}
 	else if (perm instanceof CopyPerm) {
 	    CopyPerm copyPerm = (CopyPerm) perm;
-	    boolean success = requireCopyPerm(pos, copyPerm, env);
-	    return success;
+	    if (!requireCopyPerm(pos, copyPerm, env)) {
+		log.error(pos, "missing.perm", perm);
+		return false;
+	    }
 	}
 	else if (perm instanceof EffectPerm) {
 	    EffectPerm effectPerm = (EffectPerm) perm;
-	    boolean success = requireEffectPerm(pos, effectPerm, env);
-	    return success;
+	    if (!requireEffectPerm(pos, effectPerm, env)) {
+		log.error(pos, "missing.perm", perm);
+		return false;
+	    }
 	}
 	else if (perm instanceof PreservedGroupPerm) {
 	    PreservedGroupPerm preservedGroupPerm =
@@ -1977,11 +1981,7 @@ public class Check {
 	    }
 	    // Now we have 'fresh G2'; split it to what we need
 	    scope.removePerm(generatorPerm);
-	    scope.addCopyPerm(permissions, neededPerm);
-	    scope.addCopyPerm(permissions, 
-		    CopyPerm.multipleTreePerm(neededPerm.exp, 
-		    neededPerm.sourceGroup, neededPerm.targetGroup));
-	    return true;
+	    return scope.addCopyPerm(permissions, neededPerm);
 	}
 	else if (!neededPerm.isTreePerm()) {
 	    // CASE 2:
