@@ -77,7 +77,7 @@ public class Tree {
 	
 	// 2. Reorder the bodies according to position in tree
 	refgroup NewA;
-        BodyArray<NewA> newBodies = 
+        unique(NewA) BodyArray<NewA> newBodies = 
 	    new BodyArray<NewA>(bodies.length);
 	// Requires 'copies root...T to NewA'
         this.<refgroup T,NewA>reorderBodies(root, newBodies);
@@ -257,8 +257,7 @@ public class Tree {
      */
     <refgroup T,A>void computegrav(int nstep,
 				   Node root,
-				   BodyArray<A> bodies) 
-	writes Root:*, Root:* via bodies...A
+				   unique(A) BodyArray<A> bodies) 
     {
         for each i in bodies pardo {
 	    region r;
