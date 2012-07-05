@@ -1,33 +1,35 @@
 /**
  * A simple disjoint array class
  */
-public class Array<region Elts,Rep,refgroup G | Elts # Rep> {
+public class Array<region R,refgroup G> {
 
-    public static abstract class Data<region Elts> {
+    private region Rep;
+
+    public static abstract class Data<region R> {
 	public abstract <refgroup G>void updateParallel() 
-	    writes Elts via this...G;
+	    writes R via this...G;
 	public abstract void updateSequential();
     }
 
     private arrayclass RepArray {
-	unique(G) Data<Elts> in Rep;
+	unique(G) Data<R> in R:Rep;
     }
 
-    private unique(G) RepArray rep in Rep;
+    private unique(G) RepArray rep in R:Rep;
 
     public Array(int size) {
 	rep = new RepArray(size);
     }
 
-    public <refgroup NewG>Array<Elts,Rep,NewG> freshArray() 
+    public <refgroup NewG>Array<R,NewG> freshArray() 
 	fresh NewG switches G, NewG
     {
-	Array<Elts,Rep,NewG> result = 
-	    new Array<Elts,Rep,NewG>(rep.length);
+	Array<R,NewG> result = 
+	    new Array<R,NewG>(rep.length);
 	unique(G) RepArray rep = !this.rep;
 	for each i in rep {
 		// Consumes 'copies rep[i] to NewG'
-		unique(NewG) Data<Elts> data = rep[i];
+		unique(NewG) Data<R> data = rep[i];
 		result.rep[i] = data;
 	    }
 	this.rep = rep;
@@ -38,26 +40,26 @@ public class Array<region Elts,Rep,refgroup G | Elts # Rep> {
 	return rep.length;
     }
 
-    void put(unique(G) Data<Elts> data, int idx) 
-	writes Rep
+    void put(unique(G) Data<R> data, int idx) 
+	writes R:*
     {
 	rep[idx] = data;
     }
 
-    Data<Elts> getShared(int idx) 
-	reads Rep, Elts
+    Data<R> getShared(int idx) 
+	reads R:*
     {
 	return rep[idx];
     }
 
-    unique(G) Data<Elts> getUnique(final int idx) 
-	reads Rep, Elts
+    unique(G) Data<R> getUnique(final int idx) 
+	reads R:*
     {
 	return !rep[idx];
     }
 
-    void updateAllParallel() 
-	reads Rep writes Elts via this...G
+    void updateAllParallel()
+       reads R:* writes R via this...G
     {
 	for each i in rep pardo {
 		if (rep[i] != null) {
