@@ -239,7 +239,7 @@ public class Tree<region R,refgroup G> {
 	    
 		for each i in results pardo {
 			// This causes interference but it shouldn't
-			// I removed array index regions from JavaRG but we need them here!
+			// JavaRG doesn't have index parameterization, but we need it!
 			results[i] =
 			    // Ref groups establish no interference here
 			    parallelPORecursive(visitor, subtree.children[i]);
