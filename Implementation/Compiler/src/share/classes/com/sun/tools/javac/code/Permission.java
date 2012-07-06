@@ -27,7 +27,8 @@ public abstract class Permission {
     
     public static abstract class RefPerm extends Permission 
     	implements com.sun.tools.javac.code.Translation.SubstRefGroups<RefPerm>, 
-    	com.sun.tools.javac.code.Translation.AsMemberOf<RefPerm>
+    	com.sun.tools.javac.code.Translation.AsMemberOf<RefPerm>,
+    	com.sun.tools.javac.code.Translation.AtCallSite<RefPerm>
 {
 	
 	public RefGroup getRefGroup() {
@@ -47,6 +48,14 @@ public abstract class Permission {
 	
 	public boolean isLocallyUnique() {
 	    return this instanceof LocallyUnique;
+	}
+	
+	public RefPerm atCallSite(Resolve rs, Env<AttrContext> env, JCMethodInvocation site) {
+	    return this;
+	}
+
+	public RefPerm atNewClass(Resolve rs, Env<AttrContext> env, JCNewClass site) {
+	    return this;
 	}
 	
 	public boolean isShared() {
@@ -115,6 +124,21 @@ public abstract class Permission {
 		return (this.refGroup == refGroup) ?
 			this : new LocallyUnique(refGroup);
 	    }
+	    
+	    @Override public RefPerm atNewClass(Resolve rs, Env<AttrContext> env,
+		    JCNewClass site) {
+		RefGroup refGroup = this.refGroup.atNewClass(rs, env, site);
+		return (this.refGroup == refGroup) ?
+			this : new LocallyUnique(refGroup);
+	    }
+
+	    @Override public RefPerm atCallSite(Resolve rs, Env<AttrContext> env,
+		    JCMethodInvocation site) {
+		RefGroup refGroup = this.refGroup.atCallSite(rs, env, site);
+		return (this.refGroup == refGroup) ?
+			this : new LocallyUnique(refGroup);
+	    }
+
 	    
 	    @Override public String toString() {
 		return "unique(" + refGroup + ")";
@@ -672,8 +696,10 @@ public abstract class Permission {
 		if (!(this.rpl.isIncludedIn(e.rpl)))
 		    return false;
 		// If e has deref set, then this.D must be included in e.D
-		if (e.hasDerefSet()) return this.hasDerefSet() &&
+		if (e.hasDerefSet()) { 
+		    return this.hasDerefSet() &&
 			    this.derefSet.isIncludedIn(e.derefSet, env, rs);
+		}
 		// If this was used in tree comparison, and we are including it
 		// in something with no deref set, then it must be a tree root
 		if (this.usedInTreeComparison)

@@ -16,25 +16,25 @@ public class Tree<region R,refgroup G> {
 
     private region Rep;
 
-    public interface NodeExpander {
+    public interface NodeExpander<region R,refgroup G> {
         /**
          * Method to choose in which slot to insert nextValue in
          * thisNode at level 'level' in the tree.  This method must
          * return a value i such that 0 <= i < arity which says create
          * a new inner node and insert as ith child of the new node
          */
-        public <region R>int indexToExpand(final Data<R> thisNodeData,
-					   final Data<R> parentNodeData,
-					   final Data<R> nextValue) pure;
+        public int indexToExpand(Data<R> thisNodeData,
+				 Data<R> parentNodeData,
+				 Data<R> nextValue) reads R;
 	/**
 	 * Method to create a new object for an inner tree node at level 'level'.
 	 * Region 'R' in T<R> ensures that the object must be a fresh object.
 	 */
-	public <region R,refgroup G> unique(G) Data<R> 
+	public unique(G) Data<R> 
 	    nodeFactory(Data<R> thisNodeData,
 			Data<R> parentNodeData,
 			int idxInParent,
-			Data<R> nextValue) pure;
+			Data<R> nextValue) reads R;
     }
 
     private arrayclass RepArray {
@@ -45,7 +45,7 @@ public class Tree<region R,refgroup G> {
 	public Data<R> getData();
     }
 
-    private class Node 
+    private abstract class Node 
 	implements NodeInterface<R>
     {
         unique(G) Data<R> data in R:Rep;
@@ -65,10 +65,11 @@ public class Tree<region R,refgroup G> {
 	{ 
 	    return this.data; 
 	}
+
     }
 
     private class InnerNode
-	extends Tree<R,G>.Node
+	extends Node
 	implements NodeInterface<R>
     {
         public unique(G) RepArray children in R:Rep;
@@ -91,6 +92,11 @@ public class Tree<region R,refgroup G> {
 	{
 	    children[idx] = node;
 	}
+
+	public String toString() {
+	    return "InnerNode containing " + data;
+	}
+
     }
     
     private class LeafNode
@@ -102,6 +108,11 @@ public class Tree<region R,refgroup G> {
 	{
             super(data);
         }
+
+	public String toString() {
+	    return "LeafNode containing " + data;
+	}
+
     }
 
     /**
@@ -110,29 +121,24 @@ public class Tree<region R,refgroup G> {
      * @param  expander : The logic to choose where to insert each object.
      */
     public <refgroup AG>void buildTree(UniqueDataArray<R,AG> elts,
-				       NodeExpander expander)
+				       NodeExpander<R,G> expander)
 	copies elts...AG to G
     {
 	unique(G) Node root = null;
-	unique(G) Node lastNode1 = null;
-	unique(G) Node lastNode2 = null;
         for each i in elts {
-		unique(G) Data<R> next = elts[i];
-		root = this.buildTreeHelper(next, expander,
-					    root, lastNode2, -1);
-		lastNode2 = lastNode1;
-		lastNode1 = root;
+		root = this.buildTreeHelper(elts[i], expander,
+					    root, null, -1);
         }
 	this.root = root;
     }
 
     private unique(G) Node
 	buildTreeHelper(unique(G) Data<R> elt,
-			NodeExpander expander,
+			NodeExpander<R,G> expander,
 			unique(G) NodeInterface<R> thisNode, 
 			Node parentNode,
 			int idxInParent) 
-	writes R:Rep
+	reads R writes R:Rep
     {
 	// 1. null:  create and return new leaf
 	if (thisNode == null) {
@@ -151,13 +157,13 @@ public class Tree<region R,refgroup G> {
 		    //    (c) Ask which slot to use for old node; insert it in that slot.
 		    assert(thisNode.getData() != null);
 		    unique(G) Data<R> newObject = 
-			expander.<region R,refgroup G>nodeFactory(thisNode.getData(),
-								  parentNode==null? null: parentNode.getData(),
-								  idxInParent, elt);
+			expander.nodeFactory(thisNode.getData(),
+					     parentNode==null ? null : parentNode.getData(),
+					     idxInParent, elt);
 		    unique(G) InnerNode newInner =
 			new InnerNode(newObject);
 		    int ci = expander.indexToExpand(newObject,
-						    parentNode==null? null : parentNode.getData(),
+						    parentNode==null ? null : parentNode.getData(),
 						    thisNode.getData());
 		    assert(0 <= ci && ci < arity);
 		    newInner.setChild(ci, thisNode);
@@ -174,11 +180,11 @@ public class Tree<region R,refgroup G> {
 		    //    (a) This node is result
 		    //    (b) Ask factory for a fresh object to go in that node, if any.
 		    unique(G) Data<R> newObject = 
-			expander.<region R,refgroup G>nodeFactory(thisNode.getData(),
-								  parentNode==null? null : parentNode.getData(),
-								  idxInParent, elt);
+			expander.nodeFactory(thisNode.getData(),
+					     parentNode==null? null : parentNode.getData(),
+					     idxInParent, elt);
 		    thisNode.setData(newObject);
-		    result = (InnerNode) ((Object)thisNode);
+		    result = thisNode;
 		    newParent = parentNode;
 		}
 		}
@@ -201,52 +207,46 @@ public class Tree<region R,refgroup G> {
         return result;
     }
 
-    region Result;
-
-    private static arrayclass ResultArray<region R1,R2> {
-	Data<R1:Result> in R2;
-    }
-
-    public static abstract class POVisitor {
-        public abstract <region R1,R2 | R1:* # R2:*>Data<R1:Result>
-	    visit(Data<R1> curNodeData, ResultArray<R1,R2> results)
-	    reads R1:Result,R2 writes R1 via curNodeData;
+    public interface POVisitor {
+        public <region R1,R2 | R1 # R2>Result
+	    visit(Data<R1> curNodeData, ResultArray<R2> results)
+	    reads R2 writes R1 via curNodeData;
     }
 
     /**
      * Traverse tree in postorder and apply given operation to each
      * node, passing in the results of the children as a ResultArray.
      */
-    public Data<R:Result> parallelPO(POVisitor visitor) {
+    public Result parallelPO(POVisitor visitor) {
 	return this.parallelPORecursive(visitor, root);
     }
 
-    private Data<R:Result>
+    private Result
 	parallelPORecursive(POVisitor visitor, NodeInterface<R> subtree)
-	reads R:Rep,R:Result writes R via subtree...G
+	reads R:Rep writes R via subtree...G
     {
 	if (subtree == null)
 	    return null;
 
 	region Loc;
 
-	ResultArray<R,Loc> results = null;
+	ResultArray<Loc> results = null;
 
 	switch (subtree) instanceof {
 	    case InnerNode:
 		// Recursively visit the children in parallel
-		results = new ResultArray<R,Loc>(arity);
+		results = new ResultArray<Loc>(arity);
 	    
 		for each i in results pardo {
-			// This causes interference but it shouldn't
-			// JavaRG doesn't have index parameterization, but we need it!
+			// This warns of interference but it shouldn't
+			// TODO:  Add index parameterization to JavaRG
 			results[i] =
 			    // Ref groups establish no interference here
 			    parallelPORecursive(visitor, subtree.children[i]);
 		    }
 	    }
 
-	Data<R:Result> result = null;
+	Result result = null;
 	switch (subtree) instanceof {
 	    case Node:
 		// Visit current node, passing in children's result.
@@ -256,6 +256,34 @@ public class Tree<region R,refgroup G> {
 	    }
 
 	return result;
+    }
+
+
+    public void print() {
+	printRecursive(root, 0);
+    }
+
+    private void indent(int level) {
+	for (int i = 0; i < level; ++i)
+	    System.out.print(' ');
+    }
+
+    private void printIndented(String s, int level) {
+	indent(level);
+	System.out.println(s);
+    }
+
+    private void printRecursive(NodeInterface<R> tree, int level) {
+	if (tree != null)
+	    printIndented(tree.toString(), level);
+	else
+	    printIndented("EMPTY", level);
+	switch (tree) instanceof {
+	    case InnerNode:
+		for each i in tree.children {
+			printRecursive(tree.children[i],level+2);
+		    }
+	    }
     }
 
 }

@@ -3,6 +3,12 @@
  */
 public class Array<region R,refgroup G> {
 
+    public static abstract class Data<region R> {
+	public abstract <refgroup G>void updateParallel() 
+	    writes R via this...G;
+	public abstract void updateSequential();
+    }
+
     private region Rep;
 
     private arrayclass RepArray {

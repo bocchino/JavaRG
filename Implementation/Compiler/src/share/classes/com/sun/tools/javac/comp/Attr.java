@@ -1285,6 +1285,13 @@ public class Attr extends JCTree.Visitor {
 		Translation.asMemberOf(from.effectPerms, types, ownerType);
 	effectPerms = Translation.substVarSymbols(effectPerms, permissions,
 		from.params, to.params);
+	Symbol fromThis = from.owner.thisSym;
+	Symbol toThis = to.owner.thisSym;
+	if (fromThis instanceof VarSymbol && toThis instanceof VarSymbol) {	    
+	    effectPerms = Translation.substVarSymbols(effectPerms, permissions,
+		    List.<VarSymbol>of((VarSymbol) fromThis),
+		    List.<VarSymbol>of((VarSymbol) toThis));
+	}
 	effectPerms = Translation.substRPLs(effectPerms, from.rgnParams, 
 		to.rgnParams);
 	effectPerms = Translation.substRefGroups(effectPerms, 
@@ -2482,6 +2489,7 @@ public class Attr extends JCTree.Visitor {
             MethodSymbol methSym = meth.getMethodSymbol();
             if (methSym != null) {
         	refPerm = methSym.resPerm;
+        	refPerm = refPerm.atCallSite(rs, env, meth);
         	refPerm = refPerm.substRefGroups(methSym.refGroupParams, 
         		meth.mtype.refGroupActuals);
             }
@@ -2557,6 +2565,7 @@ public class Attr extends JCTree.Visitor {
             MethodSymbol methSym = right.getMethodSymbol();
             if (methSym != null) {
         	rightPerm = methSym.resPerm;
+        	rightPerm = rightPerm.atCallSite(rs, env, right);
         	rightPerm = rightPerm.substRefGroups(methSym.refGroupParams, 
         		right.mtype.refGroupActuals);
         	remainder = permissions.split(leftPerm, rightPerm);
