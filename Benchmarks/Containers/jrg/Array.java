@@ -5,12 +5,6 @@ public class Array<region R,refgroup G> {
 
     private region Rep;
 
-    public static abstract class Data<region R> {
-	public abstract <refgroup G>void updateParallel() 
-	    writes R via this...G;
-	public abstract void updateSequential();
-    }
-
     private arrayclass RepArray {
 	unique(G) Data<R> in R:Rep;
     }
@@ -19,6 +13,10 @@ public class Array<region R,refgroup G> {
 
     public Array(int size) {
 	rep = new RepArray(size);
+    }
+
+    public int size() {
+	return rep.length;
     }
 
     public <refgroup NewG>Array<R,NewG> freshArray() 
@@ -40,7 +38,7 @@ public class Array<region R,refgroup G> {
 	return rep.length;
     }
 
-    void put(unique(G) Data<R> data, int idx) 
+    void set(unique(G) Data<R> data, int idx) 
 	writes R:*
     {
 	rep[idx] = data;
