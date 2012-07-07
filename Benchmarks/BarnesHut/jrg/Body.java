@@ -143,15 +143,6 @@ public class Body extends Node {
         return false;
     }
 
-    /**
-     * Body implementation just returns mass.
-     */
-    @Override
-    public double hackcofm() 
-    {
-        return mass;
-    }
-
     public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append("Body: mass=");

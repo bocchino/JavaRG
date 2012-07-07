@@ -37,11 +37,6 @@ public abstract class Node {
     }
 
     /**
-     * Descend tree finding center-of-mass coordinates.
-     */
-    public abstract double hackcofm();
-
-    /**
      *  Decide if a node should be opened.
      * @param p Node of interest
      * @param dsq

@@ -13,42 +13,6 @@ public class Cell<refgroup T> extends Node {
 	in BarnesHut.Links = new NodeArray<T>(Constants.NSUB); 
 
     /**
-     * Descend tree finding center-of-mass coordinates.
-     */
-    @Override
-    public double hackcofm()
-    {
-	region Loc;
-
-	VectorArray<Loc> tmpv = new VectorArray<Loc>(Constants.NSUB);
-	Vector<Loc>   tmp_pos = new Vector<Loc>();
-	double   mq;
-	DoubleArray<Loc> mrs = new DoubleArray<Loc>(Constants.NSUB);
-	
-	mq   = 0.0;
-	    
-	for each i in subp {
-		if (subp[i] != null) {
-		    tmpv[i] = new Vector<Loc>();
-		    mrs[i] = this.subp[i].hackcofm();
-		    /* find moment */
-		    tmpv[i].MULVS(this.subp[i].pos, mrs[i]);
-		}
-	    }
-	for each i in tmpv {
-		/* sum tot. moment */
-		if (tmpv[i] != null)
-		    tmp_pos.ADDV(tmp_pos, tmpv[i]);
-		mq = mrs[i] + mq;
-	    }
-	
-	this.mass = mq;
-	/* rescale cms position */
-	pos.DIVVS(tmp_pos, this.mass);
-        return mq;
-    }
-
-    /**
      * Decide if a node should be opened.
      */
     @Override

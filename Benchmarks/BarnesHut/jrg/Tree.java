@@ -135,7 +135,8 @@ public class Tree {
             }
         }
         assert(Util.chatting("About to hackcofm\n"));
-        root.hackcofm();
+        //root.hackcofm();
+	CenterOfMass.<refgroup T>hackcofm(root);
         return root;
     }
 
