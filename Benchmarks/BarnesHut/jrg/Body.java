@@ -147,7 +147,8 @@ public class Body extends Node {
      * Body implementation just returns mass.
      */
     @Override
-    public double hackcofm() {
+    public double hackcofm() 
+    {
         return mass;
     }
 

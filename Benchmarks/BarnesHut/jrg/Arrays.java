@@ -14,4 +14,7 @@ arrayclass DoubleArray<region R> {
     double in R;
 }
 
+arrayclass VectorArray<region R> {
+    Vector<R> in R;
+}
 
