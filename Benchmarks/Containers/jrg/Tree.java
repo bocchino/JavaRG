@@ -126,14 +126,14 @@ public class Tree<region R,refgroup G> {
     {
 	unique(G) Node root = null;
         for each i in elts {
-		root = this.buildTreeHelper(elts[i], expander,
+		root = this.buildTreeRecursive(elts[i], expander,
 					    root, null, -1);
         }
 	this.root = root;
     }
 
     private unique(G) Node
-	buildTreeHelper(unique(G) Data<R> elt,
+	buildTreeRecursive(unique(G) Data<R> elt,
 			NodeExpander<R,G> expander,
 			unique(G) NodeInterface<R> thisNode, 
 			Node parentNode,
@@ -155,7 +155,6 @@ public class Tree<region R,refgroup G> {
 		    //    (a) Create new InnerNode; this is node to return.
 		    //    (b) Ask factory for a fresh object to go in that node, if any.
 		    //    (c) Ask which slot to use for old node; insert it in that slot.
-		    assert(thisNode.getData() != null);
 		    unique(G) Data<R> newObject = 
 			expander.nodeFactory(thisNode.getData(),
 					     parentNode==null ? null : parentNode.getData(),
@@ -165,7 +164,6 @@ public class Tree<region R,refgroup G> {
 		    int ci = expander.indexToExpand(newObject,
 						    parentNode==null ? null : parentNode.getData(),
 						    thisNode.getData());
-		    assert(0 <= ci && ci < arity);
 		    newInner.setChild(ci, thisNode);
 		    result = newInner;
 		    newParent = parentNode;
@@ -178,7 +176,7 @@ public class Tree<region R,refgroup G> {
 		case InnerNode: {
 		    // 3. Inner node:
 		    //    (a) This node is result
-		    //    (b) Ask factory for a fresh object to go in that node, if any.
+		    //    (b) Ask factory for a data object to go in that node.
 		    unique(G) Data<R> newObject = 
 			expander.nodeFactory(thisNode.getData(),
 					     parentNode==null? null : parentNode.getData(),
@@ -198,7 +196,7 @@ public class Tree<region R,refgroup G> {
 	// 5. Recursively call self to build new subtree at child cj,
         //    inserting 'elt' in that subtree.
         final unique(G) Node newTree =
-            buildTreeHelper(elt, expander, result.getChild(cj), result, cj);
+            buildTreeRecursive(elt, expander, result.getChild(cj), result, cj);
         
 	// 6. Insert new subtree in slot computed in step 4.
         result.setChild(cj, newTree);
