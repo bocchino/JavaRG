@@ -848,12 +848,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         attr.attribType(tree.vartype, localEnv);
         Scope enclScope = enter.enterScope(env);
         
-        if (tree.refPerm.isLeaf()) {
-            if ((tree.mods.flags & FINAL) == 0) {
-        	log.error(tree.pos, "unique.field.must.be.final");
-            }
-        }
-
         VarSymbol v =
             new VarSymbol(0, tree.name, tree.vartype.type, enclScope.owner);
         v.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, v, tree);

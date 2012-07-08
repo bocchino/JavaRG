@@ -7,7 +7,9 @@
   * @author H W Yau
   * @version $Revision: 1.13 $ $Date: 1999/02/16 18:51:58 $
   */
-public class PathId<region P> extends Universal<P> {
+public class PathId extends Universal {
+
+    region PathValues;
 
   //------------------------------------------------------------------------
   // Class variables.
@@ -15,11 +17,11 @@ public class PathId<region P> extends Universal<P> {
   /**
     * A class variable.
     */
-  public static boolean DEBUG=true;
+  public final static boolean DEBUG=true;
   /**
     * The prompt to write before any debug messages.
     */
-  protected static String prompt="PathId> ";
+  protected final static String prompt="PathId> ";
 
   //------------------------------------------------------------------------
   // Instance variables.
@@ -27,20 +29,20 @@ public class PathId<region P> extends Universal<P> {
   /**
     * Simple string name.
     */
-  private String name in P;
+  private String name in Data;
 
   /**
     * The start date for the path, in YYYYMMDD format.
     */
-  private int startDate in P = 0;
+  private int startDate in Data = 0;
   /**
     * The end date for the path, in YYYYMMDD format.
     */
-  private int endDate in P = 0;
+  private int endDate in Data = 0;
   /**
     * The change in time between two successive data values.
     */
-  private double dTime in P = Double.NaN;
+  private double dTime in Data = Double.NaN;
 
   //------------------------------------------------------------------------
   // Constructors.
@@ -48,11 +50,15 @@ public class PathId<region P> extends Universal<P> {
   /**
     * Default constructor.
     */
-  public PathId() {
-    super();
-    set_prompt(prompt);
-    set_DEBUG(DEBUG);
+  public PathId() 
+      writes Data
+  {
+      super(prompt, DEBUG);
   }
+
+    public PathId(String prompt, boolean DEBUG) {
+	super(prompt, DEBUG);
+    }
 
   /**
     * Another constructor.
@@ -89,7 +95,9 @@ public class PathId<region P> extends Universal<P> {
     *
     * @param name the value to set for the instance variable <code>name</code>.
     */
-  public void set_name(String name) {
+  public void set_name(String name) 
+      writes Data via this
+  {
     this.name = name;
   }
   /**
@@ -108,7 +116,9 @@ public class PathId<region P> extends Universal<P> {
     *
     * @param startDate the value to set for the instance variable <code>startDate</code>.
     */
-  public void set_startDate(int startDate)  {
+  public void set_startDate(int startDate)  
+      writes Data via this
+  {
     this.startDate = startDate;
   }
   /**
@@ -127,7 +137,9 @@ public class PathId<region P> extends Universal<P> {
     *
     * @param endDate the value to set for the instance variable <code>endDate</code>.
     */
-  public void set_endDate(int endDate)  {
+  public void set_endDate(int endDate)  
+      writes Data via this
+  {
     this.endDate = endDate;
   }
   /**
@@ -136,7 +148,10 @@ public class PathId<region P> extends Universal<P> {
     * @return Value of instance variable <code>dTime</code>.
     * @exception DemoException thrown if instance variable <code>dTime</code> is undefined.
     */
-  public double get_dTime() throws DemoException {
+  public double get_dTime() 
+      reads Data via this
+      throws DemoException 
+  {
     if( this.dTime == Double.NaN )
       throw new DemoException("Variable dTime is undefined!");
     return(this.dTime);
@@ -146,7 +161,9 @@ public class PathId<region P> extends Universal<P> {
     *
     * @param dTime the value to set for the instance variable <code>dTime</code>.
     */
-  public void set_dTime(double dTime) {
+  public void set_dTime(double dTime) 
+      writes Data via this
+  {
     this.dTime = dTime;
   }
   //------------------------------------------------------------------------
@@ -158,7 +175,7 @@ public class PathId<region P> extends Universal<P> {
     * @exception DemoException thrown if the values to be copied contain
     *                          any undefined objects.
     */
-  public void copyInstanceVariables(PathId<P> obj) throws DemoException{
+  public void copyInstanceVariables(PathId obj) throws DemoException{
     this.name      = obj.get_name();
     this.startDate = obj.get_startDate();
     this.endDate   = obj.get_endDate();

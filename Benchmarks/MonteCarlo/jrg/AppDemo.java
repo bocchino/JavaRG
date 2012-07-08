@@ -1,5 +1,3 @@
-
-
 import java.util.*;
 import java.awt.*;
 import java.util.concurrent.locks.ReentrantLock;
@@ -23,11 +21,7 @@ public class AppDemo extends Universal {
   // Class variables.
   //------------------------------------------------------------------------
 
-  // DPJ: Region declarations
-  // TaskR: for tasks
-  // ResultR: for results (one result per task)
-  // reductionR: for local reduction
-  region ResultR, TaskR, reductionR;
+    region Arrays, Results, TaskR, reductionR;
 
   public static double JGFavgExpectedReturnRateMC =0.0;
   /**
@@ -73,12 +67,9 @@ public class AppDemo extends Universal {
     */
   private int runMode;
 
-  // An index-parameterized array of tasks under TaskR
-    private ToTask<TaskR>[] tasks in TaskR;
+    private ToTask[] tasks in TaskR;
 
-  // DPJ
-  // an index-parameterized array of results under ResultR
-  private ToResult<ResultR>[] results in ResultR;
+    private ResultArray results in Results;
 
   public AppDemo(String dataDirname, String dataFilename, int nTimeStepsMC, int nRunsMC) {
     this.dataDirname    = dataDirname;
@@ -150,37 +141,47 @@ public class AppDemo extends Universal {
     private void initTasks(int nRunsMC) {
         
       // initialize task array
-	tasks = new ToTask<TaskR>[nRunsMC];
+	tasks = new ToTask[nRunsMC];
 	
       // for each task, parallel init
       for(int i = 0; i < nRunsMC; ++i) {
         String header = "MC run "+String.valueOf(i);
-        ToTask<TaskR> task = 
-	    new ToTask<TaskR>(header, (long)i*11);
+        ToTask task = new ToTask(header, (long)i*11);
         tasks[i] = task;
       }
    }
 
-  // to process each element in result array in parallel per every iteration,
-  // an effect should be specified to show it's partitionable
   public void runParallel() {
 	 	 
-      results = new ToResult<ResultR>[nRunsMC];
-           
-      for (int i = 0; i < nRunsMC; ++i) {
-	  PriceStock<ResultR> ps = new PriceStock<ResultR>();
-	  ps.setInitAllTasks(initAllTasks);
+      refgroup Run;
+
+      unique(Run) PriceStocks<Run> inputs =
+	  new PriceStocks<Run>(nRunsMC);
+      results = new ResultArray(nRunsMC);
+
+      for each i in inputs {
+	      inputs[i] = new PriceStock<Run>();
+	  }
+      this.<refgroup Run>runParallel2(inputs);
+  }
+
+    public <refgroup Run>void 
+	runParallel2(unique(Run) PriceStocks<Run> inputs)
+	preserves Run
+    {
+      for each i in results pardo {
+	  inputs[i].setInitAllTasks(initAllTasks);
 	  // read the corresponding task and copy its value to PriceStock
-	  ps.setTask(tasks[i]);
-	  
+	  inputs[i].setTask(tasks[i]);
+
 	  // ****************************************************
 	  // main Monte Carlo computation
-	  ps.run();
+	  inputs[i].run();
 	  // ****************************************************
-	  
-	  results[i] = ps.getResult();
+	  results[i] = inputs[i].getResult();
       }
-  }
+    }
+	
   
   public void processParallel() {
       //
@@ -202,10 +203,9 @@ public class AppDemo extends Universal {
     *            any values.
     */
 
- RatePath<reductionR> avgMCrate;
- //RatePath avgMCrate;
+ RatePath avgMCrate;
  ReentrantLock lock = new ReentrantLock();
- RatePath<reductionR>[] localAvgMCrate;
+ RatePath[] localAvgMCrate;
 
     void sumReduction(final int index, double localAvgExpectedReturnRateMC, 
 		      double localAvgVolatilityMC) 
@@ -232,11 +232,11 @@ public class AppDemo extends Universal {
     //
     // Create an instance of a RatePath, for accumulating the results of the
     // Monte Carlo simulations.
-    avgMCrate = new RatePath<reductionR>(nTimeStepsMC, "MC", 19990109, 19991231, dTime);
+    avgMCrate = new RatePath(nTimeStepsMC, "MC", 19990109, 19991231, dTime);
       
     // parallelize the reduction using local and tiling
     int tileSize = 100;
-    localAvgMCrate = new RatePath<reductionR>[nRunsMC/tileSize];  
+    localAvgMCrate = new RatePath[nRunsMC/tileSize];  
 
     for (int p = 0; p < nRunsMC/tileSize; ++p) {
 
@@ -245,11 +245,12 @@ public class AppDemo extends Universal {
     	double localAvgExpectedReturnRateMC = 0.0;
         double localAvgVolatilityMC = 0.0;
 
-	localAvgMCrate[p] = new RatePath<reductionR>(nTimeStepsMC, "MC", 19990109, 19991231, dTime);
+	localAvgMCrate[p] = new RatePath(nTimeStepsMC, "MC", 19990109, 19991231, dTime);
 
     	for (int i=start;i<end;i++) {
-	    ToResult<ResultR> returnMC = results[i];
-	    localAvgMCrate[p].inc_pathValue(returnMC.get_pathValue());
+	    ToResult returnMC = results[i];
+	    PathValue pathValue = returnMC.get_pathValue();
+	    localAvgMCrate[p].inc_pathValue(pathValue);
 
     	    // reductions (sum)
     	    localAvgExpectedReturnRateMC += returnMC.get_expectedReturnRate();
@@ -273,120 +274,5 @@ public class AppDemo extends Universal {
 //    dbgPrintln("Average over "+nRunsMC+": expectedReturnRate="+
 //    avgExpectedReturnRateMC+" volatility="+avgVolatilityMC + JGFavgExpectedReturnRateMC);
   }
-  //
-  //------------------------------------------------------------------------
-  // Accessor methods for class AppDemo.
-  // Generated by 'makeJavaAccessor.pl' script.  HWY.  20th January 1999.
-  //------------------------------------------------------------------------
-  /**
-    * Accessor method for private instance variable <code>dataDirname</code>.
-    *
-    * @return Value of instance variable <code>dataDirname</code>.
-    */
-  public String get_dataDirname() {
-    return(this.dataDirname);
-  }
 
-  /**
-    * Set method for private instance variable <code>dataDirname</code>.
-    *
-    * @param dataDirname the value to set for the instance variable <code>dataDirname</code>.
-    */
-  public void set_dataDirname(String dataDirname) {
-    this.dataDirname = dataDirname;
-  }
-
-  /**
-    * Accessor method for private instance variable <code>dataFilename</code>.
-    *
-    * @return Value of instance variable <code>dataFilename</code>.
-    */
-  public String get_dataFilename() {
-    return(this.dataFilename);
-  }
-
-  /**
-    * Set method for private instance variable <code>dataFilename</code>.
-    *
-    * @param dataFilename the value to set for the instance variable <code>dataFilename</code>.
-    */
-  public void set_dataFilename(String dataFilename) {
-    this.dataFilename = dataFilename;
-  }
-
-  /**
-    * Accessor method for private instance variable <code>nTimeStepsMC</code>.
-    *
-    * @return Value of instance variable <code>nTimeStepsMC</code>.
-    */
-  public int get_nTimeStepsMC() {
-    return(this.nTimeStepsMC);
-  }
-
-  /**
-    * Set method for private instance variable <code>nTimeStepsMC</code>.
-    *
-    * @param nTimeStepsMC the value to set for the instance variable <code>nTimeStepsMC</code>.
-    */
-  public void set_nTimeStepsMC(int nTimeStepsMC) {
-    this.nTimeStepsMC = nTimeStepsMC;
-  }
-
-  /**
-    * Accessor method for private instance variable <code>nRunsMC</code>.
-    *
-    * @return Value of instance variable <code>nRunsMC</code>.
-    */
-  public int get_nRunsMC() {
-    return(this.nRunsMC);
-  }
-
-  /**
-    * Set method for private instance variable <code>nRunsMC</code>.
-    *
-    * @param nRunsMC the value to set for the instance variable <code>nRunsMC</code>.
-    */
-  public void set_nRunsMC(int nRunsMC) {
-    this.nRunsMC = nRunsMC;
-  }
-  
-  /**
-    * Accessor method for private instance variable <code>tasks</code>.
-    *
-    * @return Value of instance variable <code>tasks</code>.
-    */
-  public ToTask<TaskR>[] get_tasks() {
-  	return(this.tasks);
-  }
-  /**
-    * Set method for private instance variable <code>tasks</code>.
-    *
-    * @param tasks the value to set for the instance variable <code>tasks</code>.
-    */
-  public void set_tasks(ToTask<TaskR>[] tasks)
-    {
-	this.tasks = tasks;
-    }
-
-  /**
-    * Accessor method for private instance variable <code>results</code>.
-    *
-    * @return Value of instance variable <code>results</code>.
-    */
-  public ToResult<ResultR>[] get_results()
-    {
-  	return(this.results);
-  }
-
-  /**
-    * Set method for private instance variable <code>results</code>.
-    *
-    * @param results the value to set for the instance variable <code>results</code>.
-    */
-  public void set_results(ToResult<ResultR>[] results)
-    {
-  	this.results = results;
-  }
- 
-  //------------------------------------------------------------------------
 }

@@ -5,16 +5,16 @@
   * @version $Revision: 1.10 $ $Date: 1999/02/16 18:52:53 $
   */
 public class ToInitAllTasks  implements java.io.Serializable {
-  private String header;
-  private String name;
-  private int startDate;
-  private int endDate;
-  private double dTime;
-  private int returnDefinition;
-  private double expectedReturnRate;
-  private double volatility;
-  private int nTimeSteps;
-  private double pathStartValue;
+  private final String header;
+  private final String name;
+  private final int startDate;
+  private final int endDate;
+  private final double dTime;
+  private final int returnDefinition;
+  private final double expectedReturnRate;
+  private final double volatility;
+  private final int nTimeSteps;
+  private final double pathStartValue;
 
   /**
     * Constructor, for initialisation data which are common to all
@@ -41,7 +41,9 @@ public class ToInitAllTasks  implements java.io.Serializable {
     */
   public ToInitAllTasks(String header, String name, int startDate, int endDate, 
   double dTime, int returnDefinition, double expectedReturnRate, double volatility, 
-  double pathStartValue) {
+  double pathStartValue) 
+      pure
+  {
     this.header             = header;
     this.name               = name;
     this.startDate          = startDate;
@@ -50,7 +52,7 @@ public class ToInitAllTasks  implements java.io.Serializable {
     this.returnDefinition   = returnDefinition;
     this.expectedReturnRate = expectedReturnRate;
     this.volatility         = volatility;
-    this.nTimeSteps         = nTimeSteps;
+    this.nTimeSteps         = 0; // Bug in original code???
     this.pathStartValue     = pathStartValue;
   }
   /**
@@ -67,8 +69,11 @@ public class ToInitAllTasks  implements java.io.Serializable {
     * @exception DemoException thrown if there is a problem accessing the
     *                          instance variables from the target objetct.
     */
-  public ToInitAllTasks(ReturnPath<Root> obj, int nTimeSteps, double pathStartValue)  
-  throws DemoException {
+  public ToInitAllTasks(ReturnPath obj, int nTimeSteps, double pathStartValue)  
+  //pure
+      throws DemoException 
+    {
+      this.header = null;
     //
     // Instance variables defined in the PathId object.
     this.name      = obj.get_name();
@@ -92,160 +97,100 @@ public class ToInitAllTasks  implements java.io.Serializable {
     *
     * @return Value of instance variable <code>header</code>.
     */
-  public String get_header() {
+  public String get_header() 
+      pure
+    {
     return(this.header);
-  }
-  /**
-    * Set method for private instance variable <code>header</code>.
-    *
-    * @param header the value to set for the instance variable <code>header</code>.
-    */
-  public void set_header(String header) {
-    this.header = header;
   }
   /**
     * Accessor method for private instance variable <code>name</code>.
     *
     * @return Value of instance variable <code>name</code>.
     */
-  public String get_name() {
+    public String get_name() 
+	pure
+    {
     return(this.name);
-  }
-  /**
-    * Set method for private instance variable <code>name</code>.
-    *
-    * @param name the value to set for the instance variable <code>name</code>.
-    */
-  public void set_name(String name) {
-    this.name = name;
   }
   /**
     * Accessor method for private instance variable <code>startDate</code>.
     *
     * @return Value of instance variable <code>startDate</code>.
     */
-  public int get_startDate() {
+  public int get_startDate() 
+      pure
+    {
     return(this.startDate);
-  }
-  /**
-    * Set method for private instance variable <code>startDate</code>.
-    *
-    * @param startDate the value to set for the instance variable <code>startDate</code>.
-    */
-  public void set_startDate(int startDate) {
-    this.startDate = startDate;
   }
   /**
     * Accessor method for private instance variable <code>endDate</code>.
     *
     * @return Value of instance variable <code>endDate</code>.
     */
-  public int get_endDate() {
+  public int get_endDate() 
+      pure
+    {
     return(this.endDate);
-  }
-  /**
-    * Set method for private instance variable <code>endDate</code>.
-    *
-    * @param endDate the value to set for the instance variable <code>endDate</code>.
-    */
-  public void set_endDate(int endDate) {
-    this.endDate = endDate;
   }
   /**
     * Accessor method for private instance variable <code>dTime</code>.
     *
     * @return Value of instance variable <code>dTime</code>.
     */
-  public double get_dTime() {
+  public double get_dTime() 
+      pure
+    {
     return(this.dTime);
-  }
-  /**
-    * Set method for private instance variable <code>dTime</code>.
-    *
-    * @param dTime the value to set for the instance variable <code>dTime</code>.
-    */
-  public void set_dTime(double dTime) {
-    this.dTime = dTime;
   }
   /**
     * Accessor method for private instance variable <code>returnDefinition</code>.
     *
     * @return Value of instance variable <code>returnDefinition</code>.
     */
-  public int get_returnDefinition() {
+  public int get_returnDefinition() 
+      pure
+    {
     return(this.returnDefinition);
-  }
-  /**
-    * Set method for private instance variable <code>returnDefinition</code>.
-    *
-    * @param returnDefinition the value to set for the instance variable <code>returnDefinition</code>.
-    */
-  public void set_returnDefinition(int returnDefinition)  {
-    this.returnDefinition = returnDefinition;
   }
   /**
     * Accessor method for private instance variable <code>expectedReturnRate</code>.
     *
     * @return Value of instance variable <code>expectedReturnRate</code>.
     */
-  public double get_expectedReturnRate() {
+  public double get_expectedReturnRate() 
+      pure
+    {
     return(this.expectedReturnRate);
-  }
-  /**
-    * Set method for private instance variable <code>expectedReturnRate</code>.
-    *
-    * @param expectedReturnRate the value to set for the instance variable <code>expectedReturnRate</code>.
-    */
-  public void set_expectedReturnRate(double expectedReturnRate) {
-    this.expectedReturnRate = expectedReturnRate;
   }
   /**
     * Accessor method for private instance variable <code>volatility</code>.
     *
     * @return Value of instance variable <code>volatility</code>.
     */
-  public double get_volatility() {
+  public double get_volatility() 
+    pure
+  {
     return(this.volatility);
-  }
-  /**
-    * Set method for private instance variable <code>volatility</code>.
-    *
-    * @param volatility the value to set for the instance variable <code>volatility</code>.
-    */
-  public void set_volatility(double volatility) {
-    this.volatility = volatility;
   }
   /**
     * Accessor method for private instance variable <code>nTimeSteps</code>.
     *
     * @return Value of instance variable <code>nTimeSteps</code>.
     */
-  public int get_nTimeSteps() {
+  public int get_nTimeSteps() 
+    pure
+  {
     return(this.nTimeSteps);
-  }
-  /**
-    * Set method for private instance variable <code>nTimeSteps</code>.
-    *
-    * @param nTimeSteps the value to set for the instance variable <code>nTimeSteps</code>.
-    */
-  public void set_nTimeSteps(int nTimeSteps) {
-    this.nTimeSteps = nTimeSteps;
   }
   /**
     * Accessor method for private instance variable <code>pathStartValue</code>.
     *
     * @return Value of instance variable <code>pathStartValue</code>.
     */
-  public double get_pathStartValue() {
+  public double get_pathStartValue() 
+    pure
+  {
     return(this.pathStartValue);
-  }
-  /**
-    * Set method for private instance variable <code>pathStartValue</code>.
-    *
-    * @param pathStartValue the value to set for the instance variable <code>pathStartValue</code>.
-    */
-  public void set_pathStartValue(double pathStartValue) {
-    this.pathStartValue = pathStartValue;
   }
   //------------------------------------------------------------------------
 }

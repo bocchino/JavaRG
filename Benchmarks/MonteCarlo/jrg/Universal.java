@@ -7,7 +7,10 @@
   * @author H W Yau
   * @version $Revision: 1.7 $ $Date: 1999/02/16 18:53:43 $
   */
-public class Universal<region P> {
+public class Universal {
+
+    region Data;
+
   //------------------------------------------------------------------------
   // Class variables.
   //------------------------------------------------------------------------
@@ -15,7 +18,7 @@ public class Universal<region P> {
     * Class variable, for whether to print debug messages.  This one is
     * unique to this class, and can hence be set in the one place.
     */
-  private static boolean UNIVERSAL_DEBUG in P;
+  private boolean UNIVERSAL_DEBUG in Data;
   //------------------------------------------------------------------------
   // Instance variables.
   //------------------------------------------------------------------------
@@ -23,11 +26,11 @@ public class Universal<region P> {
     * Variable, for whether to print debug messages.  This one can
     * be set by subsequent child classes.
     */
-  private boolean DEBUG in P;
+  private boolean DEBUG in Data;
   /**
     * The prompt to write before any debug messages.
     */
-  private String prompt in P;
+  private String prompt in Data;
 
   //------------------------------------------------------------------------
   // Constructors.
@@ -35,12 +38,22 @@ public class Universal<region P> {
   /**
     * Default constructor.
     */
-  public Universal() {
+  public Universal() 
+      pure
+  {
     //super();
     this.DEBUG=true;
     this.UNIVERSAL_DEBUG=true;
     this.prompt="Universal> ";
   }
+
+    public Universal(String prompt, boolean DEBUG)
+	pure
+    {
+	this.UNIVERSAL_DEBUG=true;
+	this.prompt=prompt;
+	this.DEBUG=DEBUG;
+    }
   //------------------------------------------------------------------------
   // Methods.
   //------------------------------------------------------------------------
@@ -54,6 +67,7 @@ public class Universal<region P> {
     * @return Value of instance variable <code>DEBUG</code>.
     */
   public boolean get_DEBUG()
+      reads Data via this
   {
     return(this.DEBUG);
   }
@@ -62,7 +76,9 @@ public class Universal<region P> {
     *
     * @param DEBUG the value to set for the instance variable <code>DEBUG</code>.
     */
-  public void set_DEBUG(boolean DEBUG) {
+  public void set_DEBUG(boolean DEBUG) 
+      writes Data via this
+  {
     this.DEBUG = DEBUG;
   }
   /**
@@ -70,7 +86,9 @@ public class Universal<region P> {
     *
     * @return Value of instance variable <code>UNIVERSAL_DEBUG</code>.
     */
-  public boolean get_UNIVERSAL_DEBUG() {
+  public boolean get_UNIVERSAL_DEBUG() 
+      reads Data via this
+    {
     return(this.UNIVERSAL_DEBUG);
   }
   /**
@@ -87,7 +105,9 @@ public class Universal<region P> {
     *
     * @return Value of instance variable <code>prompt</code>.
     */
-  public String get_prompt() {
+  public String get_prompt() 
+      reads Data via this
+    {
     return(this.prompt);
   }
   /**
@@ -95,8 +115,10 @@ public class Universal<region P> {
     *
     * @param prompt the value to set for the instance variable <code>prompt</code>.
     */
-  public void set_prompt(String prompt) {
-    this.prompt = prompt;
+  public void set_prompt(String prompt) 
+      writes Data via this
+  {
+      this.prompt = prompt;
   }
   //------------------------------------------------------------------------
   /**

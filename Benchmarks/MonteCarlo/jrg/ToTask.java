@@ -5,9 +5,9 @@
   * @author H W Yau
   * @version $Revision: 1.6 $ $Date: 1999/02/16 18:53:20 $
   */
-public class ToTask<region P> implements java.io.Serializable {
-  private String header in P;
-  private long randomSeed in P;
+public class ToTask implements java.io.Serializable {
+  private final String header;
+  private final long randomSeed;
 
   public ToTask(String header, long randomSeed) {
     this.header         = header;
@@ -22,32 +22,20 @@ public class ToTask<region P> implements java.io.Serializable {
     *
     * @return Value of instance variable <code>header</code>.
     */
-  public String get_header() {
+  public String get_header() 
+      pure
+  {
     return(this.header);
-  }
-  /**
-    * Set method for private instance variable <code>header</code>.
-    *
-    * @param header the value to set for the instance variable <code>header</code>.
-    */
-  public void set_header(String header) {
-    this.header = header;
   }
   /**
     * Accessor method for private instance variable <code>randomSeed</code>.
     *
     * @return Value of instance variable <code>randomSeed</code>.
     */
-  public long get_randomSeed() {
+  public long get_randomSeed() 
+      pure
+  {
     return(this.randomSeed);
-  }
-  /**
-    * Set method for private instance variable <code>randomSeed</code>.
-    *
-    * @param randomSeed the value to set for the instance variable <code>randomSeed</code>.
-    */
-  public void set_randomSeed(long randomSeed) {
-    this.randomSeed = randomSeed;
   }
   //------------------------------------------------------------------------
 }

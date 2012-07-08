@@ -9,7 +9,7 @@
   * @author H W Yau
   * @version $Revision: 1.5 $ $Date: 1999/02/16 18:52:15 $
   */
-public class PriceStock<region P> extends Universal<P> {
+public class PriceStock<refgroup G> extends Universal {
 
     //------------------------------------------------------------------------
   // Class variables.
@@ -18,11 +18,11 @@ public class PriceStock<region P> extends Universal<P> {
     * Class variable for determining whether to switch on debug output or
     * not.
     */
-  public static boolean DEBUG=true;
+  public static final boolean DEBUG=true;
   /**
     * Class variable for defining the debug message prompt.
     */
-  protected static String prompt="PriceStock> ";
+  protected static final String prompt="PriceStock> ";
 
   //------------------------------------------------------------------------
   // Instance variables.
@@ -34,28 +34,28 @@ public class PriceStock<region P> extends Universal<P> {
   // put MonteCarloPath object under the region for PriceStock
   // necessary for parallel processing of the outer foreach
   //
-  private MonteCarloPath<P> mcPath in P;
+  private final unique(G) MonteCarloPath mcPath;
   /**
     * String identifier for a given task.
     */
-  private String taskHeader in P;
+  private String taskHeader in Data;
   /**
     * Random seed from which the Monte Carlo sequence is started.
     */
-  private long randomSeed in P;
+  private long randomSeed in Data;
   /**
     * Initial stock price value.
     */
-  private double pathStartValue in P;
+  private double pathStartValue in Data;
   /**
     * Object which represents the results from a given computation task.
     */
-  private ToResult<P> result in P;
-  private double expectedReturnRate in P;
-  private double volatility in P;
-  private double volatility2 in P;
-  private double finalStockPrice in P;
-  private double[] pathValue in P;
+  private ToResult result in Data;
+  private double expectedReturnRate in Data;
+  private double volatility in Data;
+  private double volatility2 in Data;
+  private double finalStockPrice in Data;
+  private PathValue pathValue in Data;
 
   //------------------------------------------------------------------------
   // Constructors.
@@ -63,10 +63,11 @@ public class PriceStock<region P> extends Universal<P> {
   /**
     * Default constructor.
     */
-  public PriceStock() {
+  public PriceStock() 
+      writes Data
+  {
     super();
-    
-    mcPath = new MonteCarloPath<P>();
+    mcPath = new MonteCarloPath();
     set_prompt(prompt);
     set_DEBUG(DEBUG);
   }
@@ -82,7 +83,10 @@ public class PriceStock<region P> extends Universal<P> {
     *
     * @param obj Object representing data which are common to all tasks.
     */
-   public void setInitAllTasks(ToInitAllTasks initAllTasks) {
+  public void setInitAllTasks(ToInitAllTasks initAllTasks) 
+      writes Data via this...G
+      preserves G
+  {
     mcPath.set_name(initAllTasks.get_name());
     mcPath.set_startDate(initAllTasks.get_startDate());
     mcPath.set_endDate(initAllTasks.get_endDate());
@@ -94,7 +98,7 @@ public class PriceStock<region P> extends Universal<P> {
     mcPath.set_nTimeSteps(nTimeSteps);
     this.pathStartValue = initAllTasks.get_pathStartValue();
     mcPath.set_pathStartValue(pathStartValue);
-    mcPath.set_pathValue(new double[nTimeSteps]);
+    mcPath.set_pathValue(nTimeSteps);
     mcPath.set_fluctuations(new double[nTimeSteps]);
   }
   /**
@@ -103,8 +107,10 @@ public class PriceStock<region P> extends Universal<P> {
     *
     * @param obj Object representing the data which defines a given task.
     */
-  public <region R>void setTask(ToTask<R> obj) {
-      ToTask<R> task = obj;
+  public void setTask(ToTask task) 
+      writes Data via this
+      preserves G
+  {
     this.taskHeader     = task.get_header();
     this.randomSeed     = task.get_randomSeed();
   }
@@ -112,15 +118,15 @@ public class PriceStock<region P> extends Universal<P> {
     * The business end.  Invokes the necessary computation routine, for a
     * a given task.
     */
-  // TODO major computation
-  // TODO potentially parallelizable
-  public void run() {
+  public void run() 
+      //writes Data via this...G
+      preserves G
+  {
     try{
       mcPath.computeFluctuationsGaussian(randomSeed);
       mcPath.computePathValue(pathStartValue);
-      
-      RatePath<P> rateP = new RatePath<P>(mcPath);
-      ReturnPath<P> returnP = rateP.getReturnCompounded();
+      RatePath rateP = new RatePath(mcPath);
+      ReturnPath returnP = rateP.getReturnCompounded();
       returnP.estimatePath();
       expectedReturnRate = returnP.get_expectedReturnRate();
       volatility = returnP.get_volatility();
@@ -137,9 +143,15 @@ public class PriceStock<region P> extends Universal<P> {
    *
    * @return An object representing the computed results.
    */
-  public ToResult<P> getResult() {
-    String resultHeader = "Result of task with Header="+taskHeader+": randomSeed="+randomSeed+": pathStartValue="+pathStartValue;
-    ToResult<P> res = new ToResult<P>(resultHeader,expectedReturnRate,volatility,volatility2,finalStockPrice,pathValue);
-    return res;
+  public ToResult getResult() 
+      preserves G
+  {
+    String resultHeader = 
+	"Result of task with Header=" + taskHeader + 
+	": randomSeed=" + randomSeed + 
+	": pathStartValue="+ pathStartValue;
+    return new ToResult(resultHeader, expectedReturnRate,
+			volatility, volatility2, 
+			finalStockPrice,pathValue);
   }
 }

@@ -12,7 +12,7 @@ import java.util.*;
   * @author H W Yau
   * @version $Revision: 1.28 $ $Date: 1999/02/16 18:52:29 $
   */
-public class RatePath<region P> extends PathId<P> {
+public class RatePath extends PathId {
 
   //------------------------------------------------------------------------
   // Class variables.
@@ -20,16 +20,16 @@ public class RatePath<region P> extends PathId<P> {
   /**
     * Class variable, for setting whether to print debug messages.
     */
-  public static boolean DEBUG=true;
+  public static final boolean DEBUG=true;
   /**
     * The prompt to write before any debug messages.
     */
-  protected static String prompt="RatePath> ";
+  protected static final String prompt="RatePath> ";
   /**
     * Class variable for determining which field in the stock data should be
     * used.  This is currently set to point to the 'closing price'.
     */
-  public static int DATUMFIELD=4;
+  public static final int DATUMFIELD=4;
   /**
     * Class variable to represent the minimal date, whence the stock prices
     * appear. Used to trap any potential problems with the data.
@@ -48,17 +48,16 @@ public class RatePath<region P> extends PathId<P> {
   /**
     * An instance variable, for storing the rate's path values itself.
     */
- 
-  private double[] pathValue in P;
+  private PathValue pathValue in Data;
   /**
     * An instance variable, for storing the corresponding date of the datum,
     * in 'YYYYMMDD' format.
     */
-  private int[] pathDate in P;
+  private int[] pathDate in Data;
   /**
     * The number of accepted values in the rate path.
     */
-  private int nAcceptedPathValue in P =0;
+  private int nAcceptedPathValue in Data =0;
 
   //------------------------------------------------------------------------
   // Constructors.
@@ -71,9 +70,11 @@ public class RatePath<region P> extends PathId<P> {
     * @exception DemoException thrown if there is a problem reading in
     *                          the data file.
     */
-  public RatePath(String filename) throws DemoException {
-    set_prompt(prompt);
-    set_DEBUG(DEBUG);
+  public RatePath(String filename) 
+      throws DemoException 
+      
+  {
+      super(prompt,DEBUG);
     readRatesFile(null,filename);
   }
 
@@ -105,7 +106,7 @@ public class RatePath<region P> extends PathId<P> {
     * @param dTime the time interval between successive path values, in
     *        fractions of a year.
     */
-  public RatePath(double[] pathValue, String name, int startDate, int endDate, double dTime) {
+  public RatePath(PathValue pathValue, String name, int startDate, int endDate, double dTime) {
     set_name(name);
     set_startDate(startDate);
     set_endDate(endDate);
@@ -124,7 +125,9 @@ public class RatePath<region P> extends PathId<P> {
     * @exception DemoException thrown if there is an attempt to access
     *            an undefined variable.
     */
-  public RatePath(MonteCarloPath<P> mc) throws DemoException {
+  public RatePath(MonteCarloPath mc) throws DemoException 
+
+  {
     //
     // Fields pertaining to the parent PathId object:
     set_name(mc.get_name());
@@ -161,7 +164,7 @@ public class RatePath<region P> extends PathId<P> {
     set_dTime(dTime);
     set_prompt(prompt);
     set_DEBUG(DEBUG);
-    this.pathValue = new double[pathValueLength];
+    this.pathValue = new PathValue(pathValueLength);
     this.nAcceptedPathValue = pathValue.length;
   }
   //------------------------------------------------------------------------
@@ -175,18 +178,13 @@ public class RatePath<region P> extends PathId<P> {
     * @exception DemoException thrown if there is a mismatch between the
     *            lengths of the operand and target arrays.
     */
-  public <region R>void inc_pathValue(double[] operandPath) /*throws DemoException*/ {
-    /*
-	if( pathValue.length != operandPath.length )
-      throw new DemoException("The path to update has a different size to the path to update with!");
- 	*/
- //   foreach (int i in 0, pathValue.length) {
+  public void inc_pathValue(PathValue operandPath) /*throws DemoException*/ {
     for(int i=0; i<pathValue.length; i++ ) {
       pathValue[i] += operandPath[i];
    }
   }
 
-  public <region R>void inc_pathValue2(double[] operandPath) 
+  public void inc_pathValue2(PathValue operandPath) 
   {
 	for (int i=0;i<pathValue.length;i++) {
 	    pathValue[i] += operandPath[i];
@@ -221,11 +219,7 @@ public class RatePath<region P> extends PathId<P> {
     * @return Value of instance variable <code>pathValue</code>.
     * @exception DemoException thrown if instance variable <code>pathValue</code> is undefined.
     */
-  public double[] get_pathValue() /*throws DemoException*/ {
-	  /*
-    if( this.pathValue == null )
-      throw new DemoException("Variable pathValue is undefined!");
-      */
+  public PathValue get_pathValue() /*throws DemoException*/ {
     return(this.pathValue);
   }
   /**
@@ -233,7 +227,7 @@ public class RatePath<region P> extends PathId<P> {
     *
     * @param pathValue the value to set for the instance variable <code>pathValue</code>.
     */
-  public void set_pathValue(double[] pathValue) {
+  public void set_pathValue(PathValue pathValue) {
     this.pathValue = pathValue;
   }
   /**
@@ -285,7 +279,7 @@ public class RatePath<region P> extends PathId<P> {
     *                          calculation.
     */
   // TODO main computation method. potential parallelism around for loops.
-  public ReturnPath<P> getReturnCompounded() throws DemoException {
+  public ReturnPath getReturnCompounded() throws DemoException {
     if( pathValue == null || nAcceptedPathValue == 0 ) {
       throw new DemoException("The Rate Path has not been defined!");
     }
@@ -294,7 +288,7 @@ public class RatePath<region P> extends PathId<P> {
     //*******************************************************************
     // array of double type with size of # of accepted path value
     //*******************************************************************
-    double[] returnPathValue = new double[nAcceptedPathValue];
+    PathValue returnPathValue = new PathValue(nAcceptedPathValue);
     returnPathValue[0] = 0.0;
     
     try{
@@ -309,7 +303,7 @@ public class RatePath<region P> extends PathId<P> {
     }
     
     // initialize return path
-    ReturnPath<P> rPath = new ReturnPath<P>(returnPathValue, nAcceptedPathValue,ReturnPath.COMPOUNDED);
+    ReturnPath rPath = new ReturnPath(returnPathValue, nAcceptedPathValue,ReturnPath.COMPOUNDED);
     //
     // Copy the PathId information to the ReturnPath object.
     rPath.copyInstanceVariables(this);
@@ -326,17 +320,16 @@ public class RatePath<region P> extends PathId<P> {
     * @exception DemoException thrown if there is a problem with the
     *                          calculation.
     */
-  public ReturnPath<P> getReturnNonCompounded()
+  public ReturnPath getReturnNonCompounded()
       throws DemoException 
   {
     
     if( pathValue == null || nAcceptedPathValue == 0 ) {
       throw new DemoException("The Rate Path has not been defined!");
     }
-    double[] returnPathValue = new double[nAcceptedPathValue];
+    PathValue returnPathValue = new PathValue(nAcceptedPathValue);
     returnPathValue[0] = 0.0;
     try{
-      // TODO parallelizable? 
     	for(int i=1; i< nAcceptedPathValue; i++ ) {
 	returnPathValue[i] = (pathValue[i] - pathValue[i-1])/pathValue[i];
       }
@@ -344,8 +337,8 @@ public class RatePath<region P> extends PathId<P> {
       throw new DemoException("Error in getReturnPercentage:"+aex.toString());
     }
   
-    ReturnPath<P> rPath = new ReturnPath<P>(returnPathValue, nAcceptedPathValue, 
-    ReturnPath.NONCOMPOUNDED);
+    ReturnPath rPath = new ReturnPath(returnPathValue, nAcceptedPathValue, 
+				      ReturnPath.NONCOMPOUNDED);
     //
     // Copy the PathId information to the ReturnPath object. (name, date...)
     rPath.copyInstanceVariables(this);
@@ -391,8 +384,11 @@ public class RatePath<region P> extends PathId<P> {
     * @exception DemoException thrown if there was a problem with the data
     *                          file.
     */
-  // TODO cannot serialize; just copy the body
-  private void readRatesFile(String dirName, String filename) throws DemoException {
+  private void readRatesFile(String dirName, String filename) 
+  // TODO
+      //writes Data via this
+      throws DemoException 
+  {
     java.io.File ratesFile = new File(dirName, filename);
     java.io.BufferedReader in;
     if( ! ratesFile.canRead() ) {
@@ -425,7 +421,7 @@ public class RatePath<region P> extends PathId<P> {
     // Now create an array to store the rates data.
     // two arrays of double type and int type
     // **********************************************************************
-    this.pathValue = new double[nLines];
+    this.pathValue = new PathValue(nLines);
     this.pathDate  = new int[nLines];
     // **********************************************************************
     nAcceptedPathValue=0;

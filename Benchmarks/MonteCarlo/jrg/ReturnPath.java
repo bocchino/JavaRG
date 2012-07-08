@@ -14,7 +14,7 @@ import jsr166y.forkjoin.*;
   * @author H W Yau
   * @version $Revision: 1.21 $ $Date: 1999/02/16 18:52:41 $
   */
-public class ReturnPath<region P> extends PathId<P> {
+public class ReturnPath extends PathId {
 	
   //------------------------------------------------------------------------
   // Class variables.
@@ -22,25 +22,25 @@ public class ReturnPath<region P> extends PathId<P> {
   /**
     * A class variable, for setting whether to print debug messages or not.
     */
-  public static boolean DEBUG=true;
+  public static final boolean DEBUG=true;
   /**
     * Class variable, for defining the prompt to print in front of debug
     * messages.
     */
-  protected static String prompt="ReturnPath> ";
+  protected static final String prompt="ReturnPath> ";
   /**
     * Flag for indicating one of the return definitions, via:
     *       u_i = \ln{\frac{S_i}{S_{i-1}}}
     * corresponding to the instantaneous compounded return.
     */
-  public static int COMPOUNDED = 1;
+  public static final int COMPOUNDED = 1;
 
   /**
     * Flag for indicating one of the return definitions, via:
     *       u_i = \frac{S_i - S_{i-1}}{S_i}
     * corresponding to the instantaneous non-compounded return.
     */
-  public static int NONCOMPOUNDED = 2;
+  public static final int NONCOMPOUNDED = 2;
 
   //------------------------------------------------------------------------
   // Instance variables.
@@ -48,37 +48,36 @@ public class ReturnPath<region P> extends PathId<P> {
   /**
     * An instance variable, for storing the return values.
     */
-  //private double[] pathValue;
-  private double[] pathValue in P;
+  private final PathValue pathValue;
   /**
     * The number of accepted values in the rate path.
     */
-  private int nPathValue in P =0;
+  private final int nPathValue;
   /**
     * Integer flag for indicating how the return was calculated.
     */
-  private int returnDefinition in P = 0;
+  private final int returnDefinition;
   /**
     * Value for the expected return rate.
     */
-  private double expectedReturnRate in P = Double.NaN;
+  private double expectedReturnRate in Data = Double.NaN;
   /**
     * Value for the volatility, calculated from the return data.
     */
-  private double volatility in P = Double.NaN;
+  private double volatility in Data = Double.NaN;
   /**
     * Value for the volatility-squared, a more natural quantity
     * to use for many of the calculations.
     */
-  private double volatility2 in P = Double.NaN;
+  private double volatility2 in Data = Double.NaN;
   /**
     * Value for the mean of this return.
     */
-  private double mean in P = Double.NaN;
+  private double mean in Data = Double.NaN;
   /**
     * Value for the variance of this return.
     */
-  private double variance in P = Double.NaN;
+  private double variance in Data = Double.NaN;
 
   //------------------------------------------------------------------------
   // Constructors.
@@ -90,6 +89,9 @@ public class ReturnPath<region P> extends PathId<P> {
     super();
     set_prompt(prompt);
     set_DEBUG(DEBUG);
+    pathValue = null;
+    nPathValue = 0;
+    returnDefinition = 0;
   }
 
   /**
@@ -101,7 +103,7 @@ public class ReturnPath<region P> extends PathId<P> {
     * @param returnDefinition to tell this class how the return path values
     *                         were computed.
     */
-  public ReturnPath(double[] pathValue, int nPathValue, int returnDefinition) {
+  public ReturnPath(PathValue pathValue, int nPathValue, int returnDefinition) {
 	    set_prompt(prompt);
 	    set_DEBUG(DEBUG);
 	    this.pathValue = pathValue;
@@ -122,18 +124,10 @@ public class ReturnPath<region P> extends PathId<P> {
     * @return Value of instance variable <code>pathValue</code>.
     * @exception DemoException thrown if instance variable <code>pathValue</code> is undefined.
     */
-  public double[] get_pathValue() throws DemoException {
+  public PathValue get_pathValue() throws DemoException {
     if( this.pathValue == null )
       throw new DemoException("Variable pathValue is undefined!");
     return(this.pathValue);
-  }
-  /**
-    * Set method for private instance variable <code>pathValue</code>.
-    *
-    * @param pathValue the value to set for the instance variable <code>pathValue</code>.
-    */
-  public void set_pathValue(double[] pathValue) {
-    this.pathValue = pathValue;
   }
   /**
     * Accessor method for private instance variable <code>nPathValue</code>.
@@ -147,14 +141,6 @@ public class ReturnPath<region P> extends PathId<P> {
     return(this.nPathValue);
   }
   /**
-    * Set method for private instance variable <code>nPathValue</code>.
-    *
-    * @param nPathValue the value to set for the instance variable <code>nPathValue</code>.
-    */
-  public void set_nPathValue(int nPathValue) {
-    this.nPathValue = nPathValue;
-  }
-  /**
     * Accessor method for private instance variable <code>returnDefinition</code>.
     *
     * @return Value of instance variable <code>returnDefinition</code>.
@@ -164,14 +150,6 @@ public class ReturnPath<region P> extends PathId<P> {
     if( this.returnDefinition == 0 )
       throw new DemoException("Variable returnDefinition is undefined!");
     return(this.returnDefinition);
-  }
-  /**
-    * Set method for private instance variable <code>returnDefinition</code>.
-    *
-    * @param returnDefinition the value to set for the instance variable <code>returnDefinition</code>.
-    */
-  public void set_returnDefinition(int returnDefinition) {
-    this.returnDefinition = returnDefinition;
   }
   /**
     * Accessor method for private instance variable <code>expectedReturnRate</code>.
@@ -185,14 +163,6 @@ public class ReturnPath<region P> extends PathId<P> {
     return(this.expectedReturnRate);
   }
   /**
-    * Set method for private instance variable <code>expectedReturnRate</code>.
-    *
-    * @param expectedReturnRate the value to set for the instance variable <code>expectedReturnRate</code>.
-    */
-  public void set_expectedReturnRate(double expectedReturnRate) {
-    this.expectedReturnRate = expectedReturnRate;
-  }
-  /**
     * Accessor method for private instance variable <code>volatility</code>.
     *
     * @return Value of instance variable <code>volatility</code>.
@@ -202,14 +172,6 @@ public class ReturnPath<region P> extends PathId<P> {
     if( this.volatility == Double.NaN )
       throw new DemoException("Variable volatility is undefined!");
     return(this.volatility);
-  }
-  /**
-    * Set method for private instance variable <code>volatility</code>.
-    *
-    * @param volatility the value to set for the instance variable <code>volatility</code>.
-    */
-  public void set_volatility(double volatility) {
-    this.volatility = volatility;
   }
   /**
     * Accessor method for private instance variable <code>volatility2</code>.
@@ -223,14 +185,6 @@ public class ReturnPath<region P> extends PathId<P> {
     return(this.volatility2);
   }
   /**
-    * Set method for private instance variable <code>volatility2</code>.
-    *
-    * @param volatility2 the value to set for the instance variable <code>volatility2</code>.
-    */
-  public void set_volatility2(double volatility2) {
-    this.volatility2 = volatility2;
-  }
-  /**
     * Accessor method for private instance variable <code>mean</code>.
     *
     * @return Value of instance variable <code>mean</code>.
@@ -242,14 +196,6 @@ public class ReturnPath<region P> extends PathId<P> {
     return(this.mean);
   }
   /**
-    * Set method for private instance variable <code>mean</code>.
-    *
-    * @param mean the value to set for the instance variable <code>mean</code>.
-    */
-  public void set_mean(double mean) {
-    this.mean = mean;
-  }
-  /**
     * Accessor method for private instance variable <code>variance</code>.
     *
     * @return Value of instance variable <code>variance</code>.
@@ -259,14 +205,6 @@ public class ReturnPath<region P> extends PathId<P> {
     if( this.variance == Double.NaN )
       throw new DemoException("Variable variance is undefined!");
     return(this.variance);
-  }
-  /**
-    * Set method for private instance variable <code>variance</code>.
-    *
-    * @param variance the value to set for the instance variable <code>variance</code>.
-    */
-  public void set_variance(double variance) {
-    this.variance = variance;
   }
   //------------------------------------------------------------------------
   /**

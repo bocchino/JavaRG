@@ -12,7 +12,7 @@ import java.io.*;
   * @author H W Yau
   * @version $Revision: 1.18 $ $Date: 1999/02/16 18:51:28 $
   */
-public class MonteCarloPath<region P> extends PathId<P> {
+public class MonteCarloPath extends PathId {
 
   //------------------------------------------------------------------------
   // Class variables.
@@ -21,11 +21,11 @@ public class MonteCarloPath<region P> extends PathId<P> {
     * Class variable for determining whether to switch on debug output or
     * not.
     */
-  public static boolean DEBUG=true;
+  public static final boolean DEBUG=true;
   /**
     * Class variable for defining the debug message prompt.
     */
-  protected static String prompt="MonteCarloPath> ";
+  protected static final String prompt="MonteCarloPath> ";
   /**
     * Class variable for determining which field in the stock data should be
     * used.  This is currently set to point to the 'closing price', as
@@ -40,32 +40,32 @@ public class MonteCarloPath<region P> extends PathId<P> {
     * Random fluctuations generated as a series of random numbers with
     * given distribution.
     */
-  private double[] fluctuations in P;
+  private double[] fluctuations in Data;
   /**
     * The path values from which the random fluctuations are used to update.
     */
-  private double[] pathValue in P;
+  private unique PathValue pathValue in Data;
   /**
     * Integer flag for determining how the return was calculated, when
     * used to calculate the mean drift and volatility parameters.
     */
-  private int returnDefinition in P;
+  private int returnDefinition in Data;
   /**
     * Value for the mean drift, for use in the generation of the random path.
     */
-  private double expectedReturnRate in P;
+  private double expectedReturnRate in Data;
   /**
     * Value for the volatility, for use in the generation of the random path.
     */
-  private double volatility in P;
+  private double volatility in Data;
   /**
     * Number of time steps for which the simulation should act over.
     */
-  private int nTimeSteps in P;
+  private int nTimeSteps in Data;
   /**
     * The starting value for of the security.
     */
-  private double pathStartValue in P;
+  private double pathStartValue in Data;
   //------------------------------------------------------------------------
   // Constructors.
   //------------------------------------------------------------------------
@@ -74,15 +74,17 @@ public class MonteCarloPath<region P> extends PathId<P> {
     * new instances of this class.  The instance variables for this should
     * then be initialised with the <code>setInitAllTasks()</code> method.
     */
-  public MonteCarloPath() {
+  public MonteCarloPath() 
+      writes Data
+  {
     super();
 
-	// init moved here (5/18)
-	returnDefinition = 0;
-	expectedReturnRate = Double.NaN;
-	volatility = Double.NaN;
-	nTimeSteps = 0;
-	pathStartValue = 0;
+    // init moved here (5/18)
+    returnDefinition = 0;
+    expectedReturnRate = Double.NaN;
+    volatility = Double.NaN;
+    nTimeSteps = 0;
+    pathStartValue = 0;
 
     set_prompt(prompt);
     set_DEBUG(DEBUG);
@@ -112,7 +114,7 @@ public class MonteCarloPath<region P> extends PathId<P> {
 
     copyInstanceVariables(returnPath);
     this.nTimeSteps = nTimeSteps;
-    this.pathValue = new double[nTimeSteps];
+    this.pathValue = new PathValue(nTimeSteps);
     this.fluctuations = new double[nTimeSteps];
     /**
       * Whether to debug, and how.
@@ -136,7 +138,7 @@ public class MonteCarloPath<region P> extends PathId<P> {
     * @exception DemoException Thrown if there is a problem initialising the
     *                          object's instance variables.
     */
-  public MonteCarloPath(PathId<P> pathId, int returnDefinition, double expectedReturnRate, 
+  public MonteCarloPath(PathId pathId, int returnDefinition, double expectedReturnRate, 
   double volatility, int nTimeSteps) throws DemoException {
     /**
       * These instance variables are members of PathId class.
@@ -148,7 +150,7 @@ public class MonteCarloPath<region P> extends PathId<P> {
     this.expectedReturnRate = expectedReturnRate;
     this.volatility         = volatility;
     this.nTimeSteps         = nTimeSteps;
-    this.pathValue          = new double[nTimeSteps];
+    this.pathValue          = new PathValue(nTimeSteps);
     this.fluctuations       = new double[nTimeSteps];
     /**
       * Whether to debug, and how.
@@ -190,7 +192,7 @@ public class MonteCarloPath<region P> extends PathId<P> {
     this.expectedReturnRate = expectedReturnRate;
     this.volatility         = volatility;
     this.nTimeSteps         = nTimeSteps;
-    this.pathValue          = new double[nTimeSteps];
+    this.pathValue          = new PathValue(nTimeSteps);
     this.fluctuations       = new double[nTimeSteps];
     /**
       * Whether to debug, and how.
@@ -224,7 +226,9 @@ public class MonteCarloPath<region P> extends PathId<P> {
     * @param fluctuations the value to set for the instance variable 
     * <code>fluctuations</code>.
     */
-  public void set_fluctuations(double[] fluctuations) {
+  public void set_fluctuations(double[] fluctuations) 
+      writes Data via this
+  {
     this.fluctuations = fluctuations;
   }
   /**
@@ -234,7 +238,7 @@ public class MonteCarloPath<region P> extends PathId<P> {
     * @exception DemoException thrown if instance variable <code>pathValue</code> 
     * is undefined.
     */
-  public double[] get_pathValue() throws DemoException {
+  public PathValue get_pathValue() throws DemoException {
     if( this.pathValue == null )
       throw new DemoException("Variable pathValue is undefined!");
     return(this.pathValue);
@@ -244,8 +248,10 @@ public class MonteCarloPath<region P> extends PathId<P> {
     *
     * @param pathValue the value to set for the instance variable <code>pathValue</code>.
     */
-  public void set_pathValue(double[] pathValue) {
-    this.pathValue = pathValue;
+  public void set_pathValue(int nTimeSteps)
+      writes Data via this
+  {
+      this.pathValue = new PathValue(nTimeSteps);
   }
   /**
     * Accessor method for private instance variable <code>returnDefinition</code>.
@@ -265,7 +271,9 @@ public class MonteCarloPath<region P> extends PathId<P> {
     * @param returnDefinition the value to set for the instance variable 
     * <code>returnDefinition</code>.
     */
-  public void set_returnDefinition(int returnDefinition) {
+  public void set_returnDefinition(int returnDefinition) 
+      writes Data via this
+  {
     this.returnDefinition = returnDefinition;
   }
   /**
@@ -286,7 +294,9 @@ public class MonteCarloPath<region P> extends PathId<P> {
     * @param expectedReturnRate the value to set for the instance variable 
     * <code>expectedReturnRate</code>.
     */
-  public void set_expectedReturnRate(double expectedReturnRate) {
+  public void set_expectedReturnRate(double expectedReturnRate) 
+      writes Data via this
+  {
     this.expectedReturnRate = expectedReturnRate;
   }
   /**
@@ -307,7 +317,9 @@ public class MonteCarloPath<region P> extends PathId<P> {
     * @param volatility the value to set for the instance variable 
     * <code>volatility</code>.
     */
-  public void set_volatility(double volatility) {
+  public void set_volatility(double volatility) 
+      writes Data via this
+  {
     this.volatility = volatility;
   }
   /**
@@ -328,7 +340,9 @@ public class MonteCarloPath<region P> extends PathId<P> {
     * @param nTimeSteps the value to set for the instance variable 
     * <code>nTimeSteps</code>.
     */
-  public void set_nTimeSteps(int nTimeSteps) {
+  public void set_nTimeSteps(int nTimeSteps) 
+      writes Data via this
+  {
     this.nTimeSteps = nTimeSteps;
   }
   /**
@@ -349,7 +363,9 @@ public class MonteCarloPath<region P> extends PathId<P> {
     * @param pathStartValue the value to set for the instance variable 
     * <code>pathStartValue</code>.
     */
-  public void set_pathStartValue(double pathStartValue) {
+  public void set_pathStartValue(double pathStartValue) 
+      writes Data via this
+  {
     this.pathStartValue = pathStartValue;
   }
   //------------------------------------------------------------------------
@@ -439,8 +455,8 @@ public class MonteCarloPath<region P> extends PathId<P> {
     * @exception DemoException thrown if there was a problem creating
     *            the RatePath object.
     */
-  public RatePath<P> getRatePath() throws DemoException{
-    return(new RatePath<P>(this));
+  public RatePath getRatePath() throws DemoException{
+    return(new RatePath(this));
   }
   /**
     * Method for calculating the sequence of fluctuations, based around
@@ -455,9 +471,10 @@ public class MonteCarloPath<region P> extends PathId<P> {
     *                          the computation.
     */
  
-  // TODO main computation function. potential parallelism
-  // MC computation with the random seed value
-  public void computeFluctuationsGaussian(long randomSeed) throws DemoException {
+  public void computeFluctuationsGaussian(long randomSeed) 
+      writes Data via this
+      throws DemoException 
+  {
     if( nTimeSteps > fluctuations.length )
       throw new DemoException("Number of timesteps requested is greater than the allocated array!");
     //
@@ -510,18 +527,18 @@ public class MonteCarloPath<region P> extends PathId<P> {
     * @exception DemoException thrown if there are any problems with
     *                          the computation.
     */
-  
-  // TODO main computation method. 
-  public void computePathValue(double startValue) throws DemoException {
+  public <refgroup G>void computePathValue(double startValue) 
+      writes Data via this...G
+      throws DemoException 
+  {
     pathValue[0] = startValue;
-    if( returnDefinition == ReturnPath.COMPOUNDED || 
-    returnDefinition == ReturnPath.NONCOMPOUNDED) {
-    // may not be parallelized 
-    for(int i=1; i < nTimeSteps; i++ ) {
-	pathValue[i] = pathValue[i-1] * Math.exp(fluctuations[i]);
-      }
+    if (returnDefinition == ReturnPath.COMPOUNDED || 
+	returnDefinition == ReturnPath.NONCOMPOUNDED) {
+	for(int i=1; i < nTimeSteps; i++ ) {
+	    pathValue[i] = pathValue[i-1] * Math.exp(fluctuations[i]);
+	}
     } else {
-      throw new DemoException("Unknown or undefined update method.");
+	throw new DemoException("Unknown or undefined update method.");
     }
   }
 }

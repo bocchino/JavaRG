@@ -12,7 +12,7 @@ public class DemoException extends java.lang.Exception {
   /**
     * Flag for selecting whether to print the stack-trace dump.
     */
-  public static boolean DEBUG=true;
+  public static final boolean DEBUG=true;
 
   /**
     * Default constructor.
@@ -26,7 +26,9 @@ public class DemoException extends java.lang.Exception {
   /**
     * Default constructor for reporting an error message.
     */
-  public DemoException(String s) {
+  public DemoException(String s) 
+      pure
+  {
     super(s);
     if( DEBUG ) {
       printStackTrace();
