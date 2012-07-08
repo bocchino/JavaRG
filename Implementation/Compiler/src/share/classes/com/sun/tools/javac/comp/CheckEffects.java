@@ -333,6 +333,10 @@ public class CheckEffects extends EnvScanner { // DPJ
      */
     private DerefSet getDerefSetFor(JCExpression e, Env<AttrContext> env, Resolve rs) {
 	DerefSet derefSet = DerefSet.NONE;
+	if (e == null) return derefSet;
+	Symbol sym = e.getSymbol();
+	if (sym != null && (sym.flags() & STATIC) != 0)	
+	    return derefSet;
 	if (e instanceof JCIdent) {
 	    JCIdent id = (JCIdent) e;
 	    if (id.sym.owner!=null && !id.sym.isLocal()
