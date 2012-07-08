@@ -1,4 +1,4 @@
-ALL ?= sequential-classes parallel-classes instrument-classes
+ALL ?= sequential-classes parallel-classes
 IMPLEMENTATION=${JRG_ROOT}/Implementation
 RUNTIME=${IMPLEMENTATION}/Runtime
 SCRIPTS=${JRG_ROOT}/Scripts

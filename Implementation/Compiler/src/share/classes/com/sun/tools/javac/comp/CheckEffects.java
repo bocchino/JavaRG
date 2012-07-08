@@ -233,7 +233,7 @@ public class CheckEffects extends EnvScanner { // DPJ
                 VarSymbol vsym = (VarSymbol) tree.sym;
                 if (inConstructor && isInstanceField(vsym)) return;
                 if (vsym.rpl == null) return;
-                result = Translation.<RPL>accessElt(vsym.rpl, types, tree);
+                result = Translation.<RPL>accessElt(vsym.rpl, types, tree, env);
             }
         }
 	
@@ -241,7 +241,7 @@ public class CheckEffects extends EnvScanner { // DPJ
             Type atype = tree.indexed.type;
             VarSymbol vsym = attr.getSymbolFor(tree, env);
             if (vsym == null || vsym.rpl == null) return;
-            result = Translation.<RPL>accessElt(vsym.rpl, types, tree);
+            result = Translation.<RPL>accessElt(vsym.rpl, types, tree, env);
         }
         @Override
         public void visitTree(JCTree tree) {

@@ -242,7 +242,7 @@ public class RPL
 	if (methSym != null) {
 	    MethodType methodType = (MethodType) tree.meth.type;
 	    RPL rpl = Translation.<RPL>accessElt(this, 
-		    rs.getTypes(), tree.meth);
+		    rs.getTypes(), tree.meth, env);
 	    if (methSym.rgnParams != null)
 		rpl = rpl.substRPLs(methSym.rgnParams, 
 			methodType.regionActuals);

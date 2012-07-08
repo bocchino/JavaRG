@@ -2471,7 +2471,7 @@ public class Attr extends JCTree.Visitor {
 	if (sym instanceof VarSymbol) {
 	    varSym = (VarSymbol) sym;
 	    refPerm = Translation.accessElt(env.info.scope.getRefPermFor(varSym),
-		    types, tree);	    
+		    types, tree, env);	    
 	} 
 	else if (tree instanceof JCArrayAccess) {
 	    JCArrayAccess aa = (JCArrayAccess) tree;

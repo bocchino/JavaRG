@@ -1947,6 +1947,14 @@ public class Pretty extends JCTree.Visitor {
 	Types.printDPJ = oldPrintDPJ;
     }
     
+    private boolean isArrayClass(Type type) {
+	if (type instanceof ClassType) {
+	    ClassType ct = (ClassType) type;
+	    return ct.cellType != null;
+	}
+	return false;
+    }
+    
     public void visitIdent(JCIdent tree) {
         try {
             if (needDPJThis && tree.toString().equals("this"))
@@ -1955,7 +1963,9 @@ public class Pretty extends JCTree.Visitor {
         	print (tree.sym.owner.type + "." + "this");
             } 
             else if (tree.sym instanceof ClassSymbol) {
-        	printType(tree.sym.type);
+        	if (isArrayClass(tree.sym.type))
+        	    printType(tree.sym.type);
+        	else print(tree.name);
             }
             else if (symbolIsMangled(tree.sym)) {
         	print(newMangle(tree.sym));

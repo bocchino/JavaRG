@@ -143,7 +143,7 @@ public abstract class RefGroup
 	    if (methSym != null) {
 		MethodType methodType = (MethodType) tree.meth.type;
 		RefGroup refGroup = Translation.<RefGroup>accessElt(this, 
-			rs.getTypes(), tree.meth);
+			rs.getTypes(), tree.meth, env);
 	            refGroup = refGroup.substRefGroups(methSym.refGroupParams, 
 	        	    methodType.refGroupActuals);
 	            return refGroup;

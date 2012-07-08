@@ -7,6 +7,7 @@ import com.sun.tools.javac.comp.Resolve;
 import com.sun.tools.javac.tree.JCTree.JCArrayAccess;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
+import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.util.List;
@@ -59,7 +60,7 @@ public class Translation {
         
     /** Perform 'as member of' implied by a selection */
     public static <T extends AsMemberOf<T>> T accessElt(T elt, Types types, 
-	    JCExpression tree) {
+	    JCExpression tree, Env<AttrContext> env) {
 	if (tree instanceof JCFieldAccess) {
 	    JCFieldAccess fa = (JCFieldAccess) tree;
 	    return elt.asMemberOf(types, fa.selected.type);
@@ -68,15 +69,18 @@ public class Translation {
 	    JCArrayAccess aa = (JCArrayAccess) tree;
 	    return elt.asMemberOf(types, aa.indexed.type);
 	}
+	if (tree instanceof JCIdent) {
+	    return elt.asMemberOf(types, env.enclClass.sym.type);
+	}
 	return elt;
     }
     
     /** Perform 'accessElt' on a list of things */
     public static <T extends AsMemberOf<T>> List<T>accessElts(List<T> elts,
-	    Types types, JCExpression tree) {
+	    Types types, JCExpression tree, Env<AttrContext> env) {
 	if (tree instanceof JCFieldAccess) {
 	    ListBuffer<T> lb = ListBuffer.lb();
-	    for (T elt : elts) lb.append(accessElt(elt, types, tree));
+	    for (T elt : elts) lb.append(accessElt(elt, types, tree, env));
 	    return lb.toList();
 	}
 	return elts;
