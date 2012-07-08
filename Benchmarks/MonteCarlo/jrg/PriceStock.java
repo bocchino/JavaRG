@@ -9,7 +9,7 @@
   * @author H W Yau
   * @version $Revision: 1.5 $ $Date: 1999/02/16 18:52:15 $
   */
-public class PriceStock<refgroup G> extends Universal {
+public class PriceStock<region R> extends Universal<R> {
 
     //------------------------------------------------------------------------
   // Class variables.
@@ -34,28 +34,28 @@ public class PriceStock<refgroup G> extends Universal {
   // put MonteCarloPath object under the region for PriceStock
   // necessary for parallel processing of the outer foreach
   //
-  private final unique(G) MonteCarloPath mcPath;
+  private final MonteCarloPath<R> mcPath;
   /**
     * String identifier for a given task.
     */
-  private String taskHeader in Data;
+  private String taskHeader in R;
   /**
     * Random seed from which the Monte Carlo sequence is started.
     */
-  private long randomSeed in Data;
+  private long randomSeed in R;
   /**
     * Initial stock price value.
     */
-  private double pathStartValue in Data;
+  private double pathStartValue in R;
   /**
     * Object which represents the results from a given computation task.
     */
-  private ToResult result in Data;
-  private double expectedReturnRate in Data;
-  private double volatility in Data;
-  private double volatility2 in Data;
-  private double finalStockPrice in Data;
-  private PathValue pathValue in Data;
+  private ToResult result in R;
+  private double expectedReturnRate in R;
+  private double volatility in R;
+  private double volatility2 in R;
+  private double finalStockPrice in R;
+  private PathValue<R> pathValue in R;
 
   //------------------------------------------------------------------------
   // Constructors.
@@ -64,10 +64,10 @@ public class PriceStock<refgroup G> extends Universal {
     * Default constructor.
     */
   public PriceStock() 
-      writes Data
+      writes R
   {
     super();
-    mcPath = new MonteCarloPath();
+    mcPath = new MonteCarloPath<R>();
     set_prompt(prompt);
     set_DEBUG(DEBUG);
   }
@@ -84,8 +84,7 @@ public class PriceStock<refgroup G> extends Universal {
     * @param obj Object representing data which are common to all tasks.
     */
   public void setInitAllTasks(ToInitAllTasks initAllTasks) 
-      writes Data via this...G
-      preserves G
+      writes R
   {
     mcPath.set_name(initAllTasks.get_name());
     mcPath.set_startDate(initAllTasks.get_startDate());
@@ -108,8 +107,7 @@ public class PriceStock<refgroup G> extends Universal {
     * @param obj Object representing the data which defines a given task.
     */
   public void setTask(ToTask task) 
-      writes Data via this
-      preserves G
+      writes R via this
   {
     this.taskHeader     = task.get_header();
     this.randomSeed     = task.get_randomSeed();
@@ -119,14 +117,13 @@ public class PriceStock<refgroup G> extends Universal {
     * a given task.
     */
   public void run() 
-      //writes Data via this...G
-      preserves G
+      writes R
   {
     try{
       mcPath.computeFluctuationsGaussian(randomSeed);
       mcPath.computePathValue(pathStartValue);
-      RatePath rateP = new RatePath(mcPath);
-      ReturnPath returnP = rateP.getReturnCompounded();
+      RatePath<R> rateP = new RatePath<R>(mcPath);
+      ReturnPath<R> returnP = rateP.getReturnCompounded();
       returnP.estimatePath();
       expectedReturnRate = returnP.get_expectedReturnRate();
       volatility = returnP.get_volatility();
@@ -143,15 +140,15 @@ public class PriceStock<refgroup G> extends Universal {
    *
    * @return An object representing the computed results.
    */
-  public ToResult getResult() 
-      preserves G
+  public ToResult<R> getResult() 
+      reads R
   {
     String resultHeader = 
 	"Result of task with Header=" + taskHeader + 
 	": randomSeed=" + randomSeed + 
 	": pathStartValue="+ pathStartValue;
-    return new ToResult(resultHeader, expectedReturnRate,
-			volatility, volatility2, 
-			finalStockPrice,pathValue);
+    return new ToResult<R>(resultHeader, expectedReturnRate,
+			   volatility, volatility2, 
+			   finalStockPrice,pathValue);
   }
 }

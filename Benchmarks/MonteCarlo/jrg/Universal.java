@@ -7,9 +7,7 @@
   * @author H W Yau
   * @version $Revision: 1.7 $ $Date: 1999/02/16 18:53:43 $
   */
-public class Universal {
-
-    region Data;
+public class Universal<region R> {
 
   //------------------------------------------------------------------------
   // Class variables.
@@ -18,7 +16,7 @@ public class Universal {
     * Class variable, for whether to print debug messages.  This one is
     * unique to this class, and can hence be set in the one place.
     */
-  private boolean UNIVERSAL_DEBUG in Data;
+  private boolean UNIVERSAL_DEBUG in R;
   //------------------------------------------------------------------------
   // Instance variables.
   //------------------------------------------------------------------------
@@ -26,11 +24,11 @@ public class Universal {
     * Variable, for whether to print debug messages.  This one can
     * be set by subsequent child classes.
     */
-  private boolean DEBUG in Data;
+  private boolean DEBUG in R;
   /**
     * The prompt to write before any debug messages.
     */
-  private String prompt in Data;
+  private String prompt in R;
 
   //------------------------------------------------------------------------
   // Constructors.
@@ -67,7 +65,7 @@ public class Universal {
     * @return Value of instance variable <code>DEBUG</code>.
     */
   public boolean get_DEBUG()
-      reads Data via this
+      reads R
   {
     return(this.DEBUG);
   }
@@ -77,7 +75,7 @@ public class Universal {
     * @param DEBUG the value to set for the instance variable <code>DEBUG</code>.
     */
   public void set_DEBUG(boolean DEBUG) 
-      writes Data via this
+      writes R
   {
     this.DEBUG = DEBUG;
   }
@@ -87,7 +85,7 @@ public class Universal {
     * @return Value of instance variable <code>UNIVERSAL_DEBUG</code>.
     */
   public boolean get_UNIVERSAL_DEBUG() 
-      reads Data via this
+      reads R
     {
     return(this.UNIVERSAL_DEBUG);
   }
@@ -106,7 +104,7 @@ public class Universal {
     * @return Value of instance variable <code>prompt</code>.
     */
   public String get_prompt() 
-      reads Data via this
+      reads R
     {
     return(this.prompt);
   }
@@ -116,7 +114,7 @@ public class Universal {
     * @param prompt the value to set for the instance variable <code>prompt</code>.
     */
   public void set_prompt(String prompt) 
-      writes Data via this
+      writes R
   {
       this.prompt = prompt;
   }

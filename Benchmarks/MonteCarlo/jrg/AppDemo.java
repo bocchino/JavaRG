@@ -153,32 +153,22 @@ public class AppDemo extends Universal {
 
   public void runParallel() {
 	 	 
-      refgroup Run;
-
-      unique(Run) PriceStocks<Run> inputs =
-	  new PriceStocks<Run>(nRunsMC);
       results = new ResultArray(nRunsMC);
 
-      for each i in inputs {
-	      inputs[i] = new PriceStock<Run>();
-	  }
-      this.<refgroup Run>runParallel2(inputs);
-  }
-
-    public <refgroup Run>void 
-	runParallel2(unique(Run) PriceStocks<Run> inputs)
-	preserves Run
-    {
       for each i in results pardo {
-	  inputs[i].setInitAllTasks(initAllTasks);
+	  region Loop;
+
+	  PriceStock<Loop> ps = new PriceStock<Loop>();
+	  ps.setInitAllTasks(initAllTasks);
 	  // read the corresponding task and copy its value to PriceStock
-	  inputs[i].setTask(tasks[i]);
+	  ps.setTask(tasks[i]);
 
 	  // ****************************************************
 	  // main Monte Carlo computation
-	  inputs[i].run();
+	  ps.run();
 	  // ****************************************************
-	  results[i] = inputs[i].getResult();
+	  ToResult<Loop> result = ps.getResult();
+	  results[i] = (ToResult<Results>) result;
       }
     }
 	
@@ -203,9 +193,9 @@ public class AppDemo extends Universal {
     *            any values.
     */
 
- RatePath avgMCrate;
+ RatePath<Results> avgMCrate;
  ReentrantLock lock = new ReentrantLock();
- RatePath[] localAvgMCrate;
+ RatePath<Results>[] localAvgMCrate;
 
     void sumReduction(final int index, double localAvgExpectedReturnRateMC, 
 		      double localAvgVolatilityMC) 
@@ -232,11 +222,11 @@ public class AppDemo extends Universal {
     //
     // Create an instance of a RatePath, for accumulating the results of the
     // Monte Carlo simulations.
-    avgMCrate = new RatePath(nTimeStepsMC, "MC", 19990109, 19991231, dTime);
+    avgMCrate = new RatePath<Results>(nTimeStepsMC, "MC", 19990109, 19991231, dTime);
       
     // parallelize the reduction using local and tiling
     int tileSize = 100;
-    localAvgMCrate = new RatePath[nRunsMC/tileSize];  
+    localAvgMCrate = new RatePath<Results>[nRunsMC/tileSize];  
 
     for (int p = 0; p < nRunsMC/tileSize; ++p) {
 
@@ -245,11 +235,11 @@ public class AppDemo extends Universal {
     	double localAvgExpectedReturnRateMC = 0.0;
         double localAvgVolatilityMC = 0.0;
 
-	localAvgMCrate[p] = new RatePath(nTimeStepsMC, "MC", 19990109, 19991231, dTime);
+	localAvgMCrate[p] = new RatePath<Results>(nTimeStepsMC, "MC", 19990109, 19991231, dTime);
 
     	for (int i=start;i<end;i++) {
-	    ToResult returnMC = results[i];
-	    PathValue pathValue = returnMC.get_pathValue();
+	    ToResult<Results> returnMC = results[i];
+	    PathValue<Results> pathValue = returnMC.get_pathValue();
 	    localAvgMCrate[p].inc_pathValue(pathValue);
 
     	    // reductions (sum)

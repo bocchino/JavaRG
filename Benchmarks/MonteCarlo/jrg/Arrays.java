@@ -1,11 +1,11 @@
 arrayclass ResultArray {
-    ToResult in AppDemo.Arrays;
+    ToResult<AppDemo.Results> in AppDemo.Arrays;
 }
 
-arrayclass PriceStocks<refgroup G> {
-    unique(G) PriceStock<G> in AppDemo.Arrays;
+arrayclass PathValue<region R> {
+    double in R;
 }
 
-arrayclass PathValue {
-    double in Universal.Data;
+arrayclass StringArray<region R> {
+    String in R;
 }

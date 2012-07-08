@@ -12,7 +12,7 @@ import java.util.*;
   * @author H W Yau
   * @version $Revision: 1.28 $ $Date: 1999/02/16 18:52:29 $
   */
-public class RatePath extends PathId {
+public class RatePath<region R> extends PathId<R> {
 
   //------------------------------------------------------------------------
   // Class variables.
@@ -48,16 +48,16 @@ public class RatePath extends PathId {
   /**
     * An instance variable, for storing the rate's path values itself.
     */
-  private PathValue pathValue in Data;
+  private PathValue<R> pathValue in R;
   /**
     * An instance variable, for storing the corresponding date of the datum,
     * in 'YYYYMMDD' format.
     */
-  private int[] pathDate in Data;
+  private int[] pathDate in R;
   /**
     * The number of accepted values in the rate path.
     */
-  private int nAcceptedPathValue in Data =0;
+  private int nAcceptedPathValue in R =0;
 
   //------------------------------------------------------------------------
   // Constructors.
@@ -71,11 +71,11 @@ public class RatePath extends PathId {
     *                          the data file.
     */
   public RatePath(String filename) 
+      writes R
       throws DemoException 
-      
   {
       super(prompt,DEBUG);
-    readRatesFile(null,filename);
+      readRatesFile(null,filename);
   }
 
   /**
@@ -106,7 +106,7 @@ public class RatePath extends PathId {
     * @param dTime the time interval between successive path values, in
     *        fractions of a year.
     */
-  public RatePath(PathValue pathValue, String name, int startDate, int endDate, double dTime) {
+  public RatePath(PathValue<R> pathValue, String name, int startDate, int endDate, double dTime) {
     set_name(name);
     set_startDate(startDate);
     set_endDate(endDate);
@@ -125,8 +125,9 @@ public class RatePath extends PathId {
     * @exception DemoException thrown if there is an attempt to access
     *            an undefined variable.
     */
-  public RatePath(MonteCarloPath mc) throws DemoException 
-
+  public RatePath(MonteCarloPath<R> mc) 
+      writes R
+      throws DemoException 
   {
     //
     // Fields pertaining to the parent PathId object:
@@ -164,7 +165,7 @@ public class RatePath extends PathId {
     set_dTime(dTime);
     set_prompt(prompt);
     set_DEBUG(DEBUG);
-    this.pathValue = new PathValue(pathValueLength);
+    this.pathValue = new PathValue<R>(pathValueLength);
     this.nAcceptedPathValue = pathValue.length;
   }
   //------------------------------------------------------------------------
@@ -178,13 +179,13 @@ public class RatePath extends PathId {
     * @exception DemoException thrown if there is a mismatch between the
     *            lengths of the operand and target arrays.
     */
-  public void inc_pathValue(PathValue operandPath) /*throws DemoException*/ {
+  public void inc_pathValue(PathValue<R> operandPath) /*throws DemoException*/ {
     for(int i=0; i<pathValue.length; i++ ) {
       pathValue[i] += operandPath[i];
    }
   }
 
-  public void inc_pathValue2(PathValue operandPath) 
+  public void inc_pathValue2(PathValue<R> operandPath) 
   {
 	for (int i=0;i<pathValue.length;i++) {
 	    pathValue[i] += operandPath[i];
@@ -219,7 +220,7 @@ public class RatePath extends PathId {
     * @return Value of instance variable <code>pathValue</code>.
     * @exception DemoException thrown if instance variable <code>pathValue</code> is undefined.
     */
-  public PathValue get_pathValue() /*throws DemoException*/ {
+  public PathValue<R> get_pathValue() /*throws DemoException*/ {
     return(this.pathValue);
   }
   /**
@@ -227,7 +228,7 @@ public class RatePath extends PathId {
     *
     * @param pathValue the value to set for the instance variable <code>pathValue</code>.
     */
-  public void set_pathValue(PathValue pathValue) {
+  public void set_pathValue(PathValue<R> pathValue) {
     this.pathValue = pathValue;
   }
   /**
@@ -256,7 +257,9 @@ public class RatePath extends PathId {
      * 
      * @return The last value in the rate path.
      */
-  public double getEndPathValue() {
+  public double getEndPathValue() 
+      reads R
+  {
     return( getPathValue(pathValue.length-1) );
   }
   /**
@@ -266,7 +269,9 @@ public class RatePath extends PathId {
     * @param index the index on which to return the path value.
     * @return The value of the path at the designated index.
     */
-  public double getPathValue(int index) {
+  public double getPathValue(int index) 
+      reads R
+  {
     return(pathValue[index]);
   }
   /**
@@ -278,8 +283,10 @@ public class RatePath extends PathId {
     * @exception DemoException thrown if there is a problem with the
     *                          calculation.
     */
-  // TODO main computation method. potential parallelism around for loops.
-  public ReturnPath getReturnCompounded() throws DemoException {
+  public ReturnPath<R> getReturnCompounded() 
+      writes R
+      throws DemoException 
+  {
     if( pathValue == null || nAcceptedPathValue == 0 ) {
       throw new DemoException("The Rate Path has not been defined!");
     }
@@ -288,7 +295,7 @@ public class RatePath extends PathId {
     //*******************************************************************
     // array of double type with size of # of accepted path value
     //*******************************************************************
-    PathValue returnPathValue = new PathValue(nAcceptedPathValue);
+    PathValue<R> returnPathValue = new PathValue<R>(nAcceptedPathValue);
     returnPathValue[0] = 0.0;
     
     try{
@@ -303,7 +310,7 @@ public class RatePath extends PathId {
     }
     
     // initialize return path
-    ReturnPath rPath = new ReturnPath(returnPathValue, nAcceptedPathValue,ReturnPath.COMPOUNDED);
+    ReturnPath<R> rPath = new ReturnPath<R>(returnPathValue, nAcceptedPathValue,ReturnPath.COMPOUNDED);
     //
     // Copy the PathId information to the ReturnPath object.
     rPath.copyInstanceVariables(this);
@@ -320,14 +327,14 @@ public class RatePath extends PathId {
     * @exception DemoException thrown if there is a problem with the
     *                          calculation.
     */
-  public ReturnPath getReturnNonCompounded()
+  public ReturnPath<R> getReturnNonCompounded()
       throws DemoException 
   {
     
     if( pathValue == null || nAcceptedPathValue == 0 ) {
       throw new DemoException("The Rate Path has not been defined!");
     }
-    PathValue returnPathValue = new PathValue(nAcceptedPathValue);
+    PathValue<R> returnPathValue = new PathValue<R>(nAcceptedPathValue);
     returnPathValue[0] = 0.0;
     try{
     	for(int i=1; i< nAcceptedPathValue; i++ ) {
@@ -337,8 +344,8 @@ public class RatePath extends PathId {
       throw new DemoException("Error in getReturnPercentage:"+aex.toString());
     }
   
-    ReturnPath rPath = new ReturnPath(returnPathValue, nAcceptedPathValue, 
-				      ReturnPath.NONCOMPOUNDED);
+    ReturnPath<R> rPath = new ReturnPath<R>(returnPathValue, nAcceptedPathValue, 
+					    ReturnPath.NONCOMPOUNDED);
     //
     // Copy the PathId information to the ReturnPath object. (name, date...)
     rPath.copyInstanceVariables(this);
@@ -385,8 +392,7 @@ public class RatePath extends PathId {
     *                          file.
     */
   private void readRatesFile(String dirName, String filename) 
-  // TODO
-      //writes Data via this
+      writes R
       throws DemoException 
   {
     java.io.File ratesFile = new File(dirName, filename);
@@ -421,15 +427,17 @@ public class RatePath extends PathId {
     // Now create an array to store the rates data.
     // two arrays of double type and int type
     // **********************************************************************
-    this.pathValue = new PathValue(nLines);
+    this.pathValue = new PathValue<R>(nLines);
     this.pathDate  = new int[nLines];
     // **********************************************************************
     nAcceptedPathValue=0;
     iLine=0;
+
+    region Local;
     
     for( java.util.Enumeration enum_ = allLines.elements(); enum_.hasMoreElements(); ) {
 		 aLine = (String) enum_.nextElement();
-	      String[] field = Utilities.splitString(",",aLine);
+	      StringArray<Local> field = Utilities.<region Local>splitString(",",aLine);
 	      int aDate = Integer.parseInt("19"+field[0]);
 	      //
 	      // static double Double.parseDouble() method is a feature of JDK1.2!

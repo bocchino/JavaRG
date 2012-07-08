@@ -6,13 +6,13 @@
   * @author H W Yau
   * @version $Revision: 1.8 $ $Date: 1999/02/16 18:53:07 $
   */
-public class ToResult implements java.io.Serializable {
+public class ToResult<region R> implements java.io.Serializable {
   private final String header;
   private final double expectedReturnRate;
   private final double volatility;
   private final double volatility2;
   private final double finalStockPrice;
-  private final PathValue pathValue;
+  private final PathValue<R> pathValue;
 
   /**
     * Constructor, for the results from a computation.
@@ -21,7 +21,7 @@ public class ToResult implements java.io.Serializable {
     * @param pathValue Data computed by the Monte Carlo generator.
     */
   public ToResult(String header, double expectedReturnRate, double volatility, 
-		  double volatility2, double finalStockPrice, PathValue pathValue) 
+		  double volatility2, double finalStockPrice, PathValue<R> pathValue) 
     pure
   {
     this.header=header;
@@ -100,7 +100,7 @@ public class ToResult implements java.io.Serializable {
     *
     * @return Value of instance variable <code>pathValue</code>.
     */
-  public PathValue get_pathValue() 
+  public PathValue<R> get_pathValue() 
       pure
   {
     return(this.pathValue);

@@ -5,8 +5,8 @@
   * @version $Revision: 1.4 $ $Date: 1999/02/16 18:53:59 $
   */
 public final class Utilities {
-  public static boolean DEBUG=false;
-  private static String className="Utilities";
+  public static final boolean DEBUG=false;
+  private static final String className="Utilities";
 
   /**
     * Static method which behaves like the Unix `which' command.  OS
@@ -20,10 +20,12 @@ public final class Utilities {
     *                   or failing that the error message "<executable> not found.".
     */
   public static String which(String executable, String pathEnv) {
+      region Local;
+      
     String executablePath;
-    String paths[];
+    StringArray<Local> paths;
 
-    paths=splitString(System.getProperty("path.separator"),pathEnv);
+    paths=Utilities.<region Local>splitString(System.getProperty("path.separator"),pathEnv);
     for(int i=0; i<paths.length; i++ ) {
       if( paths[i].length() > 0 ) {
 	java.io.File pathFile=new java.io.File(paths[i]);
@@ -90,10 +92,12 @@ public final class Utilities {
     * @param arg       The string to be split.
     * @return          A string array of the split string.
     */
-  public static String[] splitString(String splitChar,String arg) {
+  public static <region R>StringArray<R> splitString(String splitChar,String arg) 
+      writes R
+    {
     String methodName="split";
 
-    String myArgs[];
+    StringArray<R> myArgs;
     int nArgs=0;
     int foundIndex=0, fromIndex=0;
     
@@ -104,7 +108,7 @@ public final class Utilities {
     if( DEBUG ) {
       System.out.println("DBG "+className+"."+methodName+": "+nArgs);
     }
-    myArgs = new String[nArgs+1];
+    myArgs = new StringArray<R>(nArgs+1);
     nArgs=0;
     fromIndex=0;
     while( (foundIndex=arg.indexOf(splitChar,fromIndex)) > -1 ) {
