@@ -253,14 +253,15 @@ public class RPL
     
     public RPL atNewClass(Resolve rs, Env<AttrContext> env, 
 	    JCNewClass tree) {
+	RPL result = this.asMemberOf(rs.getTypes(), tree.type);
 	MethodSymbol methSym = tree.getMethodSymbol();
 	if (methSym != null) {
 	    ListBuffer<RPL> rpls = ListBuffer.lb();
 	    for (DPJRegionPathList rpl : tree.regionArgs)
 		rpls.append(rpl.rpl);
-	    return this.substRPLs(methSym.rgnParams, rpls.toList());
+	    return result.substRPLs(methSym.rgnParams, rpls.toList());
 	}
-	return this;
+	return result;
     }    
 
     /**
