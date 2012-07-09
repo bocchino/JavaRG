@@ -181,11 +181,12 @@ public class Effects implements
      *   get deleted
      */
     public Effects inEnvironment(Resolve rs, Env<AttrContext> env,
-	    boolean pruneLocalEffects) {
+	    boolean pruneLocalEffects, boolean pruneEffectsOnThis) {
 	Effects newEffects = new Effects();
 	boolean changed = false;
 	for (Effect e : effects) {
-	    Effect newEffect = e.inEnvironment(rs, env, pruneLocalEffects);
+	    Effect newEffect = e.inEnvironment(rs, env, pruneLocalEffects,
+		    pruneEffectsOnThis);
 	    if (newEffect == null) {
 		changed = true;
 	    } else {

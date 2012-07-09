@@ -38,7 +38,7 @@ public abstract class Effect implements
     }
     
     public Effect inEnvironment(Resolve rs, Env<AttrContext> env, 
-	    boolean pruneLocalEffects) {
+	    boolean pruneLocalEffects, boolean pruneEffectsOnThis) {
 	return this;
     }
     
@@ -181,9 +181,9 @@ public abstract class Effect implements
 
 	@Override
 	public Effect inEnvironment(Resolve rs, Env<AttrContext> env, 
-		boolean pruneLocalEffects) {
+		boolean pruneLocalEffects, boolean pruneEffectsOnThis) {
 	    return new MemoryEffect(rpls, this.perm.inEnvironment(rs, env, 
-		    pruneLocalEffects));
+		    pruneLocalEffects, pruneEffectsOnThis));
 	}
 
 	public Effect coarsenWith(Set<RefGroup> updatedGroups,
@@ -308,8 +308,9 @@ public abstract class Effect implements
 
 	@Override
 	public Effect inEnvironment(Resolve rs, Env<AttrContext> env, 
-		boolean pruneLocalEffects) {
-	    Effects newEffects = withEffects.inEnvironment(rs, env, pruneLocalEffects);
+		boolean pruneLocalEffects, boolean pruneEffectsOnThis) {
+	    Effects newEffects = withEffects.inEnvironment(rs, env, pruneLocalEffects,
+		    pruneEffectsOnThis);
 	    return (newEffects == withEffects) ?
 		    this : new InvocationEffect(rpls, methSym, newEffects);
 	}

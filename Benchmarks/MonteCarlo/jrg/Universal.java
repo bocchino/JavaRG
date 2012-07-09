@@ -75,7 +75,7 @@ public class Universal<region R> {
     * @param DEBUG the value to set for the instance variable <code>DEBUG</code>.
     */
   public void set_DEBUG(boolean DEBUG) 
-      writes R
+      writes R via this
   {
     this.DEBUG = DEBUG;
   }
@@ -104,7 +104,7 @@ public class Universal<region R> {
     * @return Value of instance variable <code>prompt</code>.
     */
   public String get_prompt() 
-      reads R
+      reads R via this
     {
     return(this.prompt);
   }
@@ -114,7 +114,7 @@ public class Universal<region R> {
     * @param prompt the value to set for the instance variable <code>prompt</code>.
     */
   public void set_prompt(String prompt) 
-      writes R
+      writes R via this
   {
       this.prompt = prompt;
   }

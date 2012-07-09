@@ -48,7 +48,7 @@ public class RatePath<region R> extends PathId<R> {
   /**
     * An instance variable, for storing the rate's path values itself.
     */
-  private PathValue<R> pathValue in R;
+  public unique PathValue<R> pathValue in R;
   /**
     * An instance variable, for storing the corresponding date of the datum,
     * in 'YYYYMMDD' format.
@@ -106,7 +106,7 @@ public class RatePath<region R> extends PathId<R> {
     * @param dTime the time interval between successive path values, in
     *        fractions of a year.
     */
-  public RatePath(PathValue<R> pathValue, String name, int startDate, int endDate, double dTime) {
+  public RatePath(unique PathValue<R> pathValue, String name, int startDate, int endDate, double dTime) {
     set_name(name);
     set_startDate(startDate);
     set_endDate(endDate);
@@ -126,7 +126,7 @@ public class RatePath<region R> extends PathId<R> {
     *            an undefined variable.
     */
   public RatePath(MonteCarloPath<R> mc) 
-      writes R
+      writes R via mc
       throws DemoException 
   {
     //
@@ -220,7 +220,9 @@ public class RatePath<region R> extends PathId<R> {
     * @return Value of instance variable <code>pathValue</code>.
     * @exception DemoException thrown if instance variable <code>pathValue</code> is undefined.
     */
-  public PathValue<R> get_pathValue() /*throws DemoException*/ {
+  public PathValue<R> get_pathValue() /*throws DemoException*/ 
+      reads R via this
+  {
     return(this.pathValue);
   }
   /**
@@ -228,7 +230,7 @@ public class RatePath<region R> extends PathId<R> {
     *
     * @param pathValue the value to set for the instance variable <code>pathValue</code>.
     */
-  public void set_pathValue(PathValue<R> pathValue) {
+  public void set_pathValue(unique PathValue<R> pathValue) {
     this.pathValue = pathValue;
   }
   /**
@@ -258,7 +260,7 @@ public class RatePath<region R> extends PathId<R> {
      * @return The last value in the rate path.
      */
   public double getEndPathValue() 
-      reads R
+      reads R via this
   {
     return( getPathValue(pathValue.length-1) );
   }
@@ -270,7 +272,7 @@ public class RatePath<region R> extends PathId<R> {
     * @return The value of the path at the designated index.
     */
   public double getPathValue(int index) 
-      reads R
+      reads R via this
   {
     return(pathValue[index]);
   }
@@ -283,8 +285,11 @@ public class RatePath<region R> extends PathId<R> {
     * @exception DemoException thrown if there is a problem with the
     *                          calculation.
     */
-  public ReturnPath<R> getReturnCompounded() 
-      writes R
+  unique ReturnPath<R> rPath in R;
+  unique PathValue<R> returnPathValue in R;
+
+  public unique ReturnPath<R> getReturnCompounded() 
+      writes R via this
       throws DemoException 
   {
     if( pathValue == null || nAcceptedPathValue == 0 ) {
@@ -295,7 +300,7 @@ public class RatePath<region R> extends PathId<R> {
     //*******************************************************************
     // array of double type with size of # of accepted path value
     //*******************************************************************
-    PathValue<R> returnPathValue = new PathValue<R>(nAcceptedPathValue);
+    returnPathValue = new PathValue<R>(nAcceptedPathValue);
     returnPathValue[0] = 0.0;
     
     try{
@@ -310,7 +315,7 @@ public class RatePath<region R> extends PathId<R> {
     }
     
     // initialize return path
-    ReturnPath<R> rPath = new ReturnPath<R>(returnPathValue, nAcceptedPathValue,ReturnPath.COMPOUNDED);
+    rPath = new ReturnPath<R>(returnPathValue, nAcceptedPathValue,ReturnPath.COMPOUNDED);
     //
     // Copy the PathId information to the ReturnPath object.
     rPath.copyInstanceVariables(this);

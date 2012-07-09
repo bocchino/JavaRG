@@ -155,9 +155,9 @@ public class CheckEffects extends EnvScanner { // DPJ
     
     private boolean statementsInterfere(JCStatement stat, List<JCStatement> stats) {
 	for (JCStatement stat2 : stats) {
-	    Effects effects1 = stat.effects.inEnvironment(rs, childEnvs.head, false);
+	    Effects effects1 = stat.effects.inEnvironment(rs, childEnvs.head, false, false);
 	    effects1 = effects1.coarsenWith(updatedGroups, attr, parentEnv);
-	    Effects effects2 = stat2.effects.inEnvironment(rs, childEnvs.head, false);
+	    Effects effects2 = stat2.effects.inEnvironment(rs, childEnvs.head, false, false);
 	    effects2 = effects2.coarsenWith(updatedGroups, attr, parentEnv);
 	    if (!Effects.noninterferingEffects(effects1, effects2,
 			childEnvs.head, rpls, childEnvs.head.info.constraints))
@@ -375,13 +375,15 @@ public class CheckEffects extends EnvScanner { // DPJ
 	constEffects = new LinkedList<Pair<Effects, DiagnosticPosition>>();
 	super.visitClassDef(tree);
 	// Check declared constructor effects against initializers
-	initEffects = initEffects.inEnvironment(rs, parentEnv, true);
-	for (Pair<Effects, DiagnosticPosition> pair : constEffects) {
-	    Effects declaredEffects = pair.fst.inEnvironment(rs, parentEnv, true);
-	    if (!initEffects.areSubeffectsOf(declaredEffects, parentEnv, rs)) {
-		log.error(pair.snd, "bad.effect.summary");
-		System.err.println("Missing " + 
-			initEffects.missingFrom(declaredEffects, parentEnv, rs).trim(parentEnv, rs));
+	if (parentEnv != null) { // TODO 
+	    initEffects = initEffects.inEnvironment(rs, parentEnv, true, true);
+	    for (Pair<Effects, DiagnosticPosition> pair : constEffects) {
+		Effects declaredEffects = pair.fst.inEnvironment(rs, parentEnv, true, true);
+		if (!initEffects.areSubeffectsOf(declaredEffects, parentEnv, rs)) {
+		    log.error(pair.snd, "bad.effect.summary");
+		    System.err.println("Missing " + 
+			    initEffects.missingFrom(declaredEffects, parentEnv, rs).trim(parentEnv, rs));
+		}
 	    }
 	}
 	initEffects = savedInitEffects;
@@ -397,10 +399,10 @@ public class CheckEffects extends EnvScanner { // DPJ
 	if (tree.body != null) {
 	    if (!inConstructor(childEnvs.head)) {
 		actualEffects = 
-		    tree.body.effects.inEnvironment(rs, childEnvs.head, true);
+		    tree.body.effects.inEnvironment(rs, childEnvs.head, true, false);
 	    } else {
 		actualEffects =
-		    tree.body.getConstructorEffects().inEnvironment(rs, childEnvs.head, true);
+		    tree.body.getConstructorEffects().inEnvironment(rs, childEnvs.head, true, true);
 		// Add in constructor effects for later checking against initializers
 		constEffects.add(new Pair<Effects, DiagnosticPosition>(declaredEffects,
 			(tree.perms == null) ? tree.pos() : tree.perms.pos()));
@@ -440,7 +442,7 @@ public class CheckEffects extends EnvScanner { // DPJ
 	env.info.scope.enter(tree.indexVar.sym);
 	env.info.scope.leave();
 	if (tree.isParallel) {
-	    Effects effects = tree.body.effects.inEnvironment(rs, env, false);
+	    Effects effects = tree.body.effects.inEnvironment(rs, env, false, false);
 	    effects = effects.coarsenWith(updatedGroups, attr, env);
 	    Effects negatedEffects = 
 		    effects.substVars(permissions, List.of(tree.indexVar.sym), 

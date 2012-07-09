@@ -153,6 +153,8 @@ public class AppDemo extends Universal {
 
   public void runParallel() {
 	 	 
+      refgroup Run;
+
       results = new ResultArray(nRunsMC);
 
       for each i in results pardo {

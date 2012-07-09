@@ -88,7 +88,7 @@ public class PathId<region R> extends Universal<R> {
     * @exception DemoException thrown if instance variable <code>name</code> is undefined.
     */
   public String get_name() 
-      reads R
+      reads R via this
       throws DemoException 
   {
     if( this.name == null )
@@ -101,7 +101,7 @@ public class PathId<region R> extends Universal<R> {
     * @param name the value to set for the instance variable <code>name</code>.
     */
   public void set_name(String name) 
-      writes R 
+      writes R via this
   {
     this.name = name;
   }
@@ -112,7 +112,7 @@ public class PathId<region R> extends Universal<R> {
     * @exception DemoException thrown if instance variable <code>startDate</code> is undefined.
     */
   public int get_startDate() 
-      reads R
+      reads R via this
       throws DemoException 
   {
     if( this.startDate == 0 )
@@ -125,7 +125,7 @@ public class PathId<region R> extends Universal<R> {
     * @param startDate the value to set for the instance variable <code>startDate</code>.
     */
   public void set_startDate(int startDate)  
-      writes R 
+      writes R via this
   {
     this.startDate = startDate;
   }
@@ -136,7 +136,7 @@ public class PathId<region R> extends Universal<R> {
     * @exception DemoException thrown if instance variable <code>endDate</code> is undefined.
     */
   public int get_endDate() 
-      reads R
+      reads R via this
       throws DemoException 
   {
     if( this.endDate == 0 )
@@ -149,7 +149,7 @@ public class PathId<region R> extends Universal<R> {
     * @param endDate the value to set for the instance variable <code>endDate</code>.
     */
   public void set_endDate(int endDate)  
-      writes R 
+      writes R via this
   {
     this.endDate = endDate;
   }
@@ -160,7 +160,7 @@ public class PathId<region R> extends Universal<R> {
     * @exception DemoException thrown if instance variable <code>dTime</code> is undefined.
     */
   public double get_dTime() 
-      reads R 
+      reads R via this
       throws DemoException 
   {
     if( this.dTime == Double.NaN )
@@ -173,7 +173,7 @@ public class PathId<region R> extends Universal<R> {
     * @param dTime the value to set for the instance variable <code>dTime</code>.
     */
   public void set_dTime(double dTime) 
-      writes R 
+      writes R via this
   {
     this.dTime = dTime;
   }
@@ -187,7 +187,7 @@ public class PathId<region R> extends Universal<R> {
     *                          any undefined objects.
     */
   public void copyInstanceVariables(PathId<R> obj) 
-      writes R
+      reads R via obj writes R via this
       throws DemoException
   {
     this.name      = obj.get_name();

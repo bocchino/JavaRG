@@ -127,7 +127,7 @@ public class Tree<region R,refgroup G> {
 	unique(G) Node root = null;
         for each i in elts {
 		root = this.buildTreeRecursive(elts[i], expander,
-					    root, null, -1);
+					       root, null, -1);
         }
 	this.root = root;
     }

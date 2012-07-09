@@ -114,6 +114,10 @@ public class DerefSet implements
 	return exp;
     }
     
+    public boolean isThis() {
+	return exp != null && exp.getSymbol().toString().equals("this");
+    }
+    
     
     /**
      * Is this a valid dereference set?  Requirements:

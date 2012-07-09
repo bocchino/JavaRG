@@ -48,7 +48,7 @@ public class ReturnPath<region R> extends PathId<R> {
   /**
     * An instance variable, for storing the return values.
     */
-  private final PathValue<R> pathValue;
+  private final unique PathValue<R> pathValue;
   /**
     * The number of accepted values in the rate path.
     */
@@ -103,8 +103,8 @@ public class ReturnPath<region R> extends PathId<R> {
     * @param returnDefinition to tell this class how the return path values
     *                         were computed.
     */
-  public ReturnPath(PathValue<R> pathValue, int nPathValue, int returnDefinition) 
-      writes R
+  public ReturnPath(unique PathValue<R> pathValue, int nPathValue, int returnDefinition) 
+      pure
   {
       set_prompt(prompt);
       set_DEBUG(DEBUG);
@@ -160,7 +160,7 @@ public class ReturnPath<region R> extends PathId<R> {
     * @exception DemoException thrown if instance variable <code>expectedReturnRate</code> is undefined.
     */
   public double get_expectedReturnRate() 
-      reads R
+      reads R via this
       throws DemoException 
   {
     if( this.expectedReturnRate == Double.NaN )
@@ -174,7 +174,7 @@ public class ReturnPath<region R> extends PathId<R> {
     * @exception DemoException thrown if instance variable <code>volatility</code> is undefined.
     */
   public double get_volatility() 
-      reads R
+      reads R via this
       throws DemoException 
   {
     if( this.volatility == Double.NaN )
@@ -188,7 +188,7 @@ public class ReturnPath<region R> extends PathId<R> {
     * @exception DemoException thrown if instance variable <code>volatility2</code> is undefined.
     */
   public double get_volatility2() 
-      reads R
+      reads R via this
       throws DemoException 
   {
     if( this.volatility2 == Double.NaN )
@@ -226,7 +226,7 @@ public class ReturnPath<region R> extends PathId<R> {
     * @exception DemoException thrown one tries to obtain an undefined variable.
     */
   public void computeExpectedReturnRate() 
-      writes R
+      writes R via this
       throws DemoException 
   {
     this.expectedReturnRate = mean/get_dTime() + 0.5*volatility2;
@@ -241,7 +241,7 @@ public class ReturnPath<region R> extends PathId<R> {
     *                          computation are undefined.
     */
   public void computeVolatility() 
-      writes R
+      writes R via this
       throws DemoException 
   {
     if( this.variance == Double.NaN ) 
@@ -258,7 +258,7 @@ public class ReturnPath<region R> extends PathId<R> {
     */
 
   public void computeMean() 
-      writes R
+      writes R via this
       throws DemoException
   {
     if( this.nPathValue == 0 )
@@ -281,7 +281,7 @@ public class ReturnPath<region R> extends PathId<R> {
     *            <code>nPathValue</code> values are undefined.
     */
   public void computeVariance() 
-      writes R
+      writes R via this
       throws DemoException
   {
     if( this.mean == Double.NaN || this.nPathValue == 0)
@@ -303,7 +303,7 @@ public class ReturnPath<region R> extends PathId<R> {
     *            variables.
     */
   public void estimatePath() 
-    writes R				    
+    writes R via this			    
     throws DemoException
   {
     computeMean();

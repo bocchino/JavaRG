@@ -34,7 +34,7 @@ public class PriceStock<region R> extends Universal<R> {
   // put MonteCarloPath object under the region for PriceStock
   // necessary for parallel processing of the outer foreach
   //
-  private final MonteCarloPath<R> mcPath;
+  private final unique MonteCarloPath<R> mcPath;
   /**
     * String identifier for a given task.
     */
@@ -116,21 +116,24 @@ public class PriceStock<region R> extends Universal<R> {
     * The business end.  Invokes the necessary computation routine, for a
     * a given task.
     */
+  private unique RatePath<R> rateP in R;
+  private unique ReturnPath<R> returnP in R;
+
   public void run() 
-      writes R
+      writes R via this
   {
     try{
       mcPath.computeFluctuationsGaussian(randomSeed);
       mcPath.computePathValue(pathStartValue);
-      RatePath<R> rateP = new RatePath<R>(mcPath);
-      ReturnPath<R> returnP = rateP.getReturnCompounded();
+      rateP = new RatePath<R>(mcPath);
+      returnP= rateP.getReturnCompounded();
       returnP.estimatePath();
       expectedReturnRate = returnP.get_expectedReturnRate();
       volatility = returnP.get_volatility();
       volatility2 = returnP.get_volatility2();
       
       finalStockPrice = rateP.getEndPathValue();
-      pathValue = mcPath.get_pathValue();
+      pathValue = rateP.get_pathValue();
     } catch( DemoException demoEx ) {
       errPrintln(demoEx.toString());
     }

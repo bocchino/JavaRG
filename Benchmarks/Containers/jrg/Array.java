@@ -3,10 +3,13 @@
  */
 public class Array<region R,refgroup G> {
 
-    public static abstract class Data<region R> {
-	public abstract <refgroup G>void updateParallel() 
-	    writes R via this...G;
-	public abstract void updateSequential();
+    public interface SequentialOperation {
+	public <region R>void op(Data<R> data);
+    }
+
+    public interface ParallelOperation {
+	public <region R>void op(Data<R> data)
+	    writes R via data;
     }
 
     private region Rep;
@@ -62,20 +65,22 @@ public class Array<region R,refgroup G> {
 	return !rep[idx];
     }
 
-    void updateAllParallel()
+    void updateAllParallel(ParallelOperation operation)
        reads R:* writes R via this...G
     {
 	for each i in rep pardo {
 		if (rep[i] != null) {
-		    this.rep[i].<refgroup G>updateParallel();
+		    operation.<region R>op(this.rep[i]);
 		}
 	    }
     }
 
-    void updateAllSequential() 
+    void updateAllSequential(SequentialOperation operation) 
     {
 	for each i in rep {
-		this.rep[i].updateSequential();
+		if (rep[i] != null) {
+		    operation.<region R>op(this.rep[i]);
+		}
 	    }
     }
 

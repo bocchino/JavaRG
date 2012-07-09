@@ -658,7 +658,11 @@ public abstract class Permission {
 	    }
 	    
 	    public EffectPerm inEnvironment(Resolve rs, Env<AttrContext> env, 
-			boolean pruneLocalEffects) {
+			boolean pruneLocalEffects, boolean pruneEffectsOnThis) {
+		if (pruneEffectsOnThis) {
+		    if (this.derefSet.isThis())
+			return EffectPerm.NONE;
+		}
 		RPL newRPL = rpl.inEnvironment(rs, env, pruneLocalEffects);
 		if (newRPL == RPL.NONE)
 		    return EffectPerm.NONE;

@@ -44,7 +44,7 @@ public class MonteCarloPath<region R> extends PathId<R> {
   /**
     * The path values from which the random fluctuations are used to update.
     */
-  private PathValue<R> pathValue in R;
+  public unique PathValue<R> pathValue in R;
   /**
     * Integer flag for determining how the return was calculated, when
     * used to calculate the mean drift and volatility parameters.
@@ -238,13 +238,13 @@ public class MonteCarloPath<region R> extends PathId<R> {
     * @exception DemoException thrown if instance variable <code>pathValue</code> 
     * is undefined.
     */
-  public PathValue<R> get_pathValue() 
-    reads R					     
-    throws DemoException 
+  public unique PathValue<R> get_pathValue() 
+      writes R via this
+      throws DemoException
   {
     if( this.pathValue == null )
       throw new DemoException("Variable pathValue is undefined!");
-    return(this.pathValue);
+    return(!this.pathValue);
   }
   /**
     * Set method for private instance variable <code>pathValue</code>.
@@ -333,7 +333,7 @@ public class MonteCarloPath<region R> extends PathId<R> {
     * is undefined.
     */
   public int get_nTimeSteps() 
-      reads R
+      reads R via this
       throws DemoException 
   {
     if( this.nTimeSteps == 0 )
@@ -478,7 +478,7 @@ public class MonteCarloPath<region R> extends PathId<R> {
     */
  
   public void computeFluctuationsGaussian(long randomSeed) 
-      writes R
+      writes R via this
       throws DemoException 
   {
     if( nTimeSteps > fluctuations.length )
@@ -534,7 +534,7 @@ public class MonteCarloPath<region R> extends PathId<R> {
     *                          the computation.
     */
   public void computePathValue(double startValue) 
-      writes R
+      writes R via this
       throws DemoException 
   {
     pathValue[0] = startValue;
