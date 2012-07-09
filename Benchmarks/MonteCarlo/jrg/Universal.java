@@ -7,7 +7,7 @@
   * @author H W Yau
   * @version $Revision: 1.7 $ $Date: 1999/02/16 18:53:43 $
   */
-public class Universal<region R> {
+public class Universal<region R> implements Data<R> {
 
   //------------------------------------------------------------------------
   // Class variables.

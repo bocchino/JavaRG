@@ -95,7 +95,7 @@ public class AppDemo extends Universal {
     double avgExpectedReturnRateMC in reductionR = 0.0;
     double avgVolatilityMC in reductionR = 0.0;
 
-    ToInitAllTasks initAllTasks = null;
+    ToInitAllTasks initAllTasks in TaskR = null;
 
     public void initParallel() {
     
@@ -151,29 +151,100 @@ public class AppDemo extends Universal {
       }
    }
 
-  public void runParallel() {
-	 	 
-      refgroup Run;
+    /**
+     * Main runParallel implementation; uses uniqueness
+     */
+    public void runParallel() {
+	results = new ResultArray(nRunsMC);
 
-      results = new ResultArray(nRunsMC);
+	if (true) {
+	    runParallelMapping();
+	    return;
+	}
 
-      for each i in results pardo {
-	  region Loop;
-
-	  PriceStock<Loop> ps = new PriceStock<Loop>();
-	  ps.setInitAllTasks(initAllTasks);
-	  // read the corresponding task and copy its value to PriceStock
-	  ps.setTask(tasks[i]);
-
-	  // ****************************************************
-	  // main Monte Carlo computation
-	  ps.run();
-	  // ****************************************************
-	  ToResult<Loop> result = ps.getResult();
-	  results[i] = (ToResult<Results>) result;
-      }
+	for each i in results pardo {
+		results[i] = 
+		    computeResult(new PriceStock<Results>(), i);
+	    }
     }
+
+    public ToResult<Results> computeResult(unique PriceStock<Results> ps, int i)
+	reads TaskR writes Results via ps 
+    {
+	ps.setInitAllTasks(initAllTasks);
+	// read the corresponding task and copy its value to PriceStock
+	ps.setTask(tasks[i]);
 	
+	// ****************************************************
+	// main Monte Carlo computation
+	ps.run();
+	// ****************************************************
+	return ps.getResult();
+    }
+
+    public void runParallelMapping() {
+	refgroup g1,g2;
+	DisjointArray<Results,g1> psArray = 
+	    new DisjointArray<Results,g1>(nRunsMC);
+	for (int i = 0; i < nRunsMC; ++i) {
+	    psArray.set(new PriceStock<Results>(),i);
+	}
+	DisjointArray<Results,g2> resultArray =
+	    psArray.<region TaskR,refgroup g2>withParallelMapping(new RunMapping<g2>());
+	for (int i = 0; i < nRunsMC; ++i) {
+	    results[i] = (ToResult<Results>) resultArray.getShared(i);
+	}
+    }
+
+    public class RunMapping<refgroup G>
+	implements DisjointArray.ParallelMapping<TaskR,G>
+    {
+	public <region R | R # TaskR>
+	    unique(G) Data<R> map(Data<R> ps, int i)
+	    reads TaskR writes R via ps
+	{
+	    switch (ps) instanceof {
+		case PriceStock<R>:
+		    ps.setInitAllTasks(initAllTasks);
+		    // read the corresponding task and copy its value to PriceStock
+		    ps.setTask(tasks[i]);
+		    
+		    // ****************************************************
+		    // main Monte Carlo computation
+		    ps.run();
+		    // ****************************************************
+		    return ps.<refgroup G>getResult();
+		}
+
+	    return null;
+	}
+
+    }
+
+    /**
+     * Alternate implementation of runParallel using local regions;
+     * not called by test harness.
+     */
+    public void runParallelLocalRegions() {
+	results = new ResultArray(nRunsMC);
+	
+	for each i in results pardo {
+		region Loop;
+		
+		PriceStock<Loop> ps = new PriceStock<Loop>();
+		ps.setInitAllTasks(initAllTasks);
+		// read the corresponding task and copy its value to PriceStock
+		ps.setTask(tasks[i]);
+		
+		// ****************************************************
+		// main Monte Carlo computation
+		ps.run();
+		// ****************************************************
+		ToResult<Loop> result = ps.getResult();
+		results[i] = (ToResult<Results>) result;
+	    }
+    }
+
   
   public void processParallel() {
       //

@@ -1,7 +1,7 @@
 /**
  * A simple disjoint array class
  */
-public class Array<region R,refgroup G> {
+public class DisjointArray<region R,refgroup G> {
 
     public interface SequentialOperation {
 	public <region R>void op(Data<R> data);
@@ -20,7 +20,7 @@ public class Array<region R,refgroup G> {
 
     private unique(G) RepArray rep in R:Rep;
 
-    public Array(int size) {
+    public DisjointArray(int size) {
 	rep = new RepArray(size);
     }
 
@@ -28,11 +28,11 @@ public class Array<region R,refgroup G> {
 	return rep.length;
     }
 
-    public <refgroup NewG>Array<R,NewG> freshArray() 
+    public <refgroup NewG>DisjointArray<R,NewG> freshArray() 
 	fresh NewG switches G, NewG
     {
-	Array<R,NewG> result = 
-	    new Array<R,NewG>(rep.length);
+	DisjointArray<R,NewG> result = 
+	    new DisjointArray<R,NewG>(rep.length);
 	unique(G) RepArray rep = !this.rep;
 	for each i in rep {
 		// Consumes 'copies rep[i] to NewG'

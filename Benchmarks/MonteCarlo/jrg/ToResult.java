@@ -6,7 +6,10 @@
   * @author H W Yau
   * @version $Revision: 1.8 $ $Date: 1999/02/16 18:53:07 $
   */
-public class ToResult<region R> implements java.io.Serializable {
+public class ToResult<region R> 
+    implements java.io.Serializable,
+	       Data<R>
+{
   private final String header;
   private final double expectedReturnRate;
   private final double volatility;

@@ -3,7 +3,7 @@ SRCS= ${wildcard dpj/*.java}
 CUTOFF ?= 100
 SIZE ?= 0
 NT ?=1
-HEAP ?= -Xmx1024m
+HEAP ?= -Xmx2048m
 
 include ../Makefile.common
 

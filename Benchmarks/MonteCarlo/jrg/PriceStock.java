@@ -84,7 +84,7 @@ public class PriceStock<region R> extends Universal<R> {
     * @param obj Object representing data which are common to all tasks.
     */
   public void setInitAllTasks(ToInitAllTasks initAllTasks) 
-      writes R
+      writes R via this
   {
     mcPath.set_name(initAllTasks.get_name());
     mcPath.set_startDate(initAllTasks.get_startDate());
@@ -143,8 +143,8 @@ public class PriceStock<region R> extends Universal<R> {
    *
    * @return An object representing the computed results.
    */
-  public ToResult<R> getResult() 
-      reads R
+  public <refgroup G>unique(G) ToResult<R> getResult() 
+      reads R via this
   {
     String resultHeader = 
 	"Result of task with Header=" + taskHeader + 

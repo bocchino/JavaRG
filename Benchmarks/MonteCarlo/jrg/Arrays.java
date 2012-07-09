@@ -2,6 +2,10 @@ arrayclass ResultArray {
     ToResult<AppDemo.Results> in AppDemo.Arrays;
 }
 
+arrayclass PriceStockArray {
+    unique PriceStock<AppDemo.Results> in AppDemo.Arrays;
+}
+
 arrayclass PathValue<region R> {
     double in R;
 }
