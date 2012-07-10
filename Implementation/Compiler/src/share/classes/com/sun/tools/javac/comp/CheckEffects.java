@@ -283,11 +283,13 @@ public class CheckEffects extends EnvScanner { // DPJ
      */    
     private void addReadEffect(JCExpression from, JCTreeWithEffects to) {
 	DerefSet derefSet = getDerefSetFor(from, parentEnv, rs);
-	RPL access = accessedRPL(from, false);
-	if (access != null)
-	    to.effects.add(MemoryEffect.readEffect(rpls, access, 
-		    derefSet));
-	access = accessedRPL(from, true);
+	if (!derefSet.isUniqueChain(attr, parentEnv)) {
+	    RPL access = accessedRPL(from, false);
+	    if (access != null)
+		to.effects.add(MemoryEffect.readEffect(rpls, access, 
+			derefSet));
+	    access = accessedRPL(from, true);
+	}
     }
     
     /**
@@ -309,11 +311,13 @@ public class CheckEffects extends EnvScanner { // DPJ
      */
     private void addWriteEffect(JCExpression from, JCTreeWithEffects to) {
 	DerefSet derefSet = getDerefSetFor(from, parentEnv, rs);
-	RPL access = accessedRPL(from, false);
-	if (access != null)
-	    to.effects.add(MemoryEffect.writeEffect(rpls, access, 
-		    derefSet)); 
-	access = accessedRPL(from, true);
+	if (!derefSet.isUniqueChain(attr, parentEnv)) {
+	    RPL access = accessedRPL(from, false);
+	    if (access != null)
+		to.effects.add(MemoryEffect.writeEffect(rpls, access, 
+			derefSet)); 
+	    access = accessedRPL(from, true);
+	}
     }
 
     /**

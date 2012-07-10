@@ -118,6 +118,33 @@ public class DerefSet implements
 	return exp != null && exp.getSymbol().toString().equals("this");
     }
     
+    /**
+     * Does this dereference set represent a chain of non-final unique permissions?
+     */
+    public boolean isUniqueChain(Attr attr, Env<AttrContext> env) {
+	return isUniqueChainHelper(this.exp, attr, env);
+    }
+    // where
+    private boolean isUniqueChainHelper(JCExpression exp, 
+	    Attr attr, Env<AttrContext> env) {
+	if (exp == null)
+	    return false;
+	if (exp.getSymbol() == null) {
+	    return false;
+	}
+	if ((exp.getSymbol().flags() & Flags.STATIC) != 0)
+	    return false;
+	RefGroup group = attr.getRefGroupFor(exp, env);
+	if (group != RefGroup.UNIQUE) 
+	    return false;
+	if (exp instanceof JCIdent)
+	    return true;
+	if (exp instanceof JCFieldAccess) {
+	    JCFieldAccess fa = (JCFieldAccess) exp;
+	    return isUniqueChainHelper(fa.selected, attr, env);
+	}
+	return false;
+    }
     
     /**
      * Is this a valid dereference set?  Requirements:
@@ -140,7 +167,7 @@ public class DerefSet implements
 	    if (!rs.isInScope(group, env) || !rs.isInScope(tg, env))
 		return false;
 	    // Groups must match
-	    if (group == RefGroup.NONE)
+	    if (group == RefGroup.UNIQUE || group == RefGroup.NONE)
 		return true;
 	    return group.equals(tg);
 	}
