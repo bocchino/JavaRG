@@ -2660,8 +2660,8 @@ public class Attr extends JCTree.Visitor {
         Type argtype = (JCTree.PREINC <= tree.getTag() && tree.getTag() <= JCTree.POSTDEC)
             ? attribTree(tree.arg, env, VAR, Type.noType)
             : chk.checkNonVoid(tree.arg.pos(), attribExpr(tree.arg, env));
-
-        // Find operator.
+            
+         // Find operator.
         Symbol operator = tree.operator = (tree.getTag() == JCTree.NOT) ?
         	rs.resolveUnaryOperator(tree.pos(), tree.getTag(), env, syms.booleanType) :
         	    rs.resolveUnaryOperator(tree.pos(), tree.getTag(), env, argtype);
@@ -2675,6 +2675,9 @@ public class Attr extends JCTree.Visitor {
      		if (tree.arg instanceof JCFieldAccess ||
      			tree.arg instanceof JCArrayAccess) {
      		    tree.isDestructiveAccess = true;
+     		    Symbol sym = tree.arg.getSymbol();
+     		    if (sym != null && ((sym.flags() & FINAL) != 0))
+     			log.error(tree.pos(), "cant.assign.val.to.final.var", sym);
      		    requireUpdatedGroupPermFor(tree.arg);
      		}
      		else {
