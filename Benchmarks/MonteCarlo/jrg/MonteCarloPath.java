@@ -44,7 +44,7 @@ public class MonteCarloPath<region R> extends PathId<R> {
   /**
     * The path values from which the random fluctuations are used to update.
     */
-  public unique PathValue<R> pathValue in R;
+  private unique PathValue<R> pathValue in R;
   /**
     * Integer flag for determining how the return was calculated, when
     * used to calculate the mean drift and volatility parameters.

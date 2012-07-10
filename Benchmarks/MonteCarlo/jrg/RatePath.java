@@ -226,14 +226,6 @@ public class RatePath<region R> extends PathId<R> {
     return(this.pathValue);
   }
   /**
-    * Set method for private instance variable <code>pathValue</code>.
-    *
-    * @param pathValue the value to set for the instance variable <code>pathValue</code>.
-    */
-  public void set_pathValue(unique PathValue<R> pathValue) {
-    this.pathValue = pathValue;
-  }
-  /**
     * Accessor method for private instance variable <code>pathDate</code>.
     *
     * @return Value of instance variable <code>pathDate</code>.
@@ -243,14 +235,6 @@ public class RatePath<region R> extends PathId<R> {
     if( this.pathDate == null )
       throw new DemoException("Variable pathDate is undefined!");
     return(this.pathDate);
-  }
-  /**
-    * Set method for private instance variable <code>pathDate</code>.
-    *
-    * @param pathDate the value to set for the instance variable <code>pathDate</code>.
-    */
-  public void set_pathDate(int[] pathDate)  {
-    this.pathDate = pathDate;
   }
   //------------------------------------------------------------------------
   /**
@@ -358,7 +342,7 @@ public class RatePath<region R> extends PathId<R> {
     // computation in ReturnPath class
     rPath.estimatePath();
     // ********************************************************************
-    return(rPath);
+    return(!this.rPath);
 
   }
   //------------------------------------------------------------------------

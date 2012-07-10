@@ -256,15 +256,11 @@ public class CheckEffects extends EnvScanner { // DPJ
      */
     private void addAll(JCTreeWithEffects from, JCTreeWithEffects to) {
 	to.effects.addAll(from.effects);
-	if (inConstructor(parentEnv))
-	    to.getConstructorEffects().addAll(from.getConstructorEffects());	
     }
     
     private void addAll(List<? extends JCTreeWithEffects> from, JCTreeWithEffects to) {
 	for (List<? extends JCTreeWithEffects> l = from; l.tail != null; l = l.tail) {
 	    to.effects.addAll(l.head.effects);
-	    if (inConstructor(parentEnv))
-		to.getConstructorEffects().addAll(l.head.getConstructorEffects());
 	}
     }
     
@@ -292,9 +288,6 @@ public class CheckEffects extends EnvScanner { // DPJ
 	    to.effects.add(MemoryEffect.readEffect(rpls, access, 
 		    derefSet));
 	access = accessedRPL(from, true);
-	if (access != null && inConstructor(parentEnv))
-	    to.getConstructorEffects().add(MemoryEffect.readEffect(rpls,
-		    access, derefSet));
     }
     
     /**
@@ -305,8 +298,6 @@ public class CheckEffects extends EnvScanner { // DPJ
      */    
     private void addAllWithWrite(JCExpression from, JCTreeWithEffects to) {
 	to.effects.addAll(from.effects);
-	if (inConstructor(parentEnv))
-	    to.getConstructorEffects().addAll(from.getConstructorEffects());
 	addWriteEffect(from, to);
     }
     
@@ -323,9 +314,6 @@ public class CheckEffects extends EnvScanner { // DPJ
 	    to.effects.add(MemoryEffect.writeEffect(rpls, access, 
 		    derefSet)); 
 	access = accessedRPL(from, true);
-	if (access != null)
-	    to.getConstructorEffects().add(MemoryEffect.writeEffect(rpls, 
-		    access, derefSet));
     }
 
     /**
@@ -375,14 +363,15 @@ public class CheckEffects extends EnvScanner { // DPJ
 	constEffects = new LinkedList<Pair<Effects, DiagnosticPosition>>();
 	super.visitClassDef(tree);
 	// Check declared constructor effects against initializers
-	if (parentEnv != null) { // TODO 
-	    initEffects = initEffects.inEnvironment(rs, parentEnv, true, true);
+	Env<AttrContext> env = childEnvs.head;
+	if (env != null) {
+	    initEffects = initEffects.inEnvironment(rs, env, true, true);
 	    for (Pair<Effects, DiagnosticPosition> pair : constEffects) {
-		Effects declaredEffects = pair.fst.inEnvironment(rs, parentEnv, true, true);
-		if (!initEffects.areSubeffectsOf(declaredEffects, parentEnv, rs)) {
+		Effects declaredEffects = pair.fst.inEnvironment(rs, env, true, true);
+		if (!initEffects.areSubeffectsOf(declaredEffects, env, rs)) {
 		    log.error(pair.snd, "bad.effect.summary");
 		    System.err.println("Missing " + 
-			    initEffects.missingFrom(declaredEffects, parentEnv, rs).trim(parentEnv, rs));
+			    initEffects.missingFrom(declaredEffects, parentEnv, rs).trim(env, rs));
 		}
 	    }
 	}
@@ -402,7 +391,7 @@ public class CheckEffects extends EnvScanner { // DPJ
 		    tree.body.effects.inEnvironment(rs, childEnvs.head, true, false);
 	    } else {
 		actualEffects =
-		    tree.body.getConstructorEffects().inEnvironment(rs, childEnvs.head, true, true);
+			tree.body.effects.inEnvironment(rs, childEnvs.head, true, true);
 		// Add in constructor effects for later checking against initializers
 		constEffects.add(new Pair<Effects, DiagnosticPosition>(declaredEffects,
 			(tree.perms == null) ? tree.pos() : tree.perms.pos()));
@@ -664,8 +653,6 @@ public class CheckEffects extends EnvScanner { // DPJ
 	    effects = effects.atCallSite(rs, parentEnv, tree);
 	    InvocationEffect ie = new InvocationEffect(rpls, sym, effects);
 	    tree.effects.add(ie);
-	    if (inConstructor(parentEnv))
-		tree.getConstructorEffects().add(ie);
 	}
     }
     
@@ -699,8 +686,6 @@ public class CheckEffects extends EnvScanner { // DPJ
 	    effects = effects.atNewClass(rs, parentEnv, tree);
 	    InvocationEffect ie = new InvocationEffect(rpls, sym, effects);
 	    tree.effects.add(ie);
-	    if (inConstructor(parentEnv))
-		tree.getConstructorEffects().add(ie);
 	}
 
     }
@@ -719,8 +704,6 @@ public class CheckEffects extends EnvScanner { // DPJ
     @Override public void visitPardo(JRGPardo tree) {
 	super.visitPardo(tree);
 	tree.effects = tree.body.effects;
-	if (inConstructor(parentEnv))
-	    tree.setConstructorEffects(tree.body.getConstructorEffects());
 	boolean interfere = false;
 	if (tree.body instanceof JCBlock) {
 	    interfere = statementsInterfere(((JCBlock) tree.body).stats);

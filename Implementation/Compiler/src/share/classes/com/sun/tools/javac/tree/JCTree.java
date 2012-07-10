@@ -669,19 +669,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 	 * Effects of this node and all its children
 	 */
 	public Effects effects = new Effects();
-	/**
-	 * Effects of this node and all its children, as seen inside a constructor
-	 * (effects on 'this' are masked).
-	 */
-	private Effects constructorEffects;
-	public Effects getConstructorEffects() {
-	    if (constructorEffects == null)
-		constructorEffects = new Effects();
-	    return constructorEffects;
-	}
-	public void setConstructorEffects(Effects e) {
-	    constructorEffects = e;
-	}
     }
     
     public static abstract class JCStatement extends JCTreeWithEffects implements StatementTree {
