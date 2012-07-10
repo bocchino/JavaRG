@@ -1,3 +1,8 @@
+/**
+ * Mask effect via unique field
+ * @author bocchino
+ *
+ */
 class MaskedEffectViaUniqueField {
     region r1, r2;
     unique Data data in r1;
@@ -12,5 +17,4 @@ class MaskedEffectViaUniqueField {
 	data.x = 1; // write to r2 is masked
     }
     
-
 }

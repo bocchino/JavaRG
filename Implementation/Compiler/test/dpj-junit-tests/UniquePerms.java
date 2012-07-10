@@ -20,5 +20,17 @@ public class UniquePerms extends DPJTestCase {
     @Test public void testMaskedEffectViaUniqueField() throws Throwable {
 	compile("MaskedEffectViaUniqueField");
     }
+    
+    @Test public void testErrorUniqueTreeEffect() throws Throwable {
+	compileExpectingErrors("ErrorUniqueTreeEffect", 1);
+    }
+    
+    @Test public void testErrorDontMaskFinalUniqueField() throws Throwable {
+	compileExpectingErrors("ErrorDontMaskFinalUniqueField", 1);	
+    }
+    
+    @Test public void testIncludeEffectOnFinalUniqueField() throws Throwable {
+	compile("IncludeEffectOnFinalUniqueField");
+    }
 
 }

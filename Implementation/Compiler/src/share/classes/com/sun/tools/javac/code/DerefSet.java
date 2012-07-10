@@ -1,5 +1,7 @@
 package com.sun.tools.javac.code;
 
+import static com.sun.tools.javac.code.Kinds.MTH;
+
 import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
@@ -119,7 +121,8 @@ public class DerefSet implements
     }
     
     /**
-     * Does this dereference set represent a chain of non-final unique permissions?
+     * Does this dereference set represent a chain of unique 
+     * permissions not including any final fields?
      */
     public boolean isUniqueChain(Attr attr, Env<AttrContext> env) {
 	return isUniqueChainHelper(this.exp, attr, env);
@@ -132,8 +135,7 @@ public class DerefSet implements
 	if (exp.getSymbol() == null) {
 	    return false;
 	}
-	if ((exp.getSymbol().flags() & Flags.STATIC) != 0)
-	    return false;
+	if (isFinalField(exp)) return false;
 	RefGroup group = attr.getRefGroupFor(exp, env);
 	if (group != RefGroup.UNIQUE) 
 	    return false;
@@ -145,6 +147,13 @@ public class DerefSet implements
 	}
 	return false;
     }
+
+    private boolean isFinalField(JCExpression exp) {
+	Symbol sym = exp.getSymbol();
+	if (sym.owner.kind == Kinds.MTH || sym.toString().equals("this"))
+	    return false;
+	return (exp.getSymbol().flags() & Flags.FINAL) != 0;
+    }
     
     /**
      * Is this a valid dereference set?  Requirements:
@@ -152,10 +161,10 @@ public class DerefSet implements
      * 2. Ref groups must match along path
      */    
     public boolean isValid(Attr attr, Env<AttrContext> env, Types types) {
-	return isValidHelper(exp, treeGroup, attr, env, types);
+	return isValidExp(exp, treeGroup, attr, env, types);
     }
-    // where
-    private boolean isValidHelper(JCExpression exp, RefGroup tg, 
+    
+    public static boolean isValidExp(JCExpression exp, RefGroup tg, 
 	    Attr attr, Env<AttrContext> env, Types types) {
 	Resolve rs = attr.rs;
 	if (exp instanceof JCIdent) {
@@ -167,7 +176,7 @@ public class DerefSet implements
 	    if (!rs.isInScope(group, env) || !rs.isInScope(tg, env))
 		return false;
 	    // Groups must match
-	    if (group == RefGroup.UNIQUE || group == RefGroup.NONE)
+	    if (group == RefGroup.NONE || tg == RefGroup.NONE)
 		return true;
 	    return group.equals(tg);
 	}
@@ -179,7 +188,7 @@ public class DerefSet implements
 		return false;
 	    }
 	    // Selected expression must be valid
-	    return isValidHelper(fa.selected, group, attr, env, types);
+	    return isValidExp(fa.selected, group, attr, env, types);
 	}
 	if (exp instanceof JCArrayAccess) {
 	    JCArrayAccess aa = (JCArrayAccess) exp;
@@ -191,7 +200,7 @@ public class DerefSet implements
 	    if (!checkGroup(attr.rs, env, tg, group))
 		return false;
 	    // Indexed expression must be valid
-	    return isValidHelper(aa.indexed, group, attr, env, types);
+	    return isValidExp(aa.indexed, group, attr, env, types);
 	}
 	return false;
     }
@@ -375,12 +384,12 @@ public class DerefSet implements
     /**
      * Check upper against lower group in tree:
      * 1. Groups must be in scope
-     * 2. If upper == NONE or lower == UNIQUE, then OK
+     * 2. If upper == NONE, then OK
      * 3. Otherwise upper must match lower
      */
-    private boolean checkGroup(Resolve rs, Env<AttrContext> env,
+    private static boolean checkGroup(Resolve rs, Env<AttrContext> env,
 	    RefGroup upper, RefGroup lower) {
-	if (upper == RefGroup.NONE || lower == RefGroup.UNIQUE)
+	if (upper == RefGroup.NONE)
 	    return true;
 	if (!rs.isInScope(upper, env) || !rs.isInScope(lower, env))
 	    return false;

@@ -4296,13 +4296,15 @@ public class Attr extends JCTree.Visitor {
 
     public void visitDerefSet(JRGDerefSet tree) {
 	attribExpr(tree.root, env, Type.noType);
-	if (!permissions.isValidDerefExp(tree.root, types)) {
-	    log.error(tree.root.pos, "bad.exp.in.deref.set");
-	}
 	if (tree.refGroupID != null)
 	    tree.refGroup = attribRefGroup(tree.refGroupID, env);
 	else
 	    tree.refGroup = RefGroup.NONE;
+	//if (!permissions.isValidDerefExp(tree.root, types)) {
+	if (!DerefSet.isValidExp(tree.root, tree.refGroup,
+		this, env, types)) {
+	    log.error(tree.root.pos, "bad.deref.set");
+	}
     }
     
 
