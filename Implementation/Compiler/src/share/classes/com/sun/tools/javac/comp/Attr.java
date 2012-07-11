@@ -496,6 +496,38 @@ public class Attr extends JCTree.Visitor {
              &&
              ((v.flags() & STATIC) != 0) == Resolve.isStatic(env));
     }
+    
+    boolean isFinal(Symbol sym) {
+	if (sym == null) return false;
+	return (sym.flags() & FINAL) != 0;
+	
+    }
+    
+    boolean isVariable(Symbol sym) {
+	if (!(sym instanceof VarSymbol))
+	    return false;
+	if (sym.owner.kind == MTH)
+	    return true;
+	if (sym.toString().equals("this"))
+	    return true;
+	return false;
+    }
+
+    boolean isFinalVar(Symbol sym) {
+	return isFinal(sym) && isVariable(sym);
+    }
+    
+    boolean isUniqueField(JCExpression exp, Env<AttrContext> env) {
+	Pair<VarSymbol,RefPerm> pair = 
+		getSymbolAndRefPermFor(exp, env);
+	if (pair.snd.getRefGroup() != RefGroup.UNIQUE)
+	    return false;
+	Symbol sym = exp.getSymbol();
+	if (sym == null) return false;
+	if (sym.owner.kind == Kinds.MTH || sym.toString().equals("this"))
+	    return false;
+	return true;
+    }
 
     /** Check that variable can be assigned to.
      *  @param pos    The current source code position.
@@ -1356,7 +1388,8 @@ public class Attr extends JCTree.Visitor {
                     v.pos = Position.MAXPOS;
                     attribExpr(tree.init, initEnv, v.type);
                     v.pos = tree.pos;
-                    assignRefPerm(initEnv.info.scope.getRefPermFor(v), 
+                    assignRefPerm(initEnv.info.getRefPermFor(v), 
+                	    isFinal(v), isVariable(v),
                 	    tree.init, env);
                 }
             }
@@ -1714,9 +1747,9 @@ public class Attr extends JCTree.Visitor {
             env.info.scope = elseScope;
             attribStat(tree.elsepart, env);
             env.info.scope = thenScope;
-            thenScope.sharedVarPerms = 
-        	    thenScope.mergeVarPerms(thenScope.sharedVarPerms, 
-        		    elseScope.sharedVarPerms);
+            thenScope.downgradedPerms = 
+        	    thenScope.mergeVarPerms(thenScope.downgradedPerms, 
+        		    elseScope.downgradedPerms);
             thenScope.envPerms = 
         	    permissions.mergeEnvPerms(thenScope.envPerms,
         		    elseScope.envPerms, env);
@@ -1824,7 +1857,8 @@ public class Attr extends JCTree.Visitor {
                 log.error(tree.pos(), "missing.ret.val");
             } else {
                 attribExpr(tree.expr, env, m.type.getReturnType());
-                assignRefPerm(env.enclMethod.sym.resPerm, tree.expr, env);
+                assignRefPerm(env.enclMethod.sym.resPerm, false,
+                	false, tree.expr, env);
             }
         }
         result = null;
@@ -2033,20 +2067,21 @@ public class Attr extends JCTree.Visitor {
                 RefPerm thisPerm = methSym.thisPerm;
                 if (tree.meth instanceof JCFieldAccess) {
                     JCFieldAccess fa = (JCFieldAccess) tree.meth;
-                    assignRefPerm(thisPerm, fa.selected, localEnv);
+                    if (!fa.selected.toString().equals("super"))
+                	assignRefPerm(thisPerm, true, true, fa.selected, localEnv);
                 }
                 else {
                     VarSymbol thisSym = (VarSymbol) thisSym(tree.pos(), localEnv);
                     RefPerm remainder = permissions.split(thisPerm, 
-                	    localEnv.info.scope.getRefPermFor(thisSym));
+                	    localEnv.info.getRefPermFor(thisSym), null);
                     if (remainder == RefPerm.ERROR) {
                 	chk.refPermError(tree.pos(), 
                 		JCDiagnostic.fragment("insufficient.ref.perm"), 
-                		localEnv.info.scope.getRefPermFor(thisSym), 
+                		localEnv.info.getRefPermFor(thisSym), 
                 		thisPerm);
                     }
                     else if (remainder == RefPerm.SHARED){
-                	localEnv.info.scope.setRefPermToShared(thisSym);
+                	localEnv.info.scope.downgradeRefPermTo(thisSym, RefPerm.SHARED);
                     }
                 }
             }
@@ -2059,7 +2094,7 @@ public class Attr extends JCTree.Visitor {
         if (!localEnv.info.varArgs && methSym != null) {
             List<JCExpression> args = tree.args;
             for (VarSymbol param : methSym.params) {
-        	RefPerm argPerm = localEnv.info.scope.getRefPermFor(param);
+        	RefPerm argPerm = localEnv.info.getRefPermFor(param);
         	if (tree.meth instanceof JCFieldAccess) {
         	    JCFieldAccess fa = (JCFieldAccess) tree.meth;
         	    argPerm = argPerm.asMemberOf(types, fa.selected.type);
@@ -2070,7 +2105,8 @@ public class Attr extends JCTree.Visitor {
         	    // Something weird with enum constructors going on here...
         	    break;
         	}
-        	assignRefPerm(argPerm, args.head, localEnv);
+        	assignRefPerm(argPerm, isFinal(param), true,
+        		args.head, localEnv);
     	    	args = args.tail;
             }
         }
@@ -2415,7 +2451,9 @@ public class Attr extends JCTree.Visitor {
         
 	RefPerm leftPerm = requireUpdatedGroupPermFor(tree.lhs);
 	if (leftPerm != null) {
-	    assignRefPerm(leftPerm, tree.rhs, env);
+	    assignRefPerm(leftPerm, isFinal(tree.lhs.getSymbol()),
+		    isVariable(tree.lhs.getSymbol()),
+		    tree.rhs, env);
 	}
 	Symbol leftSym = tree.lhs.getSymbol();
 	if (tree.lhs.getSymbol() instanceof VarSymbol) {
@@ -2470,7 +2508,7 @@ public class Attr extends JCTree.Visitor {
 	RefPerm refPerm = RefPerm.SHARED;
 	if (sym instanceof VarSymbol) {
 	    varSym = (VarSymbol) sym;
-	    refPerm = Translation.accessElt(env.info.scope.getRefPermFor(varSym),
+	    refPerm = Translation.accessElt(env.info.getRefPermFor(varSym),
 		    types, tree, env);	    
 	} 
 	else if (tree instanceof JCArrayAccess) {
@@ -2481,7 +2519,7 @@ public class Attr extends JCTree.Visitor {
 		Type site = capture(ct);
 		varSym = (VarSymbol) 
 			rs.findIdentInType(env, site, names.fromString("cell"), VAR);
-		refPerm = env.info.scope.getRefPermFor(varSym).asMemberOf(types, atype);
+		refPerm = env.info.getRefPermFor(varSym).asMemberOf(types, atype);
 	    }
 	}
 	else if (tree instanceof JCMethodInvocation) {
@@ -2497,24 +2535,31 @@ public class Attr extends JCTree.Visitor {
 	return new Pair(varSym, refPerm);
     }
     
-    private RefPerm assignRefPerm(RefPerm leftPerm, JCExpression right,
-	    Env<AttrContext> env) {
+    private RefPerm assignRefPerm(RefPerm leftPerm,
+	    boolean assignToFinal, boolean assignToVar, 
+	    JCExpression right, Env<AttrContext> env) {
 	RefPermAssigner refPermAssigner = 
-		new RefPermAssigner(leftPerm, right, env);
+		new RefPermAssigner(leftPerm, assignToFinal,
+			assignToVar, right, env);
 	return refPermAssigner.assign();
     }
 
     private class RefPermAssigner extends JCTree.Visitor {
 	
 	final RefPerm leftPerm;
+	final boolean assignToFinal;
+	final boolean assignToVar;
 	final JCExpression right;
 	final Env<AttrContext> env;
 	RefPerm rightPerm;
 	RefPerm remainder;
 	
-	RefPermAssigner(RefPerm leftPerm, JCExpression right,
-		Env<AttrContext> env) {
+	RefPermAssigner(RefPerm leftPerm, 
+		boolean assignToFinal, boolean assignToVar, 
+		JCExpression right, Env<AttrContext> env) {
 	    this.leftPerm = leftPerm;
+	    this.assignToFinal = assignToFinal;
+	    this.assignToVar = assignToVar;
 	    this.right = right;
 	    this.env = env;
 	}
@@ -2522,10 +2567,13 @@ public class Attr extends JCTree.Visitor {
 	RefPerm assign() {
 	    right.accept(this);
 	    if (remainder == RefPerm.ERROR) {
-    	    chk.refPermError(right.pos(), 
+    	    	chk.refPermError(right.pos(), 
     		    JCDiagnostic.fragment("insufficient.ref.perm"), 
 		    rightPerm, leftPerm);
 	    }
+	    if (leftPerm == RefPerm.UNIQUE && !assignToVar 
+		    && isFinalVar(right.getSymbol()))
+		log.error(right.pos(), "final.unique.cant.escape");
 	    return remainder;
 	}
 
@@ -2539,8 +2587,16 @@ public class Attr extends JCTree.Visitor {
     	    	remainder = permissions.splitOrCopy(types, leftPerm, 
     	    		rightPerm, rightExpr, env);
     	    	if (remainder == RefPerm.SHARED) {
-    	    	    env.info.scope.setRefPermToShared(rightVarSym);
-    	    	}        	
+    	    	    env.info.scope.downgradeRefPermTo(rightVarSym, RefPerm.SHARED);
+    	    	}
+    	    	if (remainder == RefPerm.NONE) {
+    	    	    if (assignToFinal && assignToVar) {
+    	    		env.info.borrowedVars.add(rightVarSym);
+    	    	    }
+    	    	    else {
+    	    		env.info.scope.downgradeRefPermTo(rightVarSym, RefPerm.NONE);
+    	    	    }
+    	    	}
             }
      	}
         
@@ -2557,7 +2613,8 @@ public class Attr extends JCTree.Visitor {
             	    getSymbolAndRefPermFor(rightExpr.arg,env);
                 VarSymbol rightVarSym = pair.fst;
         	rightPerm = pair.snd;
-    	    	remainder = permissions.split(leftPerm, rightPerm);
+    	    	remainder = permissions.split(leftPerm, rightPerm, 
+    	    		null);
             }
         }
         
@@ -2568,7 +2625,7 @@ public class Attr extends JCTree.Visitor {
         	rightPerm = rightPerm.atCallSite(rs, env, right);
         	rightPerm = rightPerm.substRefGroups(methSym.refGroupParams, 
         		right.mtype.refGroupActuals);
-        	remainder = permissions.split(leftPerm, rightPerm);
+        	remainder = permissions.split(leftPerm, rightPerm, null);
             }
         }
         
@@ -2597,11 +2654,14 @@ public class Attr extends JCTree.Visitor {
         }
         
         @Override public void visitConditional(JCConditional right) {
-            remainder = assignRefPerm(leftPerm, right.truepart, env);
+            remainder = assignRefPerm(leftPerm, assignToFinal,
+        	    assignToVar, right.truepart, env);
             if (remainder != RefPerm.ERROR)
-        	remainder = assignRefPerm(leftPerm, right.falsepart, env);
+        	remainder = assignRefPerm(leftPerm, assignToFinal,
+        		assignToVar, right.falsepart, env);
             else
-        	assignRefPerm(leftPerm, right.falsepart, env);
+        	assignRefPerm(leftPerm, assignToFinal,
+        		assignToVar, right.falsepart, env);
         }
         
         @Override public void visitAssign(JCAssign right) {

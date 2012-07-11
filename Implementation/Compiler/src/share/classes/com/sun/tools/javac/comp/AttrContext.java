@@ -31,6 +31,7 @@ import java.util.Set;
 import com.sun.tools.javac.code.Constraints;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Permission.EnvPerm;
+import com.sun.tools.javac.code.Permission.RefPerm;
 import com.sun.tools.javac.code.RPL;
 import com.sun.tools.javac.code.RefGroup;
 import com.sun.tools.javac.code.Scope;
@@ -115,7 +116,23 @@ public class AttrContext {
 	info.lint = lint;
 	return info;
     }
-
+    
+    /** Variables that have been borrowed and will be restored
+     *  at the end of the current environment.
+     */
+    public final HashSet<VarSymbol> borrowedVars =
+	    new HashSet<VarSymbol>();
+    
+    public RefPerm getRefPermFor(VarSymbol varSym) {
+	if (borrowedVars.contains(varSym))
+	    return RefPerm.NONE;
+	RefPerm refPerm = scope.downgradedPerms.get(varSym);
+	if (refPerm != null)
+	    return refPerm;
+	return varSym.refPerm;
+    }
+    
+    
     /** Duplicate this context, copying all fields.
      */
     AttrContext dup() {

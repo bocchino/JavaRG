@@ -314,7 +314,10 @@ public class ReturnPath<region R> extends PathId<R> {
   /**
     * Dumps the contents of the fields, to standard-out, for debugging.
     */
-  public void dbgDumpFields() pure {
+  public void dbgDumpFields() 
+      unique
+      pure 
+  {
     super.dbgDumpFields();
 //    dbgPrintln("nPathValue="        +this.nPathValue);
 //    dbgPrintln("expectedReturnRate="+this.expectedReturnRate);

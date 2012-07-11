@@ -104,11 +104,11 @@ public class AppDemo extends Universal {
       // Measure the requested path rate.
       // read from the file and store the data in an array
       // rateP contains the entire data as an array
-      RatePath rateP = new RatePath(dataDirname, dataFilename);
+      final unique RatePath rateP = new RatePath(dataDirname, dataFilename);
       // for debugging purpose
       rateP.dbgDumpFields();
       
-      ReturnPath returnP = rateP.getReturnCompounded();
+      final unique ReturnPath returnP = rateP.getReturnCompounded();
    
       returnP.estimatePath();
       returnP.dbgDumpFields();

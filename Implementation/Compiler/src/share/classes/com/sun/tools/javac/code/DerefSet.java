@@ -148,8 +148,9 @@ public class DerefSet implements
 	return false;
     }
 
-    private boolean isFinalField(JCExpression exp) {
+    public static boolean isFinalField(JCExpression exp) {
 	Symbol sym = exp.getSymbol();
+	if (sym == null) return false;
 	if (sym.owner.kind == Kinds.MTH || sym.toString().equals("this"))
 	    return false;
 	return (exp.getSymbol().flags() & Flags.FINAL) != 0;

@@ -269,10 +269,10 @@ public class RatePath<region R> extends PathId<R> {
     * @exception DemoException thrown if there is a problem with the
     *                          calculation.
     */
-  unique ReturnPath<R> rPath in R;
   unique PathValue<R> returnPathValue in R;
 
   public unique ReturnPath<R> getReturnCompounded() 
+      unique
       writes R via this
       throws DemoException 
   {
@@ -297,6 +297,8 @@ public class RatePath<region R> extends PathId<R> {
     } catch( ArithmeticException aex ) {
     	  throw new DemoException("Error in getReturnLogarithm:"+aex.toString());
     }
+    
+    unique ReturnPath<R> rPath;
     
     // initialize return path
     rPath = new ReturnPath<R>(returnPathValue, nAcceptedPathValue,ReturnPath.COMPOUNDED);
@@ -342,7 +344,7 @@ public class RatePath<region R> extends PathId<R> {
     // computation in ReturnPath class
     rPath.estimatePath();
     // ********************************************************************
-    return(!this.rPath);
+    return(rPath);
 
   }
   //------------------------------------------------------------------------

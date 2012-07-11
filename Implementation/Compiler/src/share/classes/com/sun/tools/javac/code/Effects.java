@@ -198,6 +198,24 @@ public class Effects implements
     }
     
     /**
+     * Mask effects via unique permissions
+     */
+    public Effects maskEffectsViaUnique(Attr attr, Env<AttrContext> env) {
+	Effects newEffects = new Effects();
+	boolean changed = false;
+	for (Effect e : effects) {
+	    Effect newEffect = e.maskEffectViaUnique(attr, env);
+	    if (newEffect == null) {
+		changed = true;
+	    } else {
+		newEffects.add(newEffect);
+		if (newEffect != e) changed = true;
+	    }
+	}
+	return changed ? newEffects : this;	
+    }
+    
+    /**
      * Check whether two effect sets are noninterfering
      */
     public static boolean noninterferingEffects(Effects effects1, 

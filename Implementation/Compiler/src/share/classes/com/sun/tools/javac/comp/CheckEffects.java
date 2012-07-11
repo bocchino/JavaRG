@@ -655,6 +655,7 @@ public class CheckEffects extends EnvScanner { // DPJ
 	    Effects effects =
 		    Effects.makeEffectsFrom(rpls, sym.effectPerms);
 	    effects = effects.atCallSite(rs, parentEnv, tree);
+	    effects = effects.maskEffectsViaUnique(attr, parentEnv);
 	    InvocationEffect ie = new InvocationEffect(rpls, sym, effects);
 	    tree.effects.add(ie);
 	}

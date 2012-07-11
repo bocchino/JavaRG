@@ -45,6 +45,8 @@ public abstract class Effect implements
     public abstract Effect coarsenWith(Set<RefGroup> updatedGroups,
 	    Attr attr, Env<AttrContext> env);
     
+    public abstract Effect maskEffectViaUnique(Attr attr, Env<AttrContext> env);
+    
     public abstract boolean isSubeffectOf(Effect e,  
  	    Env<AttrContext> env, Resolve rs);
     
@@ -192,6 +194,15 @@ public abstract class Effect implements
 		    attr, env));
 	}
 
+	@Override
+	public Effect maskEffectViaUnique(Attr attr, Env<AttrContext> env) {
+	    DerefSet derefSet = this.perm.derefSet;
+	    if (derefSet == null) return this;
+	    if (derefSet.isUniqueChain(attr, env))
+		return null;
+	    return this;
+	}
+	
 	public String toString() {
 	    StringBuffer sb = new StringBuffer();
 	    sb.append(perm);
@@ -319,6 +330,13 @@ public abstract class Effect implements
 		Attr attr, Env<AttrContext> env) {
 	    Effects newEffects = withEffects.coarsenWith(updatedGroups,
 		    attr, env);
+	    return (newEffects == withEffects) ?
+		    this : new InvocationEffect(rpls, methSym, newEffects);
+	}
+	
+	@Override
+	public Effect maskEffectViaUnique(Attr attr, Env<AttrContext> env) {
+	    Effects newEffects = withEffects.maskEffectsViaUnique(attr, env);
 	    return (newEffects == withEffects) ?
 		    this : new InvocationEffect(rpls, methSym, newEffects);
 	}

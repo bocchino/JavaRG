@@ -116,17 +116,14 @@ public class PriceStock<region R> extends Universal<R> {
     * The business end.  Invokes the necessary computation routine, for a
     * a given task.
     */
-  private unique RatePath<R> rateP in R;
-  private unique ReturnPath<R> returnP in R;
-
   public void run() 
       writes R via this
   {
     try{
       mcPath.computeFluctuationsGaussian(randomSeed);
       mcPath.computePathValue(pathStartValue);
-      rateP = new RatePath<R>(mcPath);
-      returnP= rateP.getReturnCompounded();
+      final unique RatePath<R> rateP = new RatePath<R>(mcPath);
+      final unique ReturnPath<R> returnP= rateP.getReturnCompounded();
       returnP.estimatePath();
       expectedReturnRate = returnP.get_expectedReturnRate();
       volatility = returnP.get_volatility();

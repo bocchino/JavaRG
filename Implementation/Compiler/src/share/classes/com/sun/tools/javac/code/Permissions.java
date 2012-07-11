@@ -47,13 +47,43 @@ public class Permissions {
      * Split left out of right and return the remainder.
      * Return RefPerm.ERROR if left can't be split out of right.
      */
-    public RefPerm split(RefPerm left, RefPerm right) {
-	if (left.equals(RefPerm.SHARED))
-	    return right;
-	if (left.equals(right))
-	    return RefPerm.SHARED;
+    public RefPerm split(RefPerm left, RefPerm right, JCExpression rightExp) {
+	if (left.equals(RefPerm.SHARED)) {
+	    // Pulling shared out of non-unique leaves original permission
+	    if (!right.equals(RefPerm.UNIQUE))
+		return right;
+	    if (isField(rightExp)) {
+		// Pulling shared out of final unique field leaves original permission
+		if (isFinal(rightExp))
+		    return right;
+		// Pulling shared out of non-final unique field is not allowed!
+		return RefPerm.ERROR;
+	    }
+	    // Otherwise, nothing is left
+	    return RefPerm.NONE;
+	}
+	if (left.equals(right)) {
+	    return (left == RefPerm.UNIQUE) ? RefPerm.NONE : RefPerm.SHARED;
+	}
 	return RefPerm.ERROR;
     }
+    
+    public static boolean isField(JCExpression exp) {
+	if (exp == null) return false;
+	Symbol sym = exp.getSymbol();
+	if (sym == null) return false;
+	if (sym.owner.kind == Kinds.MTH || sym.toString().equals("this"))
+	    return false;
+	return true;
+    }
+    
+    public static boolean isFinal(JCExpression exp) {
+	if (exp == null) return false;
+	Symbol sym = exp.getSymbol();
+	if (sym == null) return false;
+	return (sym.flags() & Flags.FINAL) != 0;
+    }
+
     
     /**
      * Try to split a permission.  If that doesn't work, try 
@@ -64,14 +94,14 @@ public class Permissions {
      */
     public RefPerm splitOrCopy(Types types, RefPerm leftPerm, 
 	    RefPerm rightPerm, JCExpression rightExpr, Env<AttrContext> env) {
-	RefPerm remainder = split(leftPerm, rightPerm);
+	RefPerm remainder = split(leftPerm, rightPerm, rightExpr);
 	if (remainder != RefPerm.ERROR) {
 	    // OK, we got what we wanted by splitting
 	    return remainder;
 	}
 	// We didn't get it, so create a copy permission for what we want,
 	// if legal to do so
-	if (!isValidDerefExp(rightExpr, types)) {
+	if (!isValidDerefExp(rightExpr, types) || leftPerm.getRefGroup() == RefGroup.UNIQUE) {
 	    // We can only do this if the right-hand expression is a valid
 	    // deref expression
 	    return RefPerm.ERROR;

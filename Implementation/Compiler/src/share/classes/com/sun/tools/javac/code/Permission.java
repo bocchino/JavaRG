@@ -68,7 +68,7 @@ public abstract class Permission {
 	
 	public static final RefPerm NONE = new RefPerm() {
 	    @Override public String toString() {
-		return "[no permission]";
+		return "none";
 	    }
 	};
 
@@ -343,7 +343,7 @@ public abstract class Permission {
 		return consumedFields != null;
 	    }
 	
-	    public boolean canBeSplitFromFreshGroup(Scope scope) {
+	    public boolean canBeSplitFromFreshGroup(AttrContext info) {
 		// exp must be local variable
 		if (!(exp instanceof JCIdent)) return false;
 		JCIdent id = (JCIdent) exp;
@@ -351,7 +351,7 @@ public abstract class Permission {
 			(id.sym.owner.kind != Kinds.MTH)) 
 		    return false;
 		// perm of exp must match source group
-		RefPerm refPerm = scope.getRefPermFor((VarSymbol) id.sym);
+		RefPerm refPerm = info.getRefPermFor((VarSymbol) id.sym);
 		if (!(refPerm instanceof LocallyUnique))
 		    return false;
 		LocallyUnique lu = (LocallyUnique) refPerm;

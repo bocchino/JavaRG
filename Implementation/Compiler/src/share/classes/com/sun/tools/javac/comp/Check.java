@@ -1307,7 +1307,7 @@ public class Check {
 	// Check compatibility of return permission
 	RefPerm mResPerm = m.resPerm.asMemberOf(types, origin.type);
 	RefPerm oResPerm = other.resPerm.asMemberOf(types, origin.type);
-	if (permissions.split(oResPerm, mResPerm) == RefPerm.ERROR) {
+	if (permissions.split(oResPerm, mResPerm, null) == RefPerm.ERROR) {
 	    log.error(TreeInfo.diagnosticPositionFor(m, tree), 
 		    "override.return.perm", mResPerm, oResPerm, other.owner.type);
 	}
@@ -1316,7 +1316,7 @@ public class Check {
 	if ((m.flags_field & STATIC) == 0) {
 	    RefPerm mThisPerm = m.thisPerm.asMemberOf(types, origin.type);
 	    RefPerm oThisPerm = other.thisPerm.asMemberOf(types, origin.type);
-	    if (permissions.split(mThisPerm, oThisPerm) == RefPerm.ERROR) {
+	    if (permissions.split(mThisPerm, oThisPerm, null) == RefPerm.ERROR) {
 		log.error(TreeInfo.diagnosticPositionFor(m, tree),
 			"override.this.perm", mThisPerm, oThisPerm,
 			other.owner.type);
@@ -1329,7 +1329,7 @@ public class Check {
 	    if (oParams.isEmpty()) break;
 	    RefPerm mPerm = mParam.refPerm;
 	    RefPerm oPerm = oParams.head.refPerm.asMemberOf(types, origin.type);
-	    if (permissions.split(mPerm, oPerm) == RefPerm.ERROR) {
+	    if (permissions.split(mPerm, oPerm, null) == RefPerm.ERROR) {
 		log.error(TreeInfo.diagnosticPositionFor(m, tree), 
 			"override.param.perm", mPerm, mParam,
 			oPerm, other.owner.type);
@@ -1968,7 +1968,7 @@ public class Check {
 	}
 	// Otherwise, we require something that can be split into
 	// needed perm and other stuff on a case-by-case basis.
-	if (neededPerm.canBeSplitFromFreshGroup(env.info.scope)) {
+	if (neededPerm.canBeSplitFromFreshGroup(env.info)) {
 	    // CASE 1:
 	    // The needed perm is 'copies v...G1 to G2', where v
 	    // is a unique(G1) local variable.

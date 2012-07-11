@@ -198,7 +198,10 @@ public class PathId<region R> extends Universal<R> {
   /**
     * Dumps the contents of the fields, to standard-out, for debugging.
     */
-  public void dbgDumpFields() pure {
+  public void dbgDumpFields() 
+      unique
+      pure 
+  {
 //    dbgPrintln("name="     +this.name);
 //    dbgPrintln("startDate="+this.startDate);
 //    dbgPrintln("endDate="  +this.endDate);

@@ -33,4 +33,16 @@ public class UniquePerms extends DPJTestCase {
 	compile("IncludeEffectOnFinalUniqueField");
     }
 
+    @Test public void testErrorFinalUniqueCantEscape() throws Throwable {
+	compileExpectingErrors("ErrorFinalUniqueCantEscape", 1);
+    }
+    
+    @Test public void testBorrowByAssignment() throws Throwable {
+	compile("BorrowByAssignment");
+    }
+
+    @Test public void testErrorConsumeByAssignment() throws Throwable {
+	compileExpectingErrors("ErrorConsumeByAssignment", 1);
+    }
+
 }

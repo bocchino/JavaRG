@@ -25,8 +25,10 @@
 
 package com.sun.tools.javac.code;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 
 import com.sun.tools.javac.code.Permission.EnvPerm;
 import com.sun.tools.javac.code.Permission.EnvPerm.CopyPerm;
@@ -99,24 +101,25 @@ public class Scope {
     /** A value for the empty scope.
      */
     public static final Scope emptyScope = new Scope(null, null, new Entry[]{},
-	    new HashSet<EnvPerm>(), new HashSet<VarSymbol>(),
+	    new HashSet<EnvPerm>(), new HashMap<VarSymbol,RefPerm>(),
 	    false);
 
     /** Permissions available in the environment
      */
     public HashSet<EnvPerm> envPerms = new HashSet<EnvPerm>();
     
-    /** Variable permissions that have their permissions downgraded to shared
+    /** Variables that have their permissions downgraded
      *  in the current scope.
      */
-    public HashSet<VarSymbol> sharedVarPerms = new HashSet<VarSymbol>();
+    public HashMap<VarSymbol,RefPerm> downgradedPerms = 
+	    new HashMap<VarSymbol,RefPerm>();
     
     /** Construct a new scope, within scope next, with given owner, using
      *  given table. The table's length must be an exponent of 2.
      */
     Scope(Scope next, Symbol owner, Entry[] table,
 	    HashSet<EnvPerm> envPerms, 
-	    HashSet<VarSymbol> varPerms,
+	    HashMap<VarSymbol,RefPerm> downgradedPerms,
 	    boolean inParallelBlock) {
         this.next = next;
 	assert emptyScope == null || owner != null;
@@ -124,7 +127,7 @@ public class Scope {
         this.table = table;
         this.envPerms = envPerms;
         if (envPerms == null) throw new NullPointerException();
-        this.sharedVarPerms = varPerms;
+        this.downgradedPerms = downgradedPerms;
 	this.hashMask = table.length - 1;
         this.elems = null;
 	this.nelems = 0;
@@ -137,7 +140,7 @@ public class Scope {
      */
     public Scope(Symbol owner) {
         this(null, owner, new Entry[INITIAL_SIZE], 
-        	new HashSet<EnvPerm>(), new HashSet<VarSymbol>(),
+        	new HashSet<EnvPerm>(), new HashMap<VarSymbol,RefPerm>(),
         	false);
 	for (int i = 0; i < INITIAL_SIZE; i++) table[i] = sentinel;
     }
@@ -149,7 +152,7 @@ public class Scope {
      */
     public Scope dup() {
         Scope result = new Scope(this, this.owner, this.table,
-        	this.envPerms, this.sharedVarPerms,
+        	this.envPerms, this.downgradedPerms,
         	this.inParallelBlock);
 	shared++;
 	// System.out.println("====> duping scope " + this.hashCode() + " owned by " + this.owner + " to " + result.hashCode());
@@ -164,7 +167,7 @@ public class Scope {
      */
     public Scope dup(Symbol newOwner) {
         Scope result = new Scope(this, newOwner, this.table,
-        	this.envPerms, this.sharedVarPerms,
+        	this.envPerms, this.downgradedPerms,
         	this.inParallelBlock);
 	shared++;
 	// System.out.println("====> duping scope " + this.hashCode() + " owned by " + newOwner + " to " + result.hashCode());
@@ -179,7 +182,7 @@ public class Scope {
     public Scope dupUnshared() {
 	return new Scope(this, this.owner, this.table.clone(),
 		(HashSet<EnvPerm>) this.envPerms.clone(), 
-		(HashSet<VarSymbol>) this.sharedVarPerms.clone(),
+		(HashMap<VarSymbol,RefPerm>) this.downgradedPerms.clone(),
 		this.inParallelBlock);
     }
 
@@ -483,9 +486,13 @@ public class Scope {
     /**
      * Take the union of two shared perms sets (destroys the second one)
      */    
-    public HashSet<VarSymbol> mergeVarPerms(HashSet<VarSymbol> set1,
-	    HashSet<VarSymbol> set2) {
-	set2.addAll(set1);
+    public HashMap<VarSymbol,RefPerm> mergeVarPerms(HashMap<VarSymbol,RefPerm> set1,
+	    HashMap<VarSymbol,RefPerm> set2) {
+	for (Map.Entry<VarSymbol,RefPerm> entry : set1.entrySet()) {
+	    RefPerm refPerm = set2.get(entry.getKey());
+	    if (refPerm == null || refPerm == RefPerm.SHARED)
+		set2.put(entry.getKey(), entry.getValue());
+	}
 	return set2;
     }
     
@@ -540,18 +547,13 @@ public class Scope {
 	return null;
     }
     
-    public RefPerm getRefPermFor(VarSymbol varSym) {
-	if (sharedVarPerms.contains(varSym)) return RefPerm.SHARED;
-	return varSym.refPerm;
-    }
-    
-    public void setRefPermToShared(VarSymbol varSym) {
-	if (varSym.refPerm != RefPerm.SHARED)
-	    sharedVarPerms.add(varSym);
+    public void downgradeRefPermTo(VarSymbol varSym, RefPerm refPerm) {
+	if (varSym.refPerm != refPerm)
+	    downgradedPerms.put(varSym, refPerm);
     }
     
     public void restoreRefPerm(VarSymbol varSym) {
-	sharedVarPerms.remove(varSym);
+	downgradedPerms.remove(varSym);
     }
     
     public String toString() {
@@ -682,7 +684,7 @@ public class Scope {
 
 	public DelegatedScope(Scope outer) {
 	    super(outer, outer.owner, emptyTable, new HashSet<EnvPerm>(), 
-		    new HashSet<VarSymbol>(), false);
+		    new HashMap<VarSymbol,RefPerm>(), false);
 	    delegatee = outer;
 	}
 	public Scope dup() {
