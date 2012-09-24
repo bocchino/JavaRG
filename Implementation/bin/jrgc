@@ -50,5 +50,5 @@ ea=-ea:com.sun.tools
 
 #"/Library/Java/Home/bin/java" 
 
-addcp java ${bcp:+-Xbootclasspath/p:"$bcp"} ${ea} -jar "${mylib}"/javac.jar -dpj "$@"
+jrg-addcp java ${bcp:+-Xbootclasspath/p:"$bcp"} ${ea} -jar "${mylib}"/javac.jar -dpj "$@"
 
