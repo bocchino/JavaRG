@@ -1,1 +1,1 @@
-addcp javac "$@"
+jrg-addcp javac "$@"

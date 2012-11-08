@@ -1,12 +1,12 @@
 #!/usr/bin/perl
 
 #
-# 'addcp [cmd] [args]': Add the DPJ runtime classes to the class path
+# 'addcp [cmd] [args]': Add the JRG runtime classes to the class path
 # specified in [args], then do [cmd] with the new [args]
 #
 use strict;
 
-my $RT_CLASSES="$ENV{DPJ_ROOT}/Implementation/Runtime/classes";
+my $RT_CLASSES="$ENV{JRG_ROOT}/Implementation/Runtime/classes";
 my $in_cp=0;
 my $found_cp = 0;
 my $cmd;
