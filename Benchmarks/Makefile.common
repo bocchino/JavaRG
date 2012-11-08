@@ -13,21 +13,19 @@ JAVAC=jrg-javac
 JRG-PAR-TEST= ${JRG-PAR} -ea
 JRG-SEQ-TEST=${JRG-SEQ} -ea
 JRG-INST-TEST=${JRG-INST} -ea
-SRCS= ${wildcard jrg/*.java}
-
+SRCS ?= ${wildcard jrg/*.java}
+SEQ_JAVA ?= sequential/java/*.java
+PAR_JAVA ?= parallel/java/*.java
 
 all :: ${ALL}
 
 sequential-java : ${SRCS} sequential/java
 	${JRGC-SEQ} -d sequential/java jrg/*.java ${RUNTIME}/jrg/*.java
 sequential-classes : sequential-java sequential/classes
-	${JAVAC} -d sequential/classes sequential/java/*.java
-instrument-classes : ${SRCS} instrument/java instrument/classes
-	${JRGC-INST} -d instrument/java jrg/*.java ${RUNTIME}/jrg/*.java
-	${JAVAC} -d instrument/classes instrument/java/*.java
+	${JAVAC} -d sequential/classes ${SEQ_JAVA}
 parallel-classes : ${SRCS} parallel/java parallel/classes
 	${JRGC-PAR} -d parallel/java jrg/*.java ${RUNTIME}/jrg/*.java
-	${JAVAC} -d parallel/classes parallel/java/*.java
+	${JAVAC} -d parallel/classes ${PAR_JAVA}
 
 
 countAll :: sequential/java

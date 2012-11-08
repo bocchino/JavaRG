@@ -1938,11 +1938,6 @@ public class Check {
 	return true;
     }
     
-    private static boolean debug = false;
-    public static void debugPrint(String s) {
-	if (debug) System.out.println(s);
-    }
-    
     /**
      * Require a copy permission in the environment.  If the permission 
      * is already there, nothing happens except that 'true' is returned.  

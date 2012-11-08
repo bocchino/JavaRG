@@ -1479,6 +1479,8 @@ public class Types {
 
             @Override
             public Type visitTypeVar(TypeVar t, Symbol sym) {
+        	if (t.tsym == sym)
+        	    return t;
                 return asSuper(t.getUpperBound(), sym);
             }
 
@@ -1666,7 +1668,8 @@ public class Types {
                 break;
             }
         }
-        return isConvertible(t, s, warn);
+        boolean result = isConvertible(t, s, warn);
+        return result;
     }
     // </editor-fold>
 
