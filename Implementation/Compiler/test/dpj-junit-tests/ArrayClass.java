@@ -70,7 +70,7 @@ public class ArrayClass extends DPJTestCase {
     }
     
     @Test public void testErrorNonDestructive() throws Throwable {
-	compileExpectingErrors("ErrorNonDestructive", 1);
+	compileExpectingWarnings("ErrorNonDestructive", 1);
     }
     
 }

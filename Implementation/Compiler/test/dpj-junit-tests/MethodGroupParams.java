@@ -18,7 +18,7 @@ public class MethodGroupParams extends DPJTestCase {
     }
    
     @Test public void testErrorAssignReturnType() throws Throwable {
-	compileExpectingErrors("ErrorAssignReturnType", 1);
+	compile("ErrorAssignReturnType", 1, 1);
     }
     
     @Test public void testErrorDuplicateArgs() throws Throwable {

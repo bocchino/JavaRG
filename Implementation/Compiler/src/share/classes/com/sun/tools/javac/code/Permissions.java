@@ -93,7 +93,8 @@ public class Permissions {
      * attempt succeeds.  Return RefPerm.ERROR if both attempts fail.
      */
     public RefPerm splitOrCopy(Types types, RefPerm leftPerm, 
-	    RefPerm rightPerm, JCExpression rightExpr, Env<AttrContext> env) {
+	    RefPerm rightPerm, JCExpression rightExpr, Env<AttrContext> env,
+	    boolean warn) {
 	RefPerm remainder = split(leftPerm, rightPerm, rightExpr);
 	if (remainder != RefPerm.ERROR) {
 	    // OK, we got what we wanted by splitting
@@ -123,7 +124,7 @@ public class Permissions {
 	RefGroup targetGroup = leftPerm.getRefGroup();
 	CopyPerm copyPerm = CopyPerm.simplePerm(rightExpr, targetGroup);
 	if (chk.consumeEnvPerms(rightExpr.pos(),
-		List.<EnvPerm>of(copyPerm), env)) {
+		List.<EnvPerm>of(copyPerm), env, warn)) {
 	    // OK, we got the copy permission and used it
 	    return rightPerm;
 	}	

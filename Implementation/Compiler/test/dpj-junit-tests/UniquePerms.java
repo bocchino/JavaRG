@@ -42,7 +42,7 @@ public class UniquePerms extends DPJTestCase {
     }
 
     @Test public void testErrorConsumeByAssignment() throws Throwable {
-	compileExpectingErrors("ErrorConsumeByAssignment", 1);
+	compileExpectingWarnings("ErrorConsumeByAssignment", 1);
     }
 
 }

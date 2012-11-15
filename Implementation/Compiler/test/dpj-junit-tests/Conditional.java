@@ -22,6 +22,6 @@ public class Conditional extends DPJTestCase {
     }
     
     @Test public void testErrorIfMergeRefPerms() throws Throwable {
-	compileExpectingErrors("ErrorIfMergeRefPerms", 1);
+	compileExpectingWarnings("ErrorIfMergeRefPerms", 1);
     }
 }

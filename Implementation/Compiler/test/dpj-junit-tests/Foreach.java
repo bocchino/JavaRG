@@ -22,7 +22,7 @@ public class Foreach extends DPJTestCase {
     }
     
     @Test public void testErrorPreservesUpdatesPar() throws Throwable {
-	compile("ErrorPreservesUpdatesPar", 1, 1);
+	compileExpectingWarnings("ErrorPreservesUpdatesPar", 2);
     }
 
 }

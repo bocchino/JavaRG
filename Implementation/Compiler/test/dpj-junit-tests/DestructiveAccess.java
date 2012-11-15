@@ -25,7 +25,7 @@ public class DestructiveAccess extends DPJTestCase {
     }
     
     @Test public void testErrorCantUpdate() throws Throwable {
-	compileExpectingErrors("ErrorCantUpdate", 1);
+	compileExpectingWarnings("ErrorCantUpdate", 1);
     }
     
 }

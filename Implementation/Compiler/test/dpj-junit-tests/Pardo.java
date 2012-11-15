@@ -18,7 +18,7 @@ public class Pardo extends DPJTestCase {
     }
     
     @Test public void testErrorPreservesUpdates() throws Throwable {
-	compile("ErrorPreservesUpdates", 1, 1);
+	compileExpectingWarnings("ErrorPreservesUpdates", 2);
     }
     
     @Test public void testWarnCoarsenUpdatedGroup() throws Throwable {
@@ -26,6 +26,6 @@ public class Pardo extends DPJTestCase {
     }
     
     @Test public void testErrorCantSwitch() throws Throwable {
-	compileExpectingErrors("ErrorCantSwitch", 2);
+	compileExpectingWarnings("ErrorCantSwitch", 2);
     }
 }

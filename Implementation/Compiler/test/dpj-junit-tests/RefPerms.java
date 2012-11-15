@@ -14,19 +14,19 @@ public class RefPerms extends DPJTestCase {
     }
     
     @Test public void testErrorAssignSharedToUnique() throws Throwable {
-	compileExpectingErrors("ErrorAssignSharedToUnique", 1);
+	compileExpectingWarnings("ErrorAssignSharedToUnique", 1);
     }
     
     @Test public void testErrorConsumeUnique() throws Throwable {
-	compileExpectingErrors("ErrorConsumeUnique", 1);
+	compileExpectingWarnings("ErrorConsumeUnique", 1);
     }
     
     @Test public void testErrorInit() throws Throwable {
-	compileExpectingErrors("ErrorInit", 1);
+	compileExpectingWarnings("ErrorInit", 1);
     }
     
     @Test public void testErrorFieldAccess() throws Throwable {
-	compileExpectingErrors("ErrorFieldAccess", 1);
+	compileExpectingWarnings("ErrorFieldAccess", 1);
     }
     
     @Test public void testDestructiveRead() throws Throwable {
@@ -34,15 +34,15 @@ public class RefPerms extends DPJTestCase {
     }
     
     @Test public void testErrorWrongGroup() throws Throwable {
-	compileExpectingErrors("ErrorWrongGroup", 1);
+	compileExpectingWarnings("ErrorWrongGroup", 1);
     }
     
     @Test public void testErrorArgumentMismatch() throws Throwable {
-	compileExpectingErrors("ErrorArgumentMismatch", 1);
+	compileExpectingWarnings("ErrorArgumentMismatch", 1);
     }
     
     @Test public void testErrorConsumeArgument() throws Throwable {
-	compileExpectingErrors("ErrorConsumeArgument", 1);
+	compileExpectingWarnings("ErrorConsumeArgument", 1);
     }
     
     @Test public void testMethodArgMethodParam() throws Throwable {
@@ -58,7 +58,7 @@ public class RefPerms extends DPJTestCase {
     }
     
     @Test public void testErrorSharedThis() throws Throwable {
-	compileExpectingErrors("ErrorSharedThis", 1);
+	compileExpectingWarnings("ErrorSharedThis", 1);
     }
     
     @Test public void testLocallyUniqueThis() throws Throwable {
@@ -66,7 +66,7 @@ public class RefPerms extends DPJTestCase {
     }
     
     @Test public void testErrorConsumeUniqueThis() throws Throwable {
-	compileExpectingErrors("ErrorConsumeUniqueThis", 1);
+	compileExpectingWarnings("ErrorConsumeUniqueThis", 1);
     }
     
     @Test public void testExplicitThis() throws Throwable {
@@ -78,15 +78,15 @@ public class RefPerms extends DPJTestCase {
     }
     
     @Test public void testErrorExplicitThis() throws Throwable {
-	compileExpectingErrors("ErrorExplicitThis", 1);
+	compileExpectingWarnings("ErrorExplicitThis", 1);
     }
     
     @Test public void testErrorImplicitThis() throws Throwable {
-	compileExpectingErrors("ErrorImplicitThis", 1);
+	compileExpectingWarnings("ErrorImplicitThis", 1);
     }
     
     @Test public void testErrorSharedArgToThis() throws Throwable {
-	compileExpectingErrors("ErrorSharedArgToThis", 1);
+	compileExpectingWarnings("ErrorSharedArgToThis", 1);
     }
  
     @Test public void testErrorDontDestroyFinal() throws Throwable {

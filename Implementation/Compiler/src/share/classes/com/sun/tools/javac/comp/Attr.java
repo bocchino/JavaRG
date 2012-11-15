@@ -907,7 +907,7 @@ public class Attr extends JCTree.Visitor {
 		PreservedGroupPerm newPerm = 
 			new PreservedGroupPerm(refGroup);
 		lb.append(newPerm);
-		chk.requireEnvPerm(tree.pos(), newPerm, env);
+		chk.requireEnvPerm(tree.pos(), newPerm, env, true);
 	    }
 	    methodSymbol.preservedGroupPerms = lb.toList();
 	}
@@ -2079,8 +2079,7 @@ public class Attr extends JCTree.Visitor {
                 		JCDiagnostic.fragment("insufficient.ref.perm"), 
                 		localEnv.info.getRefPermFor(thisSym), 
                 		thisPerm);
-                    }
-                    else if (remainder == RefPerm.SHARED){
+                    } else if (remainder == RefPerm.SHARED){
                 	localEnv.info.scope.downgradeRefPermTo(thisSym, RefPerm.SHARED);
                     }
                 }
@@ -2119,27 +2118,27 @@ public class Attr extends JCTree.Visitor {
             List<FreshGroupPerm> freshGroupPerms = 
         	    Translation.atCallSite(methSym.freshGroupPerms, rs, 
         		    localEnv, tree);
-            chk.consumeEnvPerms(tree.pos(), freshGroupPerms, localEnv);
+            chk.consumeEnvPerms(tree.pos(), freshGroupPerms, localEnv, true);
             // Copy perms
             List<CopyPerm> copyPerms =
         	    Translation.atCallSite(methSym.copyPerms, rs, 
         		    localEnv, tree);
-            chk.consumeEnvPerms(tree.pos(), copyPerms, localEnv);
+            chk.consumeEnvPerms(tree.pos(), copyPerms, localEnv, true);
             // Preserved group perms
             List<PreservedGroupPerm> preservedGroupPerms =
         	    Translation.atCallSite(methSym.preservedGroupPerms,
         		    rs, localEnv, tree);
-            chk.requireEnvPerms(tree.pos(), preservedGroupPerms, localEnv);
+            chk.requireEnvPerms(tree.pos(), preservedGroupPerms, localEnv, true);
             // Updated group perms
             List<UpdatedGroupPerm> updatedGroupPerms =
         	    Translation.atCallSite(methSym.updatedGroupPerms,
         		    rs, localEnv, tree);
-            chk.requireEnvPerms(tree.pos(), updatedGroupPerms, localEnv);
+            chk.requireEnvPerms(tree.pos(), updatedGroupPerms, localEnv, true);
             // Switched group perms
             List<SwitchedGroupPerm> switchedGroupPerms =
         	    Translation.atCallSite(methSym.switchedGroupPerms,
         		    rs, localEnv, tree);
-            chk.requireEnvPerms(tree.pos(), switchedGroupPerms, localEnv);      
+            chk.requireEnvPerms(tree.pos(), switchedGroupPerms, localEnv, true);      
             // Convert all groups switched by method to updated
             for (SwitchedGroupPerm perm : switchedGroupPerms) {
         	localEnv.info.scope.addUpdatedGroupPerm(permissions, 
@@ -2449,7 +2448,7 @@ public class Attr extends JCTree.Visitor {
         attribExpr(tree.rhs, env, owntype);
         result = check(tree, capturedType, VAL, pkind, pt);
         
-	RefPerm leftPerm = requireUpdatedGroupPermFor(tree.lhs);
+	RefPerm leftPerm = requireUpdatedGroupPermFor(tree.lhs, true);
 	if (leftPerm != null) {
 	    assignRefPerm(leftPerm, isFinal(tree.lhs.getSymbol()),
 		    isVariable(tree.lhs.getSymbol()),
@@ -2473,7 +2472,8 @@ public class Attr extends JCTree.Visitor {
      * @param tree
      * @return
      */
-    private RefPerm requireUpdatedGroupPermFor(JCExpression tree) {
+    private RefPerm requireUpdatedGroupPermFor(JCExpression tree, 
+	    boolean warn) {
 	Pair<VarSymbol,RefPerm> pair = getSymbolAndRefPermFor(tree, env);
 	Symbol leftVarSym = pair.fst;
 	RefPerm leftPerm = pair.snd;
@@ -2483,7 +2483,7 @@ public class Attr extends JCTree.Visitor {
 		LocallyUnique luPerm = (LocallyUnique) leftPerm;
 		RefGroup refGroup = luPerm.refGroup;
 		chk.requireEnvPerm(tree.pos(), 
-			new UpdatedGroupPerm(refGroup), env);
+			new UpdatedGroupPerm(refGroup), env, warn);
 	    }
 	}
 	return leftPerm;
@@ -2585,7 +2585,7 @@ public class Attr extends JCTree.Visitor {
             if (rightVarSym != null) {
         	rightPerm = pair.snd;
     	    	remainder = permissions.splitOrCopy(types, leftPerm, 
-    	    		rightPerm, rightExpr, env);
+    	    		rightPerm, rightExpr, env, false);
     	    	if (remainder == RefPerm.SHARED) {
     	    	    env.info.scope.downgradeRefPermTo(rightVarSym, RefPerm.SHARED);
     	    	}
@@ -2604,7 +2604,7 @@ public class Attr extends JCTree.Visitor {
         public void visitSelect(JCFieldAccess right) {
             rightPerm = RefPerm.SHARED;
             remainder = permissions.splitOrCopy(types, leftPerm, 
-        	    rightPerm, right, env);
+        	    rightPerm, right, env, false);
         }
         
         @Override public void visitUnary(JCUnary rightExpr) {
@@ -2680,7 +2680,7 @@ public class Attr extends JCTree.Visitor {
         @Override public void visitIndexed(JCArrayAccess right) {
             rightPerm = RefPerm.SHARED;
             remainder = permissions.splitOrCopy(types, leftPerm, 
-        	    rightPerm, right, env);
+        	    rightPerm, right, env, false);
         }
     }
     
@@ -2738,7 +2738,7 @@ public class Attr extends JCTree.Visitor {
      		    Symbol sym = tree.arg.getSymbol();
      		    if (sym != null && ((sym.flags() & FINAL) != 0))
      			log.error(tree.pos(), "cant.assign.val.to.final.var", sym);
-     		    requireUpdatedGroupPermFor(tree.arg);
+     		    requireUpdatedGroupPermFor(tree.arg, true);
      		}
      		else {
      		    log.error(tree.arg.pos(), "expected.access");

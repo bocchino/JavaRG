@@ -320,7 +320,7 @@ public class Check {
      */
     RefPerm refPermError(DiagnosticPosition pos, Object problem, 
 	    RefPerm found, RefPerm req) {
-	log.error(pos, "prob.found.req", problem, found, req);
+	log.warning(pos, "prob.found.req", problem, found, req);
 	return RefPerm.ERROR;
     }
 
@@ -1355,7 +1355,7 @@ public class Check {
 	    //System.out.println("Lower env perms: " + mEnv.info.scope.envPerms);
 
 	    DiagnosticPosition pos = TreeInfo.diagnosticPositionFor(m, tree);
-	    if (!consumeEnvPerms(pos, mEnv.info.scope.envPerms, oEnv)) {
+	    if (!consumeEnvPerms(pos, mEnv.info.scope.envPerms, oEnv, true)) {
 		System.err.println("Error(s) occurred overriding method in class " + 
 			other.owner.type);
 	    }
@@ -1854,22 +1854,22 @@ public class Check {
     }
     
     <T extends EnvPerm>boolean requireEnvPerms(DiagnosticPosition pos, 
-	    Iterable<T> perms, Env<AttrContext> env) {
+	    Iterable<T> perms, Env<AttrContext> env, boolean warn) {
 	boolean success = true;
 	for (T perm : perms)
-	    success &= requireEnvPerm(pos, perm, env);
+	    success &= requireEnvPerm(pos, perm, env, warn);
 	return success;
     }
 
     public <T extends EnvPerm>boolean consumeEnvPerms(DiagnosticPosition pos,
-	    Iterable<T> perms, Env<AttrContext> env) {
+	    Iterable<T> perms, Env<AttrContext> env, boolean warn) {
 	boolean success = true;
 	ListBuffer<EnvPerm> updatedGroupPerms = ListBuffer.lb();
 	for (T perm : perms) {
 	    if (perm instanceof UpdatedGroupPerm) {
 		updatedGroupPerms.append(perm);
 	    } else {
-		boolean result = requireEnvPerm(pos, perm, env);
+		boolean result = requireEnvPerm(pos, perm, env, warn);
 		success &= result;
 		if (perm.isLinear()) {
 		    env.info.scope.removePerm(perm);
@@ -1877,32 +1877,31 @@ public class Check {
 	    }
 	}
 	// Do all updated group perms last.
-	success &= requireEnvPerms(pos, updatedGroupPerms, env);
+	success &= requireEnvPerms(pos, updatedGroupPerms, env, warn);
 	//System.out.println("FINAL ENV PERMS: " + env.info.scope.envPerms);
 	return success;	
     }
     
     boolean requireEnvPerm(DiagnosticPosition pos, 
-	    EnvPerm perm, Env<AttrContext> env) 
+	    EnvPerm perm, Env<AttrContext> env, boolean warn) 
     {
 	Scope scope = env.info.scope;
 	if (perm instanceof FreshGroupPerm) {
 	    if (!scope.containsPerm(perm)) {
-		log.error(pos, "missing.perm", perm);
+		reportMissingPerm(pos, perm, warn);
 		return false;
 	    }
 	}
 	else if (perm instanceof CopyPerm) {
 	    CopyPerm copyPerm = (CopyPerm) perm;
-	    if (!requireCopyPerm(pos, copyPerm, env)) {
-		log.error(pos, "missing.perm", perm);
+	    if (!requireCopyPerm(pos, copyPerm, env, warn)) {
 		return false;
 	    }
 	}
 	else if (perm instanceof EffectPerm) {
 	    EffectPerm effectPerm = (EffectPerm) perm;
-	    if (!requireEffectPerm(pos, effectPerm, env)) {
-		log.error(pos, "missing.perm", perm);
+	    if (!requireEffectPerm(pos, effectPerm, env, warn)) {
+		reportMissingPerm(pos, perm, warn);
 		return false;
 	    }
 	}
@@ -1911,7 +1910,7 @@ public class Check {
 		    (PreservedGroupPerm) perm;
 	    if (!scope.addPreservedGroupPerm(permissions, 
 		    preservedGroupPerm)) {
-		log.error(pos, "cant.preserve.group", 
+		log.warning(pos, "cant.preserve.group", 
 			preservedGroupPerm.refGroup);
 		return false;
 	    }
@@ -1921,7 +1920,7 @@ public class Check {
 		    (UpdatedGroupPerm) perm;
 	    if (!scope.addUpdatedGroupPerm(permissions, 
 		    updatedGroupPerm)) {
-		log.error(pos, "cant.update.group", 
+		log.warning(pos, "cant.update.group", 
 			updatedGroupPerm.refGroup);
 		return false;
 	    }
@@ -1930,7 +1929,7 @@ public class Check {
 	    SwitchedGroupPerm switchedGroupPerm =
 		    (SwitchedGroupPerm) perm;
 	    if (!scope.envPerms.contains(perm)) {
-		log.error(pos, "cant.switch.group",
+		log.warning(pos, "cant.switch.group",
 			switchedGroupPerm.refGroup);
 		return false;
 	    }
@@ -1953,7 +1952,8 @@ public class Check {
      * @return
      */
     boolean requireCopyPerm(DiagnosticPosition pos,
-	    CopyPerm neededPerm, Env<AttrContext> env) {
+	    CopyPerm neededPerm, Env<AttrContext> env,
+	    boolean warn) {
 	//System.out.flush();
 	//System.out.println("envPerms="+env.info.scope.envPerms);
 	Scope scope = env.info.scope;
@@ -1969,7 +1969,7 @@ public class Check {
 	    // is a unique(G1) local variable.
 	    FreshGroupPerm generatorPerm = 
 		    new FreshGroupPerm(neededPerm.targetGroup);
-	    if (!requireEnvPerm(pos, generatorPerm, env)) {
+	    if (!requireEnvPerm(pos, generatorPerm, env, warn)) {
 		// Whoops, we can't get the fresh group we need!
 		// Bail out.
 		return false;
@@ -1998,7 +1998,7 @@ public class Check {
 		generatorPerm = CopyPerm.singleTreePerm(neededPerm.exp, 
 		    sourceGroup, neededPerm.targetGroup);
 	    }
-	    if (!requireEnvPerm(pos, generatorPerm, env)) {
+	    if (!requireEnvPerm(pos, generatorPerm, env, warn)) {
 		// It's not available; bail out
 		return false;
 	    }
@@ -2059,7 +2059,7 @@ public class Check {
 		// generates it via case 2.
 		CopyPerm generatorPerm = CopyPerm.simplePerm(fa.selected,
 			neededPerm.targetGroup);
-		if (!requireEnvPerm(pos, generatorPerm, env)) {
+		if (!requireEnvPerm(pos, generatorPerm, env, warn)) {
 		    // We couldn't get it, so bail out
 		    return false;
 		}
@@ -2071,7 +2071,7 @@ public class Check {
 	    // consumed set {\f}
 	    if (found.consumedFields.contains(fa.name)) {
 		// Not there.
-		log.error(pos, "missing.perm", neededPerm);
+		reportMissingPerm(pos, neededPerm, warn);
 		return false;
 	    }
 	    // It's there.  Consume the name in 'found' and add the 
@@ -2089,7 +2089,7 @@ public class Check {
 	    JCArrayAccess aa = (JCArrayAccess) neededPerm.exp;
 	    CopyPerm generatorPerm = CopyPerm.simplePerm(aa.indexed,
 		    neededPerm.targetGroup);
-	    if (!requireCopyPerm(pos, generatorPerm, env)) {
+	    if (!requireCopyPerm(pos, generatorPerm, env, warn)) {
 		// We couldn't get it
 		return false;
 	    }
@@ -2097,19 +2097,20 @@ public class Check {
 	    // it should be there.
 	    if (!env.info.scope.envPerms.contains(neededPerm)) {
 		// It's not there
-		log.error(pos, "missing.perm", neededPerm);
+		reportMissingPerm(pos, neededPerm, warn);
 		return false;
 	    }
 	    // It is there:  return success
 	    return true;
 	}
 	// This shouldn't happen...
-	log.error(pos, "missing.perm", neededPerm);
+	reportMissingPerm(pos, neededPerm, warn);
 	return false;
     }
 	
     boolean requireEffectPerm(DiagnosticPosition pos,
-	    EffectPerm neededPerm, Env<AttrContext> env) {
+	    EffectPerm neededPerm, Env<AttrContext> env,
+	    boolean warn) {
 	Scope scope = env.info.scope;
 	for (EnvPerm perm : scope.envPerms) {
 	    if (perm instanceof EffectPerm) {
@@ -2118,11 +2119,16 @@ public class Check {
 		    return true;
 	    }
 	}
-	log.error(pos, "missing.perm", neededPerm);
+	reportMissingPerm(pos, neededPerm, warn);
 	//System.out.println("envPerms="+scope.envPerms);
 	return false;
    }
     
+   private void reportMissingPerm(DiagnosticPosition pos, EnvPerm perm,
+	   boolean warn) {
+       if (warn)
+	   log.warning(pos, "missing.perm", perm);       
+   }
     
 /* *************************************************************************
  * Check annotations

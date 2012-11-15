@@ -14,15 +14,15 @@ public class UpdatePerms extends DPJTestCase {
     }
     
     @Test public void testErrorCantUpdateField() throws Throwable {
-	compileExpectingErrors("ErrorCantUpdateField", 1);
+	compileExpectingWarnings("ErrorCantUpdateField", 1);
     }
 
     @Test public void testErrorCantUpdateArray() throws Throwable {
-	compileExpectingErrors("ErrorCantUpdateArray", 1);
+	compileExpectingWarnings("ErrorCantUpdateArray", 1);
     }
 
     @Test public void testErrorPermDestroyedBySwitch() throws Throwable {
-	compileExpectingErrors("ErrorPermDestroyedBySwitch", 1);
+	compileExpectingWarnings("ErrorPermDestroyedBySwitch", 1);
     }    
     
 }

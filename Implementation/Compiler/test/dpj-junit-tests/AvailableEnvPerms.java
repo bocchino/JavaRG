@@ -18,7 +18,7 @@ public class AvailableEnvPerms extends DPJTestCase {
     }
 
     @Test public void testFreshGroupPermError() throws Throwable {
-	compileExpectingErrors("FreshGroupPermError", 1);
+	compileExpectingWarnings("FreshGroupPermError", 1);
     }
     
     @Test public void testPreservedGroupPermOK() throws Throwable {
@@ -26,7 +26,7 @@ public class AvailableEnvPerms extends DPJTestCase {
     }
     
     @Test public void testPreservedGroupPermError() throws Throwable {
-	compileExpectingErrors("PreservedGroupPermError", 1);
+	compileExpectingWarnings("PreservedGroupPermError", 1);
     }
     
 }

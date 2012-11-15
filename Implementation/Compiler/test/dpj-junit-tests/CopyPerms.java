@@ -30,11 +30,11 @@ public class CopyPerms extends DPJTestCase {
     }
     
     @Test public void testErrorRootNotLocallyUnique() throws Throwable {
-	compileExpectingErrors("ErrorRootNotLocallyUnique", 1);
+	compileExpectingWarnings("ErrorRootNotLocallyUnique", 1);
     }
     
     @Test public void testErrorMissingPermAtCallSite() throws Throwable {
-	compileExpectingErrors("ErrorMissingPermAtCallSite", 1);
+	compileExpectingWarnings("ErrorMissingPermAtCallSite", 1);
     }
     
     @Test public void testPermOKAtCallSite() throws Throwable {
@@ -42,15 +42,15 @@ public class CopyPerms extends DPJTestCase {
     }
     
     @Test public void testErrorKillByAssigningVar() throws Throwable {
-	compileExpectingErrors("ErrorKillByAssigningVar", 1);
+	compileExpectingWarnings("ErrorKillByAssigningVar", 1);
     }
     
     @Test public void testErrorPermConsumed() throws Throwable {
-	compileExpectingErrors("ErrorPermConsumed", 1);
+	compileExpectingWarnings("ErrorPermConsumed", 1);
     }
     
     @Test public void testErrorKillByAssigningField() throws Throwable {
-	compileExpectingErrors("ErrorKillByAssigningField", 1);
+	compileExpectingWarnings("ErrorKillByAssigningField", 1);
     }
 
 }
