@@ -12,7 +12,7 @@ class GenericArray<type T> {
      * @param T    - Must be an array type
      * @param size - the size of the array
      */
-    public static <type T>T create(int size) 
+    public static <type T>unique T create(int size) 
 	pure 
     {
 	return (T) ((Object) new Object[size]);

@@ -41,7 +41,7 @@ public class ArraySlice<type T,region R> {
     /**
      * The underlying array representation
      */
-    private final Elts elts in R;
+    private final unique Elts elts in R;
 
     /**
      * The start index for indexing into the underlying array
@@ -70,13 +70,17 @@ public class ArraySlice<type T,region R> {
      *
      * @param elts  The Java array to wrap
      */
-    public ArraySlice(Elts elts) pure {
+    public ArraySlice(unique Elts elts) 
+	pure 
+    {
 	this.elts = elts;
 	this.start = 0;
 	this.length = elts.length;
     }
 
-    private ArraySlice(Elts elts, int start, int length) pure {
+    private ArraySlice(unique Elts elts, int start, int length) 
+	pure 
+    {
 	this.elts = elts;
 	this.start = start;
 	this.length = length;
@@ -93,7 +97,9 @@ public class ArraySlice<type T,region R> {
      * @param idx Index of value to return
      * @param return Value stored at {@code idx}
      */
-    public T get(int idx) reads R { 
+    public T get(int idx) 
+	reads R via this
+    { 
 	if (idx < 0 || idx > length-1) {
 	    throw new ArrayIndexOutOfBoundsException();
 	}
@@ -111,7 +117,9 @@ public class ArraySlice<type T,region R> {
      * @param idx Index of value to replace
      * @param val New value
      */
-    public void put(int idx, T val) writes R {
+    public void put(int idx, T val) 
+	writes R via this
+    {
 	if (idx < 0 || idx > length-1) {
 	    throw new ArrayIndexOutOfBoundsException();
 	}
@@ -134,7 +142,9 @@ public class ArraySlice<type T,region R> {
      * @return Subarray of this {@code ArraySlice} defined by {@code
      * start} and {@code length}
      */
-    public ArraySlice<T,R> subarray(int start, int length) pure {
+    public ArraySlice<T,R> subarray(int start, int length) 
+	pure 
+    {
 	if (start < 0 || length < 0 || 
 	    start + length > this.length) {
 	    throw new ArrayIndexOutOfBoundsException();
