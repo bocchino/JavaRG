@@ -4,12 +4,12 @@ package DPJRuntime;
  * The {@link ArraySlice} class, specialized to {@code $}.
  *
  * <p>The {@code ArraySlice$$} class wraps and provides a "view" of an
- * ordinary Java array of {@code $}.  In addition to array-element
+ * ordinary array of {@code $}.  In addition to array-element
  * access, the {@code ArraySlice$$} class supports the creation of a
  * <i>subarray</i>, which is a contiguous slice of the original array.
  * The subarray itself is a new {@code ArraySlice$$} object.  Both the
  * original {@code ArraySlice$$} and the subarray wrap the same
- * underlying Java array.
+ * underlying array.
  *
  * <p>A {@code ArraySlice$$} stores a start position (indexed into the
  * underlying array) and a length.  Accesses to the {@code ArraySlice$$}
@@ -18,16 +18,17 @@ package DPJRuntime;
  * the {@code ArraySlice$$}.  For example:
  *
  * <p><blockquote><pre>
- * // Create a Java array a of 10 $
- * $[] a = new $[10];
- * // Wrap a in a ArraySlice$$
- * ArraySlice$$ A = new ArraySlice$$(a);
- * // Create a subarray of A
- * ArraySlice$$ B = A.subarray(5,2);
- * // Store value 1 into position 5 of a
- * B.put(0,1);
+ * // Create an array of 10 $
+ * region r;
+ * Array$$&lt;r&gt; array = new Array$$&lt;r&gt;(10);
+ * // Wrap array in an ArraySlice
+ * ArraySlice$$&lt;r&gt; slice = new ArraySlice$$&lt;r&gt;(array)
+ * // Create a subarray of slice
+ * ArraySlice$$&lt;r&gt; slice1 = slice.subarray(5,2);
+ * // Store value 1 into position 5 of array
+ * slice1.put(0,1);
  * // Error:  Out of bounds
- * B.put(3,5);
+ * slice1.put(3,5);
  * </pre></blockquote><p>
  * 
  * @author Rob Bocchino
@@ -36,14 +37,10 @@ package DPJRuntime;
  */
 public class ArraySlice$$<region R> {
 
-    public static arrayclass Elts<region R> {
-	$ in R;
-    }
-
     /**
      * The underlying array representation
      */
-    private final unique Elts<R> elts in R;
+    private final unique Array$$<R> elts in R;
 
     /**
      * The start index for indexing into the underlying array
@@ -57,24 +54,24 @@ public class ArraySlice$$<region R> {
 
     /**
      * Creates a {@code ArraySlice$$} of the specified length, wrapping
-     * a freshly created Java array with the same length.
+     * a freshly created array with the same length.
      *
      * @param length  The length of the {@code ArraySlice$$}
      */
     public ArraySlice$$(int length) 
         pure 
     {
-	this.elts = new Elts<R>(length);
+	this.elts = new Array$$<R>(length);
 	this.start = 0;
 	this.length = length;
     }
 
     /**
-     * Creates a {@code ArraySlice$$} that wraps the given Java array.
+     * Creates a {@code ArraySlice$$} that wraps the given array.
      *
-     * @param elts  The Java array to wrap
+     * @param elts  The array to wrap
      */
-    public ArraySlice$$(unique Elts<R> elts) 
+    public ArraySlice$$(unique Array$$<R> elts) 
         pure 
     {
 	this.elts = elts;
@@ -82,7 +79,7 @@ public class ArraySlice$$<region R> {
 	this.length = elts.length;
     }
 
-    private ArraySlice$$(Elts<R> elts, int start, int length) 
+    private ArraySlice$$(Array$$<R> elts, int start, int length) 
         pure 
     {
 	this.elts = elts;
@@ -157,11 +154,11 @@ public class ArraySlice$$<region R> {
     }
 
     /**
-     * Returns the underlying Java array for this {@code ArraySlice$$}.
+     * Returns the underlying array for this {@code ArraySlice$$}.
      *
-     * @return The underlying Java array
+     * @return The underlying array
      */
-    public Elts<R> toArray() pure { return elts; }
+    public Array$$<R> toArray() pure { return elts; }
 
     /**
      * Returns a string representation of this {@code ArraySlice$$}.
