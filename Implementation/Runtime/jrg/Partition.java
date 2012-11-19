@@ -19,9 +19,9 @@ package DPJRuntime;
  */
 public class Partition<type T,region R,refgroup G> {
 
-    private arrayclass Segs 
+    private arrayclass Segs<region R1>
     {
-	unique(G) ArraySlice<T,R> in R;
+	unique(G) ArraySlice<T,R> in R1;
     }
 
     /**
@@ -32,7 +32,7 @@ public class Partition<type T,region R,refgroup G> {
     /**
      * The segments of the partition
      */
-    private final Segs segs;
+    public final unique(G) Segs<R> segs;
 
     /**
      * Number of segments in the partition
@@ -59,15 +59,18 @@ public class Partition<type T,region R,refgroup G> {
      */
     public Partition(ArraySlice<T,R> A, final int idx) 
 	fresh G
-	writes R
+	pure
 	switches G
     {
 	this.A = A;
 	this.length = 2;
 	this.stride = 0;
-	segs = GenericArray.create(length);
-	segs[0] = A.subarray(0, idx);
-	segs[1] = A.subarray(idx, A.length - idx);
+	region Local;
+	unique(G) Segs<Local> localSegs = 
+	    GenericArray.<Segs<Local>,refgroup G>createLocallyUnique(length);
+	localSegs[0] = A.subarray(0, idx);
+	localSegs[1] = A.subarray(idx, A.length - idx);
+	this.segs = (Segs<R>) localSegs;
     }
 
     /**
@@ -88,19 +91,22 @@ public class Partition<type T,region R,refgroup G> {
      */
     public Partition(ArraySlice<T,R> A, final int idx, boolean exclude) 
 	fresh G
-	writes R 
+	pure
 	switches G
     {
 	this.A = A;
 	this.length = 2;
 	this.stride = 0;
-	this.segs = GenericArray.create(length);
-	segs[0] = A.subarray(0, idx);
+	region Local;
+	unique(G) Segs<Local> localSegs =
+	    GenericArray.<Segs<Local>,refgroup G>createLocallyUnique(length);
+	localSegs[0] = A.subarray(0, idx);
 	if (exclude) {
-	    segs[1] = A.subarray(idx + 1, A.length - idx - 1);
+	    localSegs[1] = A.subarray(idx + 1, A.length - idx - 1);
 	} else {
-            segs[1] = A.subarray(idx, A.length - idx);
+            localSegs[1] = A.subarray(idx, A.length - idx);
 	}
+	this.segs = (Segs<R>) localSegs;
     }
 
     /**
@@ -110,12 +116,21 @@ public class Partition<type T,region R,refgroup G> {
      */
     private Partition(ArraySlice<T,R> A, int stride, double strided) 
 	fresh G
-	pure 
+	pure
+	switches G
     {
     	this.A = A;
         this.stride = stride;
 	this.length = (A.length / stride) + ((A.length % stride == 0) ? 0 : 1);
-	this.segs = null;
+	region Local;
+	unique(G) Segs<Local> localSegs =
+	    GenericArray.<Segs<Local>,refgroup G>createLocallyUnique(length);
+	for (int idx = 0; idx < length; ++idx) {
+	    int start = idx * stride;
+	    int segLength = (start + stride > A.length) ? (A.length - start) : stride;
+	    localSegs[idx] = A.subarray(start, segLength);
+	}
+	this.segs = (Segs<R>) localSegs;
     }
 
     /**
@@ -132,7 +147,7 @@ public class Partition<type T,region R,refgroup G> {
     public static <type T,region R,refgroup G>Partition<T,R,G> 
       stridedPartition(ArraySlice<T,R> A, int stride) 
 	fresh G
-	pure 
+	pure
 	switches G
     {
     	return new Partition<T,R,G>(A, stride, 0.0);
@@ -163,25 +178,28 @@ public class Partition<type T,region R,refgroup G> {
     {
 	this.A = A;
 	this.length = idxs.length+1;
-	this.segs = GenericArray.create(length);
 	this.stride = 0;
+	region Local;
+	unique(G) Segs<Local> localSegs =
+	    GenericArray.<Segs<Local>,refgroup G>createLocallyUnique(length);
 	if (length == 1)
-	    segs[0] = A;
+	    localSegs[0] = A;
 	else {
 	    int i = 0, len = 0;
-	    segs[0] = A.subarray(0, idxs[0]);
+	    localSegs[0] = A.subarray(0, idxs[0]);
 	    for (i = 1; i < idxs.length; ++i) {
 		len = idxs[i] - idxs[i-1];
 		if (len < 0) 
 		    throw new ArrayIndexOutOfBoundsException();
 	    	final int j = i;
-		segs[j] = A.subarray(idxs[j-1], len);	    
+		localSegs[j] = A.subarray(idxs[j-1], len);	    
 	    }
             i = idxs[idxs.length - 1];
             len = A.length - i;
 	    final int length = idxs.length;
-            segs[length] = A.subarray(i, len);
+            localSegs[length] = A.subarray(i, len);
 	}
+	this.segs = (Segs<R>) localSegs;
     }
 
     /**
@@ -199,13 +217,7 @@ public class Partition<type T,region R,refgroup G> {
 	if (idx < 0 || idx > length-1) {
 	    throw new ArrayIndexOutOfBoundsException();
 	}
-	if (segs != null)
-   	    return !segs[idx];
-	else {
-	    int start = idx * stride;
-	    int segLength = (start + stride > A.length) ? (A.length - start) : stride;
-	    return A.subarray(start, segLength);
-        }
+	return !segs[idx];
     }
 
 }

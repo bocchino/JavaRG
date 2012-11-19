@@ -18,4 +18,11 @@ class GenericArray<type T> {
 	return (T) ((Object) new Object[size]);
     }
 
+    public static <type T,refgroup G> unique(G) T 
+	createLocallyUnique(int size)
+	fresh G
+	pure
+    {
+	return (T) ((Object) new Object[size]);
+    }
 }
