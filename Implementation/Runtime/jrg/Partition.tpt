@@ -1,12 +1,14 @@
 package DPJRuntime;
 
 /**
- * <p>The {@code Partition} class represents an array of {@link
- * ArraySlice} objects that partition another {@code ArraySlice}
- * (called the <i>root array</i>).  Each {@code ArraySlice} in the
- * partition is a contiguous subsection of the root array, and all are
- * mutually disjoint.  The {@code ArraySlice}s in the partition are
- * called <i>segments</i> of the root array.
+ * The {@link Partition} class, specialized to {@code $}.
+ *
+ * <p>The {@code Partition$$} class represents an array of {@link
+ * DPJArray$$} objects that partition another {@code DPJArray$$} (called
+ * the <i>root array</i>).  Each {@code DPJArray$$} in the partition is
+ * a contiguous subsection of the root array, and all are mutually
+ * disjoint.  The {@code DPJArray$$}s in the partition are called
+ * <i>segments</i> of the root array.
  *
  * <p>For example, if the root array has index space {@code [0,10]},
  * then a partition might have segments with index spaces {@code
@@ -14,28 +16,27 @@ package DPJRuntime;
  * 
  * @author Rob Bocchino
  *
- * @param <T> The type of an element of an array in the partition
  * @param <R> The region of a cell of an array in the partition
  */
-public class Partition<type T,region R,refgroup G> {
+public class Partition$$<region R,refgroup G> {
 
     /**
      * Array class to represent the partition
      */
     private arrayclass Segs<region R1>
     {
-	unique(G) ArraySlice<T,R> in R1;
+	unique(G) ArraySlice$$<R> in R1;
     }
 
     /**
      * The array being partitioned
      */
-    private final ArraySlice<T,R> A;
+    private final ArraySlice$$<R> A;
 
     /**
      * The segments of the partition
      */
-    public final unique(G) Segs<R> segs;
+    private final unique(G) Segs<R> segs;
 
     /**
      * Number of segments in the partition
@@ -60,8 +61,8 @@ public class Partition<type T,region R,refgroup G> {
      * @param A   The array to partition
      * @param idx The partition index
      */
-    public Partition(ArraySlice<T,R> A, final int idx) 
-	fresh G
+    public Partition$$(ArraySlice$$<R> A, final int idx) 
+        fresh G
 	pure
 	switches G
     {
@@ -69,7 +70,7 @@ public class Partition<type T,region R,refgroup G> {
 	this.length = 2;
 	this.stride = 0;
 	region Local;
-	unique(G) Segs<Local> localSegs = ArrayCreator.create(length);
+	unique(G) Segs<Local> localSegs = new Segs<Local>(length);
 	localSegs[0] = A.subarray(0, idx);
 	localSegs[1] = A.subarray(idx, A.length - idx);
 	this.segs = (Segs<R>) localSegs;
@@ -91,8 +92,8 @@ public class Partition<type T,region R,refgroup G> {
      * @param exclude Whether to exclude the element at
      *                {@code idx} from the segments
      */
-    public Partition(ArraySlice<T,R> A, final int idx, boolean exclude) 
-	fresh G
+    public Partition$$(ArraySlice$$<R> A, final int idx, boolean exclude) 
+        fresh G
 	pure
 	switches G
     {
@@ -100,7 +101,7 @@ public class Partition<type T,region R,refgroup G> {
 	this.length = 2;
 	this.stride = 0;
 	region Local;
-	unique(G) Segs<Local> localSegs = ArrayCreator.create(length);
+	unique(G) Segs<Local> localSegs = new Segs<Local>(length);
 	localSegs[0] = A.subarray(0, idx);
 	if (exclude) {
 	    localSegs[1] = A.subarray(idx + 1, A.length - idx - 1);
@@ -115,16 +116,16 @@ public class Partition<type T,region R,refgroup G> {
      * use it to disambiguate this constructor from the other one that
      * takes an array and a stride.
      */
-    private Partition(ArraySlice<T,R> A, int stride, double strided) 
-	fresh G
-	pure
+    private Partition$$(ArraySlice$$<R> A, int stride, double strided) 
+        fresh G
+        pure 
 	switches G
     {
     	this.A = A;
         this.stride = stride;
 	this.length = (A.length / stride) + ((A.length % stride == 0) ? 0 : 1);
 	region Local;
-	unique(G) Segs<Local> localSegs = ArrayCreator.create(length);
+	unique(G) Segs<Local> localSegs = new Segs<Local>(length);
 	for (int idx = 0; idx < length; ++idx) {
 	    int start = idx * stride;
 	    int segLength = (start + stride > A.length) ? (A.length - start) : stride;
@@ -144,13 +145,13 @@ public class Partition<type T,region R,refgroup G> {
      * @param stride The stride at which to partition
      * @return A partition of {@code A} with stride {@code stride}
      */
-    public static <type T,region R,refgroup G>Partition<T,R,G> 
-      stridedPartition(ArraySlice<T,R> A, int stride) 
-	fresh G
+    public static <region R,refgroup G>Partition$$<R,G> 
+      stridedPartition(ArraySlice$$<R> A, int stride) 
+        fresh G
 	pure
 	switches G
     {
-    	return new Partition<T,R,G>(A, stride, 0.0);
+    	return new Partition$$<R,G>(A, stride, 0.0);
     }
 
     /**
@@ -171,16 +172,16 @@ public class Partition<type T,region R,refgroup G> {
      * @return A partition of {@code A} using {@code idxs} as the
      * split points.
      */
-    public <region RI>Partition(ArraySlice<T,R> A, ArrayInt<RI> idxs) 
-	fresh G
-	reads RI writes R 
+    public <region RI>Partition$$(ArraySlice$$<R> A, ArrayInt<RI> idxs)
+        fresh G
+	reads RI writes R
 	switches G
     {
 	this.A = A;
 	this.length = idxs.length+1;
 	this.stride = 0;
 	region Local;
-	unique(G) Segs<Local> localSegs = ArrayCreator.create(length);
+	unique(G) Segs<Local> localSegs = new Segs<Local>(length);
 	if (length == 1)
 	    localSegs[0] = A;
 	else {

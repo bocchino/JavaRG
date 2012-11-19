@@ -40,16 +40,16 @@ java/DPJRuntime/%.java: dpj/%.java
 javadoc-forkjoin :
 	javadoc forkjoin/*java -d $@
 
-DPJDOC=${DPJ_ROOT}/Implementation/Compiler/dist/bootstrap/bin/javadoc
-dpjdoc-html : dpjdoc dpj/*java
+JRGDOC=${JRG_ROOT}/Implementation/Compiler/dist/bootstrap/bin/javadoc
+jrgdoc-html : jrgdoc jrg/*java
 	# Generate html documentation for runtime classes
-	${DPJDOC} dpj/*java -classpath classes -d dpjdoc
+	${JRGDOC} jrg/*java -classpath classes -d jrgdoc
 
-dpjdoc :
+jrgdoc :
 	mkdir $@
 
 clean :
 	rm -Rf classes
 	rm -Rf java
-	rm -Rf dpjdoc
+	rm -Rf jrgdoc
 	perl clearAll.pl
