@@ -1,0 +1,8 @@
+/**
+ * The {@link Array} class, specialized to {@code $}.
+ */
+package DPJRuntime;
+
+public arrayclass Array$$<region R> {
+    $ in R;
+}

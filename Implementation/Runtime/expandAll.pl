@@ -10,10 +10,12 @@ my @targets = (
     ["double", "Double"]
 );
 
-foreach (`ls dpj`) {
+my $dir = "jrg";
+
+foreach (`ls $dir`) {
     chomp;
     if (/(.*)\.tpt$/) {
-	my $prefix = "dpj/".$1;
+	my $prefix = "$dir/".$1;
 	foreach(@targets) {
 	    my $typeName = $$_[0];
 	    my $className = $$_[1];

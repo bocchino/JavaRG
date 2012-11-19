@@ -1,10 +1,10 @@
 /**
- * Wrapper class to encapsulate the hideous nonsense we have to do in
- * Java to create a generic array.
+ * Wrapper for the nonsense we have to do to get a generic array in
+ * Java.
  */
 package DPJRuntime;
 
-class GenericArray<type T> {
+class ArrayCreator {
 
     /**
      * Create a generic array of type T and size size.
@@ -18,11 +18,4 @@ class GenericArray<type T> {
 	return (T) ((Object) new Object[size]);
     }
 
-    public static <type T,refgroup G> unique(G) T 
-	createLocallyUnique(int size)
-	fresh G
-	pure
-    {
-	return (T) ((Object) new Object[size]);
-    }
 }

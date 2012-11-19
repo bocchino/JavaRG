@@ -66,8 +66,7 @@ public class Partition<type T,region R,refgroup G> {
 	this.length = 2;
 	this.stride = 0;
 	region Local;
-	unique(G) Segs<Local> localSegs = 
-	    GenericArray.<Segs<Local>,refgroup G>createLocallyUnique(length);
+	unique(G) Segs<Local> localSegs = ArrayCreator.create(length);
 	localSegs[0] = A.subarray(0, idx);
 	localSegs[1] = A.subarray(idx, A.length - idx);
 	this.segs = (Segs<R>) localSegs;
@@ -98,8 +97,7 @@ public class Partition<type T,region R,refgroup G> {
 	this.length = 2;
 	this.stride = 0;
 	region Local;
-	unique(G) Segs<Local> localSegs =
-	    GenericArray.<Segs<Local>,refgroup G>createLocallyUnique(length);
+	unique(G) Segs<Local> localSegs = ArrayCreator.create(length);
 	localSegs[0] = A.subarray(0, idx);
 	if (exclude) {
 	    localSegs[1] = A.subarray(idx + 1, A.length - idx - 1);
@@ -123,8 +121,7 @@ public class Partition<type T,region R,refgroup G> {
         this.stride = stride;
 	this.length = (A.length / stride) + ((A.length % stride == 0) ? 0 : 1);
 	region Local;
-	unique(G) Segs<Local> localSegs =
-	    GenericArray.<Segs<Local>,refgroup G>createLocallyUnique(length);
+	unique(G) Segs<Local> localSegs = ArrayCreator.create(length);
 	for (int idx = 0; idx < length; ++idx) {
 	    int start = idx * stride;
 	    int segLength = (start + stride > A.length) ? (A.length - start) : stride;
@@ -180,8 +177,7 @@ public class Partition<type T,region R,refgroup G> {
 	this.length = idxs.length+1;
 	this.stride = 0;
 	region Local;
-	unique(G) Segs<Local> localSegs =
-	    GenericArray.<Segs<Local>,refgroup G>createLocallyUnique(length);
+	unique(G) Segs<Local> localSegs = ArrayCreator.create(length);
 	if (length == 1)
 	    localSegs[0] = A;
 	else {

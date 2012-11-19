@@ -1906,16 +1906,18 @@ public class Pretty extends JCTree.Visitor {
     }
 
     public void visitSelect(JCFieldAccess tree) {
-        try {
-            // Hack to work around generation of types starting with "." during barrier insertion
-            // TODO Fix the root cause of this (in TreeMaker, I think).
-            if (tree.selected instanceof JCIdent && 
-        	    ((JCIdent)(tree.selected)).name.length() == 0) {
-        	print(tree.name);
-            } else {
-        	printExpr(tree.selected, TreeInfo.postfixPrec);
-        	print("." + tree.name);
-            }
+	try {
+	    printExpr(tree.selected, TreeInfo.postfixPrec);
+	    print(".");
+	    if (tree.sym instanceof ClassSymbol) {
+		if (isArrayClass(tree.sym.type)) {
+		    printType(tree.sym.type);
+		}
+		else print(tree.name);
+	    }
+	    else {
+		print(tree.name);
+	    }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -1963,8 +1965,9 @@ public class Pretty extends JCTree.Visitor {
         	print (tree.sym.owner.type + "." + "this");
             } 
             else if (tree.sym instanceof ClassSymbol) {
-        	if (isArrayClass(tree.sym.type))
+        	if (isArrayClass(tree.sym.type)) {
         	    printType(tree.sym.type);
+        	}
         	else print(tree.name);
             }
             else if (symbolIsMangled(tree.sym)) {
@@ -2087,13 +2090,10 @@ public class Pretty extends JCTree.Visitor {
     public void visitTypeApply(JCTypeApply tree) {
 	try {
             printExpr(tree.functor);
-            if (tree.functor.getSymbol() instanceof ClassSymbol &&
-        	    tree.functor.type instanceof ClassType) {
-        	ClassType ct = (ClassType) tree.functor.type;
-        	if (ct.cellType != null) {
+            Symbol functorSymbol = tree.functor.getSymbol();
+            if (functorSymbol != null)
+        	if (isArrayClass(functorSymbol.type))
         	    return;
-        	}
-            }
             boolean rplsToPrint = (codeGenMode == NONE) && tree.rplArgs != null &&
             	tree.rplArgs.nonEmpty();
             boolean effectsToPrint = (codeGenMode == NONE) && tree.refGroupArgs != null &&

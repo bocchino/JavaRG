@@ -18,8 +18,8 @@ classes :
 	mkdir $@
 
 runtime-only:
-# 	Generate Java 'template' classes
-#	perl expandAll.pl
+	# Generate Java 'template' classes
+	perl expandAll.pl
 	# Compile the DPJ runtime
 	jrgc -seq ${INSTRUMENT} -d java -cp classes ${UNCHECKED} jrg/*.java
 	javac -cp classes -d classes java/DPJRuntime/*.java
