@@ -324,6 +324,7 @@ public class CheckEffects extends EnvScanner { // DPJ
      * Get the deref set, if any, associated with a variable access
      */
     private DerefSet getDerefSetFor(JCExpression e, Env<AttrContext> env, Resolve rs) {
+	boolean print=false;
 	DerefSet derefSet = DerefSet.NONE;
 	if (e == null) return derefSet;
 	Symbol sym = e.getSymbol();
@@ -345,6 +346,12 @@ public class CheckEffects extends EnvScanner { // DPJ
 	else if (e instanceof JCArrayAccess) {
 	    JCArrayAccess aa = (JCArrayAccess) e;
 	    derefSet = new DerefSet(aa.indexed, rs);
+	}
+	else if (e instanceof JCUnary) {
+	    JCUnary unary = (JCUnary) e;
+	    if (unary.isDestructiveAccess) {
+		derefSet = getDerefSetFor(unary.arg,env,rs);
+	    }
 	}
 	if (!derefSet.isValid(attr, parentEnv, types))
 	    derefSet = DerefSet.NONE;	

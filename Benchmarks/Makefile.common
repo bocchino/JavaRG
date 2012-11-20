@@ -6,7 +6,7 @@ JRG=jrg
 JRG-PAR=${JRG} -cp parallel/classes
 JRG-SEQ=${JRG} -cp sequential/classes
 JRG-INST=${JRG} -cp instrument/classes
-JRGC-PAR=jrgc
+JRGC-PAR=jrgc ${JRGC_OPTS}
 JRGC-SEQ=${JRGC-PAR} -seq
 JRGC-INST=${JRGC-SEQ} -instrument
 JAVAC=jrg-javac
@@ -23,8 +23,9 @@ sequential-java : ${SRCS} sequential/java
 	${JRGC-SEQ} -d sequential/java jrg/*.java ${RUNTIME}/jrg/*.java
 sequential-classes : sequential-java sequential/classes
 	${JAVAC} -d sequential/classes ${SEQ_JAVA}
-parallel-classes : ${SRCS} parallel/java parallel/classes
+parallel-java : ${SRCS} parallel/java
 	${JRGC-PAR} -d parallel/java jrg/*.java ${RUNTIME}/jrg/*.java
+parallel-classes : parallel-java parallel/classes
 	${JAVAC} -d parallel/classes ${PAR_JAVA}
 
 

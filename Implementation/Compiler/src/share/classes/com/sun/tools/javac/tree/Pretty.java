@@ -1602,7 +1602,8 @@ public class Pretty extends JCTree.Visitor {
 		for(VarSymbol var : copyAll)
 		{
 		    align();
-		    print(var.type.toString()+" "+var.toString()+";\n");
+		    printType(var.type);
+		    print(" "+var.toString()+";\n");
 		}
 		
 		//Generate constructor for class
@@ -1614,7 +1615,8 @@ public class Pretty extends JCTree.Visitor {
 			print(",");
 		    else
 			needsComma=true;
-		    print(var.type.toString()+" "+var.toString());
+		    printType(var.type);
+		    print(" "+var.toString());
 		}
 		print(") {\n");
 		indent();
@@ -2111,8 +2113,6 @@ public class Pretty extends JCTree.Visitor {
         	    if (tree.typeArgs.nonEmpty() || rplsToPrint) {
         		print(", ");
         	    }
-        	    // printExprs(tree.effectArgs);
-        	    // TODO:  WHY DOES THIS CAUSE STACK OVERFLOW???
         	}
         	print(">");
             }

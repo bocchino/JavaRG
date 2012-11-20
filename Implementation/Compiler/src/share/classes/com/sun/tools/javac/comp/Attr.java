@@ -2064,7 +2064,7 @@ public class Attr extends JCTree.Visitor {
             
             // Check that there's enough permission for 'this' to call the method
             if (methSym != null && ((methSym.flags() & STATIC) == 0)) {
-                RefPerm thisPerm = methSym.thisPerm;
+                RefPerm thisPerm = methSym.thisPerm.atCallSite(rs,env,tree);
                 if (tree.meth instanceof JCFieldAccess) {
                     JCFieldAccess fa = (JCFieldAccess) tree.meth;
                     if (!fa.selected.toString().equals("super"))
@@ -2093,7 +2093,7 @@ public class Attr extends JCTree.Visitor {
         if (!localEnv.info.varArgs && methSym != null) {
             List<JCExpression> args = tree.args;
             for (VarSymbol param : methSym.params) {
-        	RefPerm argPerm = localEnv.info.getRefPermFor(param);
+        	RefPerm argPerm = param.refPerm;
         	if (tree.meth instanceof JCFieldAccess) {
         	    JCFieldAccess fa = (JCFieldAccess) tree.meth;
         	    argPerm = argPerm.asMemberOf(types, fa.selected.type);
@@ -2684,7 +2684,6 @@ public class Attr extends JCTree.Visitor {
         }
     }
     
-    
     public void visitAssignop(JCAssignOp tree) {
         // Attribute arguments.
         Type owntype = attribTree(tree.lhs, env, VAR, Type.noType);
@@ -2738,7 +2737,7 @@ public class Attr extends JCTree.Visitor {
      		    Symbol sym = tree.arg.getSymbol();
      		    if (sym != null && ((sym.flags() & FINAL) != 0))
      			log.error(tree.pos(), "cant.assign.val.to.final.var", sym);
-     		    requireUpdatedGroupPermFor(tree.arg, true);
+     		    //requireUpdatedGroupPermFor(tree.arg, true);
      		}
      		else {
      		    log.error(tree.arg.pos(), "expected.access");
@@ -2973,7 +2972,6 @@ public class Attr extends JCTree.Visitor {
      * @param sym   The type or class symbol whose cell type we are computing
      * @param type  The instantiated type of the class
      */
-    boolean bidlika = false;
     private void computeCellType(Env<AttrContext> env, Symbol sym, Type type) {
         if ((sym.kind == TYP || sym.kind == CLASS) && 
         	types.isArrayClass(type)) {
@@ -3111,7 +3109,6 @@ public class Attr extends JCTree.Visitor {
         result = checkId(tree, site, sym, env, pkind, pt, varArgs);
         env.info.tvars = List.nil();
         env.info.rvars = List.nil();
-        
         
     }
     //where

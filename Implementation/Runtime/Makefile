@@ -4,10 +4,13 @@ ifndef INSTRUMENT		## set this in your env to change behavior
 INSTRUMENT=#-instrument		## or take out the comment on this line
 endif
 
+JAVAC=javac ${JAVAC_OPTS}
+JRGC=jrgc ${JRGC_OPTS}
+
 all : java classes
 	cp -Rf forkjoin jsr166y extra166y java
 	# Compile FJTask
-	javac -d classes java/forkjoin/*.java
+	${JAVAC} -d classes java/forkjoin/*.java
 	make runtime-only
 #	make dpjdoc-html
 
@@ -18,21 +21,21 @@ classes :
 	mkdir $@
 
 runtime-only:
-	# Generate Java 'template' classes
-	perl expandAll.pl
+#	# Generate Java 'template' classes
+#	perl expandAll.pl
 	# Compile the DPJ runtime
-	jrgc -seq ${INSTRUMENT} -d java -cp classes ${UNCHECKED} jrg/*.java
-	javac -cp classes -d classes java/DPJRuntime/*.java
+	${JRGC} -seq ${INSTRUMENT} -d java -cp classes ${UNCHECKED} jrg/*.java
+	${JAVAC} -cp classes -d classes java/DPJRuntime/*.java
 
 # Count DPJ Annotations
 countAll :
-	jrgc -seq -count -d java -cp classes dpj/*.java
+	${JRGC} -seq -count -d java -cp classes dpj/*.java
 
 classes/DPJRuntime/%.class: java/DPJRuntime/%.java
-	javac -d classes/DPJRuntime $<
+	${JAVAC} -d classes/DPJRuntime $<
 
 java/DPJRuntime/%.java: dpj/%.java
-	jrgc -seq ${INSTRUMENT} -d java ${UNCHECKED} $<
+	${JRGC} -seq ${INSTRUMENT} -d java ${UNCHECKED} $<
 
 
 # Build javadoc for the OLD version of FJTask that the compiler still uses

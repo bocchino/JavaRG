@@ -423,7 +423,7 @@ public class DerefSet implements
 	MethodSymbol methSym = tree.getMethodSymbol();
 	if (methSym != null) {
             result = result.substVars(rs.getPermissions(), 
-        	    methSym.params(), tree.args);
+        	    methSym.params(), Translation.stripDereference(tree.args));
             result = Translation.substForThis(result, tree.meth,
         	    rs, env, methSym.owner.thisSym);
 	}

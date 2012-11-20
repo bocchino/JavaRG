@@ -10,6 +10,7 @@ import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
+import com.sun.tools.javac.tree.JCTree.JCUnary;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
@@ -190,5 +191,22 @@ public class Translation {
 		    List.of((VarSymbol) thisSym), List.of(thisArg));
 	return elt;
     }
+    
+    /**
+     * Take away destructive dereference
+     */
+    public static List<JCExpression> stripDereference(List<JCExpression> es) {
+	ListBuffer<JCExpression> lb = ListBuffer.lb();
+	for (JCExpression e : es) {
+	    if (e instanceof JCUnary) {
+		lb.append(((JCUnary) e).arg);
+	    }
+	    else {
+		lb.append(e);
+	    }
+	}
+	return lb.toList();
+    }
+     
 }
     

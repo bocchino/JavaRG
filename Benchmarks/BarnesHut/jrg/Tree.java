@@ -220,7 +220,7 @@ public class Tree {
 	    
 	    final int si = subindex(xpic, level);
 	    cell.subp[si] = this.<refgroup T>loadtree(body, xpic, 
-						      cell.subp[si],
+						      !cell.subp[si],
 						      level >> 1, idx);
 	    return cell;
 	}
