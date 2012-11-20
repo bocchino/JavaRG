@@ -63,20 +63,21 @@ public abstract class MergeSort extends Harness {
 	}
     }
     
-    protected static <region R1,R2,R3,
-	refgroup G1,G2,G3 | R1 # R2, R1 # R3, R2 # R3>
+    protected static <region R1,R2,refgroup G1,G2 | R1 # R2>
 	void merge(ArraySliceInt<R1,G1> A, 
-		   ArraySliceInt<R2,G2> B, 
-		   ArraySliceInt<R3,G3> out) 
-	writes R1 via A...G1, R2 via B...G2, R3 via out...G3
+		   ArraySliceInt<R1,G1> B, 
+		   ArraySliceInt<R2,G2> out) 
+        // FIXME
+	writes R1 via A...G1, R1 via B...G1,
+	       R2 via out...G2
     {
 	
 	if (A.length <= MERGE_SIZE) {
-	    MergeSort.<region R1,R2,R3,refgroup G1,G2,G3>
+	    MergeSort.<region R1,R2,refgroup G1,G2>
 		sequentialMerge(A, B, out);
 	} else {
 	    int aHalf = A.length >>> 1; /*l33t shifting h4x!!!*/
-	    int bSplit = MergeSort.<region R2,refgroup G2>findSplit(A.get(aHalf), B);
+	    int bSplit = MergeSort.<region R1,refgroup G1>findSplit(A.get(aHalf), B);
 
 	    A.partition(aHalf);
 	    B.partition(bSplit);
@@ -90,12 +91,13 @@ public abstract class MergeSort extends Harness {
     }
 
     /** A standard sequential merge **/
-    protected static <region R1,R2,R3,
-	refgroup G1,G2,G3 | R1#R3, R2#R3>
+    protected static <region R1,R2,
+	refgroup G1,G2 | R1#R2>
 	void sequentialMerge(ArraySliceInt<R1,G1> A, 
-			     ArraySliceInt<R2,G2> B, 
-			     ArraySliceInt<R3,G3> out) 
-	reads R1 via A...G1, R2 via B...G2 writes R3 via out...G3
+			     ArraySliceInt<R1,G1> B, 
+			     ArraySliceInt<R2,G2> out) 
+	reads R1 via A...G1, R1 via B...G1 
+	writes R2 via out...G2
     {
 	int a = 0;
 	int aFence = A.length;
@@ -147,7 +149,7 @@ public abstract class MergeSort extends Harness {
     
     /** A standard sequential quicksort **/
     protected static <region R,refgroup G>
-	void quickSort(unique(G) ArraySliceInt<R,G> arr) 
+	void quickSort(ArraySliceInt<R,G> arr) 
 	writes R via arr...G
     {
 	int lo = 0;
@@ -210,8 +212,8 @@ public abstract class MergeSort extends Harness {
 	}
 
 	arr.partition(left+1);
-	MergeSort.<region R,refgroup G>quickSort(!arr.segs[0]);
-	MergeSort.<region R,refgroup G>quickSort(!arr.segs[1]);
+	MergeSort.<region R,refgroup G>quickSort(arr.segs[0]);
+	MergeSort.<region R,refgroup G>quickSort(arr.segs[1]);
 	
     }
     
